@@ -25,15 +25,15 @@
       "database_name": "jess-realty-leads",
       "database_id": "0993981e-2ebc-41ba-b367-efc3d9a5b542"
     }
-  ]
+  ],
 
-  // Still to add before the admin board works (see ADMIN-SETUP.md):
-  //
-  //   "vars": {
-  //     "CF_ACCESS_TEAM_DOMAIN": "<team>.cloudflareaccess.com",
-  //     "CF_ACCESS_AUD": "<audience tag>"
-  //   }
-  //
-  // Until these are set, /api/leads returns 503 by design rather than
-  // serving client contact details unauthenticated.
+  // Not secrets: the team domain and audience tag are public identifiers.
+  // The audience tag is what pins an Access token to *this* application, so
+  // a token minted for another app on the same team is rejected here.
+  // worker.js verifies the signed Access token against these on every admin
+  // request, so the API fails closed if the Access policy is ever removed.
+  "vars": {
+    "CF_ACCESS_TEAM_DOMAIN": "kortumskingdom.cloudflareaccess.com",
+    "CF_ACCESS_AUD": "1d803f7c90ddecc3a79b09f290ff8f48bb3f48382606a80913bcc136c3398751"
+  }
 }
