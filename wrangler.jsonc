@@ -14,19 +14,26 @@
   "assets": {
     "directory": ".",
     "binding": "ASSETS"
-  }
+  },
 
-  // Still to add once the values are known (see ADMIN-SETUP.md):
+  // `wrangler deploy` is declarative: it reconciles the Worker to this file
+  // on every deploy. Bindings therefore have to live here, not in the
+  // dashboard, or they get dropped on the next build.
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "jess-realty-leads",
+      "database_id": "0993981e-2ebc-41ba-b367-efc3d9a5b542"
+    }
+  ]
+
+  // Still to add before the admin board works (see ADMIN-SETUP.md):
   //
-  //   "d1_databases": [
-  //     { "binding": "DB", "database_name": "jess-realty-leads",
-  //       "database_id": "<id from the D1 dashboard>" }
-  //   ],
   //   "vars": {
   //     "CF_ACCESS_TEAM_DOMAIN": "<team>.cloudflareaccess.com",
   //     "CF_ACCESS_AUD": "<audience tag>"
   //   }
   //
-  // `wrangler deploy` is declarative: bindings live here rather than in the
-  // dashboard, because a deploy reconciles the Worker to this file.
+  // Until these are set, /api/leads returns 503 by design rather than
+  // serving client contact details unauthenticated.
 }
