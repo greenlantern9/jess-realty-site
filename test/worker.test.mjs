@@ -223,7 +223,90 @@ const okPatch = await worker.fetch(
 check('patch accepts valid fields', okPatch.status === 200, 'got ' + okPatch.status);
 
 /* ------------------------------------------------------------------ */
-console.log('\n7. routing and private files');
+console.log('\n7. follow-up dates, budgets and the activity log');
+
+const budgetCases = [
+  ['450000',  200], ['450k', 200], ['$450,000', 200], ['1.2m', 200],
+  ['', 200], ['abc', 400], ['-5', 400], ['999999999999', 400]
+];
+for (const [value, expected] of budgetCases) {
+  const r = await worker.fetch(
+    authReq('/api/leads', 'POST', { name: 'B', phone: '813', budget: value }), authEnv(okDb));
+  check('budget ' + JSON.stringify(value).padEnd(16) + ' -> ' + expected,
+    r.status === expected, 'got ' + r.status);
+}
+
+for (const [value, expected] of [['2026-09-01', 200], ['next tuesday', 400], ['', 200]]) {
+  const r = await worker.fetch(
+    authReq('/api/leads', 'POST', { name: 'F', phone: '813', next_follow_up: value }), authEnv(okDb));
+  check('follow-up ' + JSON.stringify(value).padEnd(16) + ' -> ' + expected,
+    r.status === expected, 'got ' + r.status);
+}
+
+// Appending reads the current log, prepends, and writes back with a
+// server-side timestamp the client cannot forge.
+let storedActivity = null;
+const activityDb = { prepare: (sql) => ({
+  _sql: sql,
+  bind(...a){ this._binds = a; return this; },
+  first: async () => ({ activity: JSON.stringify([{ at:'2026-01-01T00:00:00Z', type:'call', text:'older' }]) }),
+  run: async function(){
+    if (/UPDATE/i.test(this._sql)) storedActivity = this._binds.find(b => typeof b === 'string' && b.startsWith('['));
+    return { meta: { changes: 1 } };
+  },
+  all: async () => ({ results: [] })
+}) };
+
+let r2 = await worker.fetch(
+  authReq('/api/leads/abc', 'PATCH', { activityAppend: { type:'showing', text:'Toured 3 homes' } }),
+  authEnv(activityDb));
+check('activity append -> 200', r2.status === 200, 'got ' + r2.status);
+const parsedLog = JSON.parse(storedActivity || '[]');
+check('newest entry is first', parsedLog[0] && parsedLog[0].text === 'Toured 3 homes', storedActivity);
+check('existing entries preserved', parsedLog.length === 2 && parsedLog[1].text === 'older');
+check('timestamp is server-set', !!parsedLog[0] && !Number.isNaN(Date.parse(parsedLog[0].at)));
+
+r2 = await worker.fetch(
+  authReq('/api/leads/abc', 'PATCH', { activityAppend: { type:'telepathy', text:'x' } }), authEnv(activityDb));
+check('unknown activity type rejected', r2.status === 400, 'got ' + r2.status);
+
+r2 = await worker.fetch(
+  authReq('/api/leads/abc', 'PATCH', { activityAppend: { type:'call', text:'   ' } }), authEnv(activityDb));
+check('empty activity text rejected', r2.status === 400, 'got ' + r2.status);
+
+/* ------------------------------------------------------------------ */
+console.log('\n8. CSV export');
+
+res = await worker.fetch(req('/api/export'), { ...staticEnv(), DB: okDb });
+check('export -> 503 when unconfigured', res.status === 503, 'got ' + res.status);
+res = await worker.fetch(req('/api/export'), authEnv(okDb));
+check('export -> 401 without a token', res.status === 401, 'got ' + res.status);
+
+const exportDb = { prepare: () => ({ bind() { return this; },
+  run: async () => ({ meta:{ changes:1 } }),
+  all: async () => ({ results: [
+    { name:'Dana "D" Whitfield', email:'d@x.com', phone:'813', intent:'Buy',
+      status:'new', priority:'hot', source:'website', budget:450000, tags:'a, b',
+      next_follow_up:'2026-09-01', message:'line1\nline2', notes:'',
+      created_at:'2026-08-01T00:00:00Z', updated_at:'2026-08-01T00:00:00Z' },
+    { name:'=cmd|calc', email:'', phone:'', intent:'', status:'new', priority:'warm',
+      source:'other', budget:0, tags:'', next_follow_up:'', message:'', notes:'',
+      created_at:'2026-08-02T00:00:00Z', updated_at:'2026-08-02T00:00:00Z' }
+  ] }) }) };
+
+res = await worker.fetch(authReq('/api/export'), authEnv(exportDb));
+const csv = await res.text();
+check('export -> 200 with a valid token', res.status === 200, 'got ' + res.status);
+check('sends a csv attachment',
+  (res.headers.get('content-type') || '').includes('text/csv') &&
+  (res.headers.get('content-disposition') || '').includes('attachment'));
+check('quotes inside values are doubled', csv.includes('"Dana ""D"" Whitfield"'), csv.slice(0, 120));
+check('newlines survive inside a quoted cell', csv.includes('line1\nline2'));
+// A cell starting with = would execute as a formula when opened in Excel.
+check('formula injection neutralised', csv.includes(`"'=cmd|calc"`), csv.slice(-200));
+
+/* ------------------------------------------------------------------ */
+console.log('\n9. routing and private files');
 
 for (const [path, status] of [
   ['/', 200], ['/schema.sql', 404], ['/worker.js', 404], ['/wrangler.jsonc', 404],

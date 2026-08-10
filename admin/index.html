@@ -67,6 +67,7 @@
     letter-spacing:.08em;text-transform:uppercase}
   .stat b{font-family:var(--serif);font-size:1.05rem;color:var(--cream);letter-spacing:0}
   .stat.is-hot b{color:var(--hot)}
+  .stat.is-due b{color:#eda071}
 
   .banner{margin:14px 22px 0;padding:13px 16px;border-radius:3px;font-size:.87rem;
     border:1px solid rgba(226,134,127,.4);background:rgba(226,134,127,.10);color:#f2b9b4}
@@ -110,6 +111,42 @@
   .card select{flex:1;font-size:.72rem;color:var(--cream-soft);background:var(--ink-3);
     border:1px solid var(--line-soft);border-radius:2px;padding:4px 5px;cursor:pointer}
   .card select:focus{outline:none;border-color:var(--brass)}
+  .card .money{font-family:var(--serif);font-size:.9rem;color:var(--cream);margin-top:7px}
+
+  /* follow-up badge - the whole point is that overdue is impossible to miss */
+  .due{display:inline-flex;align-items:center;gap:5px;font-size:.66rem;font-weight:700;
+    letter-spacing:.07em;text-transform:uppercase;padding:3px 7px;border-radius:2px;margin-top:9px}
+  .due.overdue{background:rgba(221,127,74,.18);color:#eda071}
+  .due.today{background:rgba(201,162,107,.20);color:var(--brass-bright)}
+  .due.soon{background:transparent;border:1px solid var(--line-soft);color:var(--sage)}
+  /* both .val and .n would otherwise claim the free space and split it */
+  .col-head .val{font-family:var(--serif);font-size:.82rem;color:var(--sage);margin-left:auto}
+  .col-head .val + .n{margin-left:8px}
+
+  /* quick actions */
+  .quick{display:flex;gap:8px;flex-wrap:wrap}
+  .quick a{display:inline-flex;align-items:center;gap:6px;padding:8px 12px;border-radius:3px;
+    border:1px solid var(--line);color:var(--cream);text-decoration:none;font-size:.78rem;
+    font-weight:600;transition:background .2s,border-color .2s}
+  .quick a:hover{background:rgba(201,162,107,.12);border-color:var(--brass)}
+  .quick a[aria-disabled="true"]{opacity:.35;pointer-events:none}
+
+  /* activity timeline */
+  .tl{display:flex;flex-direction:column;gap:0;max-height:230px;overflow-y:auto;
+    scrollbar-width:thin;scrollbar-color:var(--line) transparent}
+  .tl::-webkit-scrollbar{width:7px}
+  .tl::-webkit-scrollbar-thumb{background:var(--line);border-radius:4px}
+  .tl-item{display:grid;grid-template-columns:22px 1fr;gap:10px;padding:9px 0;
+    border-bottom:1px solid var(--line-soft)}
+  .tl-item:last-child{border-bottom:0}
+  .tl-ico{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;
+    justify-content:center;font-size:.7rem;background:var(--ink-2);border:1px solid var(--line-soft)}
+  .tl-txt{font-size:.85rem;color:var(--cream-soft);word-break:break-word}
+  .tl-when{font-size:.7rem;color:var(--sage);margin-top:2px}
+  .tl-empty{font-size:.82rem;color:var(--sage);font-style:italic;padding:8px 0}
+  .tl-add{display:flex;gap:8px;margin-top:10px}
+  .tl-add select{flex:0 0 108px}
+  .tl-add input{flex:1}
 
   /* ---------------- drawer ---------------- */
   .drawer-bg{position:fixed;inset:0;background:rgba(6,12,20,.72);z-index:40;display:none}
@@ -191,12 +228,22 @@
     <option value="cold">Cold</option>
   </select>
   <select id="fSource" aria-label="Filter by source"></select>
+  <select id="fDue" aria-label="Filter by follow-up">
+    <option value="">Any follow-up</option>
+    <option value="overdue">Overdue</option>
+    <option value="today">Due today</option>
+    <option value="week">Due this week</option>
+    <option value="none">No date set</option>
+  </select>
   <button class="btn" id="addLead" type="button">+ New lead</button>
+  <button class="btn ghost" id="exportCsv" type="button">Export CSV</button>
 
   <div class="stats">
     <span class="stat">Total <b id="stTotal">0</b></span>
     <span class="stat">New <b id="stNew">0</b></span>
     <span class="stat is-hot">Hot <b id="stHot">0</b></span>
+    <span class="stat is-due">Overdue <b id="stDue">0</b></span>
+    <span class="stat">Pipeline <b id="stValue">$0</b></span>
   </div>
 </div>
 
@@ -212,6 +259,12 @@
   </div>
 
   <div class="drawer-body">
+    <div class="quick" id="dQuick" hidden>
+      <a id="qCall" href="#">📞 Call</a>
+      <a id="qText" href="#">💬 Text</a>
+      <a id="qMail" href="#">✉️ Email</a>
+    </div>
+
     <div class="grid2">
       <div class="fset" id="fs-name">
         <label for="dName">Name</label>
@@ -265,6 +318,19 @@
       </div>
     </div>
 
+    <div class="grid2">
+      <div class="fset" id="fs-next_follow_up">
+        <label for="dFollow">Next follow-up</label>
+        <input id="dFollow" type="date">
+        <span class="err" id="err-next_follow_up"></span>
+      </div>
+      <div class="fset" id="fs-budget">
+        <label for="dBudget">Budget / price point</label>
+        <input id="dBudget" type="text" inputmode="numeric" placeholder="450000 or 450k">
+        <span class="err" id="err-budget"></span>
+      </div>
+    </div>
+
     <div class="fset">
       <label for="dTags">Tags <span style="text-transform:none;letter-spacing:0">(comma separated)</span></label>
       <input id="dTags" type="text" placeholder="first-time, waterfront, pre-approved">
@@ -281,6 +347,23 @@
         <button class="linkbtn" id="dStamp" type="button">+ Add dated entry</button>
       </div>
       <textarea id="dNotes" placeholder="Call summaries, budget, follow-up dates — only you see this."></textarea>
+    </div>
+
+    <div class="fset" id="fs-activity">
+      <label>Contact log</label>
+      <div class="tl" id="dTimeline"></div>
+      <div class="tl-add">
+        <select id="aType" aria-label="Activity type">
+          <option value="call">Call</option>
+          <option value="text">Text</option>
+          <option value="email">Email</option>
+          <option value="showing">Showing</option>
+          <option value="offer">Offer</option>
+          <option value="note">Note</option>
+        </select>
+        <input id="aText" type="text" placeholder="What happened? (Enter to log)">
+        <button class="btn ghost" id="aAdd" type="button">Log</button>
+      </div>
     </div>
 
     <div class="meta-line" id="dMeta"></div>
@@ -347,6 +430,49 @@
   }
   const splitTags = (s) => String(s || '').split(',').map(t => t.trim()).filter(Boolean);
 
+  const ACTIVITY_ICON = { call:'📞', text:'💬', email:'✉️', showing:'🏠', offer:'📄', note:'✎' };
+
+  const todayISO = () => {
+    const d = new Date();
+    return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+  };
+
+  // Whole-day difference, compared as calendar dates so "today" means today
+  // in the agent's timezone rather than 24 hours from now.
+  function daysUntil(dateStr){
+    if (!dateStr) return null;
+    const then = new Date(dateStr + 'T00:00:00');
+    if (Number.isNaN(then.getTime())) return null;
+    const now = new Date(todayISO() + 'T00:00:00');
+    return Math.round((then - now) / 86400000);
+  }
+
+  function money(n){
+    const v = Number(n) || 0;
+    if (!v) return '';
+    if (v >= 1e6) return '$' + (v / 1e6).toFixed(v % 1e6 ? 2 : 1).replace(/\.0$/, '') + 'M';
+    if (v >= 1e3) return '$' + Math.round(v / 1e3) + 'k';
+    return '$' + v;
+  }
+
+  function readActivity(raw){
+    try { const a = JSON.parse(raw || '[]'); return Array.isArray(a) ? a : []; }
+    catch { return []; }
+  }
+
+  // Mirrors parseBudget() in worker.js. The server is authoritative; this only
+  // keeps the board honest between save and the next reload.
+  function parseBudgetLocal(raw){
+    const s = String(raw ?? '').trim().toLowerCase().replace(/[$,\s]/g, '');
+    if (!s) return 0;
+    const m = s.match(/^(\d+(?:\.\d+)?)(k|m)?$/);
+    if (!m) return 0;
+    let n = parseFloat(m[1]);
+    if (m[2] === 'k') n *= 1e3;
+    if (m[2] === 'm') n *= 1e6;
+    return Math.round(n);
+  }
+
   function fillSelect(sel, items, valueKey, labelKey){
     sel.textContent = '';
     items.forEach(i => {
@@ -390,13 +516,26 @@
     }
   }
 
+  function matchesDue(lead, mode){
+    const d = daysUntil(lead.next_follow_up);
+    switch (mode) {
+      case 'overdue': return d !== null && d < 0;
+      case 'today':   return d === 0;
+      case 'week':    return d !== null && d >= 0 && d <= 7;
+      case 'none':    return !lead.next_follow_up;
+      default:        return true;
+    }
+  }
+
   function visibleLeads(){
     const q = el('q').value.trim().toLowerCase();
     const p = el('fPriority').value;
     const s = el('fSource').value;
+    const d = el('fDue').value;
     return leads.filter(l => {
       if (p && (l.priority || 'warm') !== p) return false;
       if (s && (l.source || 'website') !== s) return false;
+      if (d && !matchesDue(l, d)) return false;
       if (!q) return true;
       return [l.name, l.email, l.phone, l.intent, l.message, l.notes, l.tags]
         .some(v => String(v || '').toLowerCase().includes(q));
@@ -407,6 +546,26 @@
     el('stTotal').textContent = list.length;
     el('stNew').textContent   = list.filter(l => l.status === 'new').length;
     el('stHot').textContent   = list.filter(l => l.priority === 'hot').length;
+    el('stDue').textContent   = list.filter(l => matchesDue(l, 'overdue')).length;
+
+    // Pipeline excludes closed and lost - money already banked or gone is not
+    // pipeline, and counting it would flatter the number.
+    const open = list.filter(l => l.status !== 'closed' && l.status !== 'lost');
+    const total = open.reduce((sum, l) => sum + (Number(l.budget) || 0), 0);
+    el('stValue').textContent = total ? money(total) : '$0';
+  }
+
+  function dueBadge(lead){
+    const d = daysUntil(lead.next_follow_up);
+    if (d === null) return null;
+    const span = document.createElement('span');
+    span.className = 'due ' + (d < 0 ? 'overdue' : d === 0 ? 'today' : 'soon');
+    span.textContent =
+      d < 0  ? '⚠ ' + Math.abs(d) + 'd overdue' :
+      d === 0 ? '● Due today' :
+      d === 1 ? 'Due tomorrow' :
+      'Due in ' + d + 'd';
+    return span;
   }
 
   /* ---------------- cards ----------------
@@ -458,6 +617,16 @@
     }
     card.appendChild(chips);
 
+    if (Number(lead.budget)){
+      const m = document.createElement('div');
+      m.className = 'money';
+      m.textContent = money(lead.budget);
+      card.appendChild(m);
+    }
+
+    const badge = dueBadge(lead);
+    if (badge) card.appendChild(badge);
+
     const foot = document.createElement('div');
     foot.className = 'card-foot';
     const sel = document.createElement('select');
@@ -499,6 +668,14 @@
       n.className = 'n';
       n.textContent = items.length;
       head.append(h2, n);
+
+      const stageValue = items.reduce((s, l) => s + (Number(l.budget) || 0), 0);
+      if (stageValue){
+        const v = document.createElement('span');
+        v.className = 'val';
+        v.textContent = money(stageValue);
+        head.insertBefore(v, n);
+      }
 
       const body = document.createElement('div');
       body.className = 'col-body';
@@ -552,7 +729,9 @@
     const e = el('err-' + name);
     if (e) e.textContent = msg || '';
   }
-  function clearFieldErrors(){ ['name','email','phone'].forEach(n => setFieldError(n, '')); }
+  function clearFieldErrors(){
+    ['name','email','phone','next_follow_up','budget'].forEach(n => setFieldError(n, ''));
+  }
 
   function openDrawer(id){
     clearFieldErrors();
@@ -572,6 +751,12 @@
     el('dStatus').value   = lead ? lead.status : 'new';
     el('dPriority').value = lead ? (lead.priority || 'warm') : 'warm';
     el('dSource').value   = lead ? (lead.source || 'website') : 'referral';
+    el('dFollow').value   = lead ? (lead.next_follow_up || '') : '';
+    el('dBudget').value   = lead && Number(lead.budget) ? String(lead.budget) : '';
+
+    renderQuick(lead);
+    renderTimeline(lead);
+    el('fs-activity').style.display = lead ? '' : 'none';
 
     // Website leads carry a message from the form; manual ones do not.
     const hasMsg = !!(lead && lead.message);
@@ -598,6 +783,81 @@
     el('drawerBg').classList.remove('open');
   }
 
+  // Tel/SMS/mailto links, with the email pre-addressed and subject-lined.
+  function renderQuick(lead){
+    const wrap = el('dQuick');
+    if (!lead){ wrap.hidden = true; return; }
+    wrap.hidden = false;
+
+    const tel = String(lead.phone || '').replace(/[^\d+]/g, '');
+    const setLink = (id, href) => {
+      const a = el(id);
+      if (href){ a.href = href; a.removeAttribute('aria-disabled'); }
+      else { a.removeAttribute('href'); a.setAttribute('aria-disabled', 'true'); }
+    };
+    setLink('qCall', tel ? 'tel:' + tel : '');
+    setLink('qText', tel ? 'sms:' + tel : '');
+    setLink('qMail', lead.email
+      ? 'mailto:' + encodeURIComponent(lead.email) +
+        '?subject=' + encodeURIComponent('Following up — Jessica Kortum, Tampa Bay Real Estate')
+      : '');
+  }
+
+  function renderTimeline(lead){
+    const tl = el('dTimeline');
+    tl.textContent = '';
+    const entries = lead ? readActivity(lead.activity) : [];
+    if (!entries.length){
+      const p = document.createElement('div');
+      p.className = 'tl-empty';
+      p.textContent = lead ? 'Nothing logged yet.' : 'Save the lead first, then log calls here.';
+      tl.appendChild(p);
+      return;
+    }
+    entries.forEach(e => {
+      const row = document.createElement('div');
+      row.className = 'tl-item';
+      const ico = document.createElement('span');
+      ico.className = 'tl-ico';
+      ico.textContent = ACTIVITY_ICON[e.type] || '•';
+      const body = document.createElement('div');
+      const txt = document.createElement('div');
+      txt.className = 'tl-txt';
+      txt.textContent = e.text;
+      const when = document.createElement('div');
+      when.className = 'tl-when';
+      when.textContent = (e.type || 'note') + ' · ' + fullDate(e.at);
+      body.append(txt, when);
+      row.append(ico, body);
+      tl.appendChild(row);
+    });
+  }
+
+  async function addActivity(){
+    if (!activeId) return;
+    const text = el('aText').value.trim();
+    if (!text) return;
+    const type = el('aType').value;
+    const btn = el('aAdd');
+    btn.disabled = true;
+    try {
+      await api('/api/leads/' + encodeURIComponent(activeId), {
+        method:'PATCH', body: JSON.stringify({ activityAppend:{ type, text } })
+      });
+      const lead = leads.find(l => l.id === activeId);
+      const entries = readActivity(lead.activity);
+      entries.unshift({ at:new Date().toISOString(), type, text });
+      lead.activity = JSON.stringify(entries);
+      el('aText').value = '';
+      renderTimeline(lead);
+      hideBanner();
+    } catch (err) {
+      if (err.message !== 'unauthorized') showBanner('Could not log that: ' + err.message);
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
   function collect(){
     return {
       name:     el('dName').value.trim(),
@@ -608,7 +868,9 @@
       notes:    el('dNotes').value,
       status:   el('dStatus').value,
       priority: el('dPriority').value,
-      source:   el('dSource').value
+      source:   el('dSource').value,
+      next_follow_up: el('dFollow').value,
+      budget:   el('dBudget').value.trim()
     };
   }
 
@@ -633,7 +895,10 @@
         await api('/api/leads/' + encodeURIComponent(activeId), {
           method:'PATCH', body: JSON.stringify(payload)
         });
-        Object.assign(leads.find(l => l.id === activeId), payload);
+        // Mirror the server's normalisation so the card does not briefly show
+        // the raw "450k" the user typed.
+        Object.assign(leads.find(l => l.id === activeId), payload,
+          { budget: parseBudgetLocal(payload.budget) });
       } else {
         const res = await api('/api/leads', { method:'POST', body: JSON.stringify(payload) });
         // Reload rather than guess at server-assigned timestamps.
@@ -700,9 +965,44 @@
   el('dDelete').addEventListener('click', deleteLead);
   el('dStamp').addEventListener('click', stampNote);
 
+  el('aAdd').addEventListener('click', addActivity);
+  el('aText').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter'){ e.preventDefault(); addActivity(); }
+  });
+
   el('q').addEventListener('input', render);
   el('fPriority').addEventListener('change', render);
   el('fSource').addEventListener('change', render);
+  el('fDue').addEventListener('change', render);
+
+  // Fetched rather than linked so a 401 surfaces as a message instead of
+  // dumping an error page into a downloaded file.
+  el('exportCsv').addEventListener('click', async () => {
+    const btn = el('exportCsv');
+    btn.disabled = true;
+    try {
+      const res = await fetch('/api/export');
+      if (res.status === 401){
+        showBanner('Your admin session expired. Reload the page to sign in again.');
+        return;
+      }
+      if (!res.ok) throw new Error('Export failed (' + res.status + ')');
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'leads-' + todayISO() + '.csv';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      hideBanner();
+    } catch (err) {
+      showBanner(err.message);
+    } finally {
+      btn.disabled = false;
+    }
+  });
 
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && drawerOpen) closeDrawer();

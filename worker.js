@@ -61,6 +61,11 @@ async function handleApi(request, env, url) {
     return methodNotAllowed('GET, POST');
   }
 
+  if (path === '/api/export') {
+    if (request.method !== 'GET') return methodNotAllowed('GET');
+    return handleExport(request, env);
+  }
+
   const match = path.match(/^\/api\/leads\/([^/]+)$/);
   if (match) {
     const id = decodeURIComponent(match[1]);
@@ -136,10 +141,42 @@ const LEAD_SOURCES = new Set([
 
 const LEAD_PRIORITIES = new Set(['hot', 'warm', 'cold']);
 
+// Activity kinds for the contact log.
+const ACTIVITY_TYPES = new Set(['call', 'text', 'email', 'showing', 'offer', 'note']);
+const MAX_ACTIVITY_ENTRIES = 200;
+
 const FIELD_LIMITS = {
   name: 120, email: 200, phone: 40, intent: 80,
   message: 4000, notes: 8000, tags: 300
 };
+
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;   // follow-up dates are plain calendar days
+
+function parseBudget(raw) {
+  // Accepts "450000", "450,000", "$450k". Returns whole dollars, or null if unusable.
+  if (raw === '' || raw === null || raw === undefined) return 0;
+  const s = String(raw).trim().toLowerCase().replace(/[$,\s]/g, '');
+  if (!s) return 0;
+  const m = s.match(/^(\d+(?:\.\d+)?)(k|m)?$/);
+  if (!m) return null;
+  let n = parseFloat(m[1]);
+  if (m[2] === 'k') n *= 1e3;
+  if (m[2] === 'm') n *= 1e6;
+  n = Math.round(n);
+  if (!Number.isFinite(n) || n < 0 || n > 100000000) return null;
+  return n;
+}
+
+// The log is stored as JSON in one column rather than a side table: it is
+// small, always read with its lead, and never queried on its own.
+function readActivity(raw) {
+  try {
+    const parsed = JSON.parse(raw || '[]');
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
 
 /* ------------------------------------------------------------------ *
  * schema
@@ -162,6 +199,9 @@ const SCHEMA_SQL = [
      source      TEXT NOT NULL DEFAULT 'website',
      priority    TEXT NOT NULL DEFAULT 'warm',
      tags        TEXT NOT NULL DEFAULT '',
+     next_follow_up TEXT NOT NULL DEFAULT '',
+     budget      INTEGER NOT NULL DEFAULT 0,
+     activity    TEXT NOT NULL DEFAULT '[]',
      created_at  TEXT NOT NULL,
      updated_at  TEXT NOT NULL
    )`,
@@ -175,7 +215,10 @@ const SCHEMA_SQL = [
 const MIGRATIONS = [
   `ALTER TABLE leads ADD COLUMN source   TEXT NOT NULL DEFAULT 'website'`,
   `ALTER TABLE leads ADD COLUMN priority TEXT NOT NULL DEFAULT 'warm'`,
-  `ALTER TABLE leads ADD COLUMN tags     TEXT NOT NULL DEFAULT ''`
+  `ALTER TABLE leads ADD COLUMN tags     TEXT NOT NULL DEFAULT ''`,
+  `ALTER TABLE leads ADD COLUMN next_follow_up TEXT NOT NULL DEFAULT ''`,
+  `ALTER TABLE leads ADD COLUMN budget   INTEGER NOT NULL DEFAULT 0`,
+  `ALTER TABLE leads ADD COLUMN activity TEXT NOT NULL DEFAULT '[]'`
 ];
 
 const errText = (err) => String((err && err.message) || err);
@@ -337,7 +380,8 @@ async function handleLeadList(request, env) {
     const { results } = await withSchema(env, () =>
       env.DB.prepare(
         `SELECT id, name, email, phone, intent, message, status, notes,
-                source, priority, tags, created_at, updated_at
+                source, priority, tags, next_follow_up, budget, activity,
+                created_at, updated_at
            FROM leads
           ORDER BY created_at DESC`
       ).all()
@@ -345,6 +389,49 @@ async function handleLeadList(request, env) {
     return json({ leads: results ?? [], user: auth.email });
   } catch (err) {
     console.error('Lead query failed:', err);
+    return json({ error: dbErrorMessage(err) }, 500);
+  }
+}
+
+// Full export so the data is never trapped in this tool.
+async function handleExport(request, env) {
+  const auth = await requireAccess(env, request);
+  if (!auth.ok) return json({ error: auth.message }, auth.status);
+  if (!env.DB) return json({ error: 'Lead database is not bound.' }, 503);
+
+  const COLUMNS = [
+    'name', 'email', 'phone', 'intent', 'status', 'priority', 'source',
+    'budget', 'tags', 'next_follow_up', 'message', 'notes', 'created_at', 'updated_at'
+  ];
+
+  // A leading =, +, - or @ makes a spreadsheet treat the cell as a formula.
+  // Lead text is attacker-controlled, so neutralise it before export.
+  const cell = (value) => {
+    let s = String(value ?? '');
+    if (/^[=+\-@\t\r]/.test(s)) s = "'" + s;
+    return '"' + s.replace(/"/g, '""') + '"';
+  };
+
+  try {
+    const { results } = await withSchema(env, () =>
+      env.DB.prepare(
+        `SELECT ${COLUMNS.join(', ')} FROM leads ORDER BY created_at DESC`
+      ).all()
+    );
+
+    const rows = [COLUMNS.join(',')];
+    for (const r of results ?? []) rows.push(COLUMNS.map((c) => cell(r[c])).join(','));
+
+    const stamp = new Date().toISOString().slice(0, 10);
+    return new Response('﻿' + rows.join('\r\n'), {
+      headers: {
+        'Content-Type': 'text/csv; charset=utf-8',
+        'Content-Disposition': `attachment; filename="leads-${stamp}.csv"`,
+        'Cache-Control': 'no-store'
+      }
+    });
+  } catch (err) {
+    console.error('Export failed:', err);
     return json({ error: dbErrorMessage(err) }, 500);
   }
 }
@@ -385,23 +472,33 @@ async function handleLeadCreate(request, env) {
   if (!LEAD_SOURCES.has(source))      errors.source = 'Unknown source.';
   if (!LEAD_PRIORITIES.has(priority)) errors.priority = 'Unknown priority.';
 
+  const followUp = String(body.next_follow_up ?? '').trim();
+  if (followUp && !DATE_RE.test(followUp)) errors.next_follow_up = 'Use a calendar date.';
+
+  const budget = parseBudget(body.budget);
+  if (budget === null) errors.budget = 'Use a number, like 450000 or 450k.';
+
   if (Object.keys(errors).length) {
     return json({ error: 'Please check the highlighted fields.', errors }, 400);
   }
 
   const now = new Date().toISOString();
   const id = crypto.randomUUID();
+  const activity = JSON.stringify([
+    { at: now, type: 'note', text: 'Lead added manually (' + source.replace(/_/g, ' ') + ').' }
+  ]);
 
   try {
     await withSchema(env, () =>
       env.DB.prepare(
         `INSERT INTO leads
            (id, name, email, phone, intent, message, status, notes,
-            source, priority, tags, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+            source, priority, tags, next_follow_up, budget, activity,
+            created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
       )
         .bind(id, name, email, phone, intent, message, status, notes,
-              source, priority, tags, now, now)
+              source, priority, tags, followUp, budget, activity, now, now)
         .run()
     );
     return json({ success: true, id });
@@ -447,6 +544,50 @@ async function handleLeadUpdate(request, env, id) {
     }
     sets.push(`${field} = ?`);
     binds.push(value);
+  }
+
+  if (body.next_follow_up !== undefined) {
+    const v = String(body.next_follow_up).trim();
+    if (v && !DATE_RE.test(v)) {
+      return json({ error: 'Use a calendar date.', errors: { next_follow_up: 'Use a calendar date.' } }, 400);
+    }
+    sets.push('next_follow_up = ?');
+    binds.push(v);
+  }
+
+  if (body.budget !== undefined) {
+    const b = parseBudget(body.budget);
+    if (b === null) {
+      return json({ error: 'Budget must be a number.', errors: { budget: 'Use a number, like 450000 or 450k.' } }, 400);
+    }
+    sets.push('budget = ?');
+    binds.push(b);
+  }
+
+  // Appending is server-side so the timestamp is trustworthy and the client
+  // cannot rewrite history by posting a whole replacement array.
+  if (body.activityAppend !== undefined) {
+    const entry = body.activityAppend || {};
+    const type = String(entry.type || 'note');
+    const text = String(entry.text || '').trim().slice(0, 1000);
+    if (!ACTIVITY_TYPES.has(type)) return json({ error: 'Unknown activity type.' }, 400);
+    if (!text) return json({ error: 'Activity needs some text.' }, 400);
+
+    let current = [];
+    try {
+      const row = await withSchema(env, () =>
+        env.DB.prepare('SELECT activity FROM leads WHERE id = ?').bind(id).first()
+      );
+      if (!row) return json({ error: 'Lead not found.' }, 404);
+      current = readActivity(row.activity);
+    } catch (err) {
+      console.error('Activity read failed:', err);
+      return json({ error: dbErrorMessage(err) }, 500);
+    }
+
+    current.unshift({ at: new Date().toISOString(), type, text });
+    sets.push('activity = ?');
+    binds.push(JSON.stringify(current.slice(0, MAX_ACTIVITY_ENTRIES)));
   }
 
   if (!sets.length) return json({ error: 'Nothing to update.' }, 400);
