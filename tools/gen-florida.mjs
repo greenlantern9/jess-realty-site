@@ -99,11 +99,11 @@ const heat = [
 const gradients = heat
   .map(
     (h) => `      <radialGradient id="heat-${h.name}">
-        <stop offset="0%"   stop-color="#dbe9ff" stop-opacity=".92"/>
-        <stop offset="18%"  stop-color="#a9c6e8" stop-opacity=".62"/>
-        <stop offset="42%"  stop-color="#7fa6d0" stop-opacity=".34"/>
-        <stop offset="70%"  stop-color="#7fa6d0" stop-opacity=".14"/>
-        <stop offset="100%" stop-color="#7fa6d0" stop-opacity="0"/>
+        <stop offset="0%"   stop-color="#f9e7c4" stop-opacity=".92"/>
+        <stop offset="18%"  stop-color="#e3c08c" stop-opacity=".62"/>
+        <stop offset="42%"  stop-color="#c9a26b" stop-opacity=".34"/>
+        <stop offset="70%"  stop-color="#c9a26b" stop-opacity=".14"/>
+        <stop offset="100%" stop-color="#c9a26b" stop-opacity="0"/>
       </radialGradient>`
   )
   .join('\n');

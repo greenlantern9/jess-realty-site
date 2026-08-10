@@ -6,7 +6,7 @@
 <title>Jessica Kortum · Tampa, FL Real Estate</title>
 <meta name="description" content="Jessica Kortum is a Tampa, Florida REALTOR® who helps people buy and sell homes with care, candor, and a sharp read on the market." />
 <link rel="canonical" href="https://jessicakortum.com/" />
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' fill='%2316233a'/%3E%3Cpath d='M3.2 11 12 4l8.8 7' fill='none' stroke='%237fa6d0' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M5.5 10v9h13v-9' fill='none' stroke='%237fa6d0' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3Crect x='10' y='13.5' width='4' height='5.5' fill='%237fa6d0'/%3E%3C/svg%3E" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' fill='%23232019'/%3E%3Cpath d='M3.2 11 12 4l8.8 7' fill='none' stroke='%23c9a26b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M5.5 10v9h13v-9' fill='none' stroke='%23c9a26b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3Crect x='10' y='13.5' width='4' height='5.5' fill='%23c9a26b'/%3E%3C/svg%3E" />
 
 <meta property="og:type" content="website" />
 <meta property="og:site_name" content="Jessica Kortum · Tampa Bay REALTOR®" />
@@ -42,16 +42,16 @@
 
 <style>
   :root{
-    --ink:#16233a;        /* deep navy — the walls */
-    --ink-2:#1f2f49;      /* raised surface */
-    --ink-3:#0e1826;      /* deepest */
-    --cream:#eef2f8;      /* cool white text */
-    --cream-soft:#bcc7d8;
-    --sage:#8794a8;       /* muted gray-blue text */
-    --brass:#7fa6d0;      /* the one accent (steel blue) */
-    --brass-bright:#a9c6e8;
-    --line:rgba(127,166,208,.30);
-    --line-soft:rgba(238,242,248,.12);
+    --ink:#232019;        /* warm espresso — the walls */
+    --ink-2:#2e2a22;      /* raised surface */
+    --ink-3:#18150f;      /* deepest */
+    --cream:#f4f0e6;      /* warm bone text */
+    --cream-soft:#d0c8b8;
+    --sage:#9a9081;       /* warm muted text */
+    --brass:#c9a26b;      /* the one accent (antique gold) */
+    --brass-bright:#e3c08c;
+    --line:rgba(201,162,107,.32);
+    --line-soft:rgba(244,240,230,.12);
 
     --serif:"Fraunces",Georgia,serif;
     --sans:"Hanken Grotesk",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
@@ -102,7 +102,7 @@
     border-bottom:1px solid transparent;
   }
   header.nav.scrolled{
-    background:rgba(15,29,22,.82);
+    background:rgba(24,21,15,.86);
     backdrop-filter:blur(12px) saturate(120%);
     border-bottom:1px solid var(--line-soft);
   }
@@ -141,9 +141,9 @@
   /* cool navy backdrop, fully CSS so it never breaks */
   .hero-bg{position:absolute;inset:0;z-index:0;
     background:
-      radial-gradient(120% 90% at 78% 18%, rgba(127,166,208,.20), transparent 55%),
-      radial-gradient(90% 70% at 20% 90%, rgba(14,24,38,.9), transparent 60%),
-      linear-gradient(160deg,#1a2942 0%,#152238 45%,#0e1826 100%);
+      radial-gradient(120% 90% at 78% 18%, rgba(201,162,107,.20), transparent 55%),
+      radial-gradient(90% 70% at 20% 90%, rgba(24,21,15,.92), transparent 60%),
+      linear-gradient(160deg,#2f2a21 0%,#262218 45%,#18150f 100%);
   }
   /* faint architectural floor-plan lines */
   .hero-grid{position:absolute;inset:0;z-index:0;opacity:.10;
@@ -152,7 +152,7 @@
   .hero-inner{position:relative;z-index:2;width:100%;display:grid;
     grid-template-columns:1.05fr .95fr;gap:clamp(36px,6vw,72px);align-items:center}
   .hero-photo{position:relative;aspect-ratio:4/5;width:100%;max-width:440px;margin-left:auto;
-    border-radius:2px;overflow:hidden;background:linear-gradient(155deg,#28405f,#152238)}
+    border-radius:2px;overflow:hidden;background:linear-gradient(155deg,#3d3628,#242019)}
   .hero-photo img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 16%}
   .hero-badge{position:absolute;left:14px;bottom:14px;z-index:3;display:inline-flex;align-items:center;gap:7px;
     background:var(--brass);color:var(--ink-3);font-weight:700;font-size:.76rem;letter-spacing:.05em;
@@ -187,7 +187,7 @@
   /* ===================== ABOUT ===================== */
   .about{max-width:820px}
   .portrait{position:relative;aspect-ratio:4/5;border-radius:2px;overflow:hidden;
-    background:linear-gradient(155deg,#28405f,#152238)}
+    background:linear-gradient(155deg,#3d3628,#242019)}
   .portrait .ph-label{position:absolute;left:0;right:0;bottom:0;padding:14px 16px;font-size:.66rem;
     letter-spacing:.18em;text-transform:uppercase;color:var(--sage);background:linear-gradient(transparent,rgba(0,0,0,.45))}
   .portrait svg{position:absolute;inset:0;width:100%;height:100%;opacity:.9}
@@ -206,20 +206,20 @@
   /* ===================== LIFESTYLE BANNER ===================== */
   .lifestyle{position:relative;min-height:clamp(340px,52vh,500px);display:flex;align-items:center;
     background:
-      linear-gradient(90deg, rgba(11,20,33,.86) 0%, rgba(12,22,36,.60) 52%, rgba(12,22,36,.28) 100%),
+      linear-gradient(90deg, rgba(20,17,12,.86) 0%, rgba(24,21,15,.58) 52%, rgba(24,21,15,.24) 100%),
       url('tampa-sunset.jpg') center/cover no-repeat;}
   .lifestyle-inner{position:relative;z-index:2;max-width:620px}
   .lifestyle h2{font-size:clamp(2rem,4.6vw,3.3rem);margin-top:14px;color:#fff;line-height:1.08}
-  .lifestyle p{color:#e7ecf3;margin-top:16px;max-width:44ch;font-size:1.05rem}
+  .lifestyle p{color:#f0eadd;margin-top:16px;max-width:44ch;font-size:1.05rem}
   @media(max-width:640px){
     .lifestyle{background:
-      linear-gradient(180deg, rgba(11,20,33,.80) 0%, rgba(12,22,36,.55) 60%, rgba(12,22,36,.72) 100%),
+      linear-gradient(180deg, rgba(20,17,12,.80) 0%, rgba(24,21,15,.55) 60%, rgba(24,21,15,.72) 100%),
       url('tampa-sunset.jpg') center/cover no-repeat;text-align:left}
   }
 
   /* dusk photo behind contact */
   #contact{background:
-    linear-gradient(rgba(12,22,36,.90), rgba(11,19,31,.94)),
+    linear-gradient(rgba(24,21,15,.91), rgba(20,17,12,.95)),
     url('dusk-contact.jpg') center/cover no-repeat;}
   .about-body p{color:var(--cream-soft);margin-top:18px}
   .about-body p strong{color:var(--cream);font-weight:600}
@@ -240,7 +240,7 @@
     transition:transform .3s,border-color .3s}
   .listing:hover{transform:translateY(-5px);border-color:var(--line)}
   /* PHOTO: replace this .listing-photo block's SVG with <img src="..."> of the home */
-  .listing-photo{position:relative;aspect-ratio:3/2;background:linear-gradient(155deg,#243c5a,#141f33)}
+  .listing-photo{position:relative;aspect-ratio:3/2;background:linear-gradient(155deg,#3d3628,#201d16)}
   .listing-photo svg{position:absolute;inset:0;width:100%;height:100%}
   .status{position:absolute;top:14px;left:14px;font-size:.66rem;letter-spacing:.14em;text-transform:uppercase;
     font-weight:600;padding:6px 12px;border-radius:2px;background:var(--brass);color:var(--ink-3)}
@@ -356,12 +356,12 @@
     align-items:center;margin-top:clamp(34px,5vw,54px)}
   .coverage-figure{position:relative}
   .coverage-map{width:100%;height:auto;display:block;max-height:520px}
-  .cov-base{fill:rgba(127,166,208,.10)}
-  .cov-outline{fill:none;stroke:rgba(127,166,208,.55);stroke-width:1.6;stroke-linejoin:round}
+  .cov-base{fill:rgba(201,162,107,.10)}
+  .cov-outline{fill:none;stroke:rgba(201,162,107,.55);stroke-width:1.6;stroke-linejoin:round}
   /* dashes read as an island chain rather than a stray line */
-  .cov-keys{fill:none;stroke:rgba(127,166,208,.55);stroke-width:3;
+  .cov-keys{fill:none;stroke:rgba(201,162,107,.55);stroke-width:3;
     stroke-linecap:round;stroke-dasharray:1 7}
-  .cov-dot-1{fill:#dbe9ff}
+  .cov-dot-1{fill:#f9e7c4}
   .cov-dot-2{fill:var(--brass)}
   .cov-ring{fill:none;stroke:var(--brass-bright);stroke-width:1.2;opacity:.5}
   .cov-label{fill:var(--sage);font-family:var(--sans);font-size:13px;font-weight:600;letter-spacing:.05em}
@@ -374,9 +374,9 @@
     border-top:1px solid var(--line-soft);display:flex;flex-direction:column;gap:12px}
   .coverage-key li{display:flex;align-items:center;gap:12px;font-size:.9rem;color:var(--cream-soft)}
   .coverage-key .k{width:26px;height:9px;border-radius:2px;flex-shrink:0}
-  .coverage-key .k-1{background:linear-gradient(90deg,#dbe9ff,#a9c6e8)}
-  .coverage-key .k-2{background:rgba(127,166,208,.42)}
-  .coverage-key .k-3{background:rgba(127,166,208,.14);border:1px solid var(--line-soft)}
+  .coverage-key .k-1{background:linear-gradient(90deg,#f9e7c4,#e3c08c)}
+  .coverage-key .k-2{background:rgba(201,162,107,.42)}
+  .coverage-key .k-3{background:rgba(201,162,107,.14);border:1px solid var(--line-soft)}
 
   @media(max-width:820px){
     .coverage{grid-template-columns:1fr;gap:28px}
@@ -406,7 +406,7 @@
   .leaflet-control-zoom a{background:var(--ink-2)!important;color:var(--cream)!important;
     border-color:var(--line-soft)!important}
   .leaflet-control-zoom a:hover{background:var(--ink)!important;color:var(--brass-bright)!important}
-  .leaflet-control-attribution{background:rgba(15,29,22,.7)!important;color:var(--sage)!important}
+  .leaflet-control-attribution{background:rgba(24,21,15,.75)!important;color:var(--sage)!important}
   .leaflet-control-attribution a{color:var(--brass)!important}
   .area-tip{background:var(--ink-3);color:var(--cream);border:1px solid var(--line);
     border-radius:2px;font-weight:600;font-size:.8rem;letter-spacing:.02em;padding:5px 10px;
@@ -433,7 +433,7 @@
     padding:16px 18px;transition:border-color .25s,background .25s,transform .2s}
   .place:hover{border-color:var(--line);transform:translateX(2px)}
   .place:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
-  .place.active{border-color:var(--brass);background:#22334e}
+  .place.active{border-color:var(--brass);background:#332e21}
   .place .idx{display:flex;align-items:center;justify-content:center;width:26px;height:26px;
     border-radius:50%;border:1px solid var(--line);color:var(--brass);
     font-size:.74rem;font-weight:700;margin-top:2px}
@@ -601,18 +601,18 @@
           <desc id="cov-desc">A map of Florida shaded to show coverage of the whole state, concentrated most heavily around Tampa and Sarasota and fading outward from there.</desc>
           <defs>
               <radialGradient id="heat-tampa">
-                <stop offset="0%"   stop-color="#dbe9ff" stop-opacity=".92"/>
-                <stop offset="18%"  stop-color="#a9c6e8" stop-opacity=".62"/>
-                <stop offset="42%"  stop-color="#7fa6d0" stop-opacity=".34"/>
-                <stop offset="70%"  stop-color="#7fa6d0" stop-opacity=".14"/>
-                <stop offset="100%" stop-color="#7fa6d0" stop-opacity="0"/>
+                <stop offset="0%"   stop-color="#f9e7c4" stop-opacity=".92"/>
+                <stop offset="18%"  stop-color="#e3c08c" stop-opacity=".62"/>
+                <stop offset="42%"  stop-color="#c9a26b" stop-opacity=".34"/>
+                <stop offset="70%"  stop-color="#c9a26b" stop-opacity=".14"/>
+                <stop offset="100%" stop-color="#c9a26b" stop-opacity="0"/>
               </radialGradient>
               <radialGradient id="heat-sarasota">
-                <stop offset="0%"   stop-color="#dbe9ff" stop-opacity=".92"/>
-                <stop offset="18%"  stop-color="#a9c6e8" stop-opacity=".62"/>
-                <stop offset="42%"  stop-color="#7fa6d0" stop-opacity=".34"/>
-                <stop offset="70%"  stop-color="#7fa6d0" stop-opacity=".14"/>
-                <stop offset="100%" stop-color="#7fa6d0" stop-opacity="0"/>
+                <stop offset="0%"   stop-color="#f9e7c4" stop-opacity=".92"/>
+                <stop offset="18%"  stop-color="#e3c08c" stop-opacity=".62"/>
+                <stop offset="42%"  stop-color="#c9a26b" stop-opacity=".34"/>
+                <stop offset="70%"  stop-color="#c9a26b" stop-opacity=".14"/>
+                <stop offset="100%" stop-color="#c9a26b" stop-opacity="0"/>
               </radialGradient>
             <clipPath id="fl-clip"><path d="M64.3 125.2 L56.7 47.4 L305.2 47.4 L305.2 78.8 L318.6 86.3 L448.5 88.5 L572.8 88.5 L587.1 74.4 L627.3 70.1 C636.3 75.8, 642.5 97.8, 647.3 112.2 C652.2 126.7, 655.5 150.9, 659.8 166.2 C664.1 181.6, 670.7 200.6, 676 214.8 C681.3 229.1, 688.4 247.5, 695.1 261.3 C701.9 275.1, 716.1 291.7, 720.9 306.6 C725.8 321.5, 723.2 344.4, 727.6 360.6 C732.1 376.8, 744.3 398.4, 750.6 414.6 C756.9 430.8, 765.4 452.4, 769.7 468.6 C774 484.8, 778.7 506.4, 779.2 522.6 C779.8 538.8, 774.8 563, 773.5 576.6 C772.2 590.2, 773.8 602.3, 770.6 613.4 C767.5 624.4, 757.8 641.3, 752.5 650.1 C747.2 658.8, 743.6 666.8, 735.3 671.7 C727 676.5, 706.1 681.5, 697.1 682.5 C688 683.5, 680.1 685.1, 675.1 678.2 C670 671.2, 667.5 647.2, 663.6 636 C659.7 624.9, 656.4 612.5, 649.3 603.6 C642.1 594.7, 624.1 585.9, 615.8 576.6 C607.5 567.4, 600.3 552.6, 593.8 542.1 C587.4 531.5, 579.1 516.6, 572.8 506.4 C566.5 496.2, 557.2 483.6, 551.8 474 C546.3 464.5, 540.2 451.6, 536.5 442.7 C532.8 433.8, 530.5 422.9, 526.9 414.6 C523.3 406.4, 514 396.5, 512.6 387.6 C511.2 378.7, 515.5 365, 517.4 355.2 C519.2 345.5, 523.9 333.4, 525 322.8 C526.2 312.3, 526.4 294.8, 525 285 C523.6 275.3, 520.9 264.5, 515.5 258 C510 251.6, 496.6 248.3, 488.7 241.8 C480.8 235.4, 472.5 222.9, 462.9 214.8 C453.3 206.7, 438.6 195.5, 424.7 187.8 C410.7 180.2, 383.8 165.4, 370.2 164.1 C356.6 162.8, 343.6 175.6, 333.9 179.2 C324.1 182.8, 314.5 189.8, 305.2 187.8 C295.9 185.9, 281 172.7, 271.7 166.2 C262.4 159.8, 253.8 150.8, 243.1 144.6 C232.3 138.5, 213.7 129.7, 200 125.2 C186.4 120.7, 166.6 116.3, 152.3 114.4 C137.9 112.5, 117.7 110.6, 104.5 112.2 C91.3 113.9, 71.5 134.9, 64.3 125.2 Z"/></clipPath>
           </defs>

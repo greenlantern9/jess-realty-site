@@ -13,7 +13,8 @@
 // Routing contract:
 //   POST   /api/contact       public   - website contact form
 //   GET    /api/leads         private  - admin board data
-//   PATCH  /api/leads/:id     private  - move stage / edit notes
+//   POST   /api/leads         private  - add a lead by hand (open house, referral)
+//   PATCH  /api/leads/:id     private  - edit any field, move stage
 //   DELETE /api/leads/:id     private  - remove a lead
 //   everything else                    - static assets, untouched
 
@@ -55,8 +56,9 @@ async function handleApi(request, env, url) {
   }
 
   if (path === '/api/leads') {
-    if (request.method !== 'GET') return methodNotAllowed('GET');
-    return handleLeadList(request, env);
+    if (request.method === 'GET')  return handleLeadList(request, env);
+    if (request.method === 'POST') return handleLeadCreate(request, env);
+    return methodNotAllowed('GET, POST');
   }
 
   const match = path.match(/^\/api\/leads\/([^/]+)$/);
@@ -127,6 +129,18 @@ const LEAD_STATUSES = new Set([
   'lost'
 ]);
 
+const LEAD_SOURCES = new Set([
+  'website', 'referral', 'open_house', 'sign_call', 'zillow',
+  'social', 'past_client', 'other'
+]);
+
+const LEAD_PRIORITIES = new Set(['hot', 'warm', 'cold']);
+
+const FIELD_LIMITS = {
+  name: 120, email: 200, phone: 40, intent: 80,
+  message: 4000, notes: 8000, tags: 300
+};
+
 /* ------------------------------------------------------------------ *
  * schema
  *
@@ -139,12 +153,15 @@ const SCHEMA_SQL = [
   `CREATE TABLE IF NOT EXISTS leads (
      id          TEXT PRIMARY KEY,
      name        TEXT NOT NULL,
-     email       TEXT NOT NULL,
+     email       TEXT NOT NULL DEFAULT '',
      phone       TEXT,
      intent      TEXT,
      message     TEXT,
      status      TEXT NOT NULL DEFAULT 'new',
      notes       TEXT NOT NULL DEFAULT '',
+     source      TEXT NOT NULL DEFAULT 'website',
+     priority    TEXT NOT NULL DEFAULT 'warm',
+     tags        TEXT NOT NULL DEFAULT '',
      created_at  TEXT NOT NULL,
      updated_at  TEXT NOT NULL
    )`,
@@ -152,18 +169,41 @@ const SCHEMA_SQL = [
   `CREATE INDEX IF NOT EXISTS idx_leads_created ON leads(created_at DESC)`
 ];
 
-function isMissingTable(err) {
-  return /no such table/i.test(String((err && err.message) || err));
-}
+// Columns added after the table already existed in production. Applied lazily
+// the same way the table is - each is tried on its own so an already-applied
+// one does not block the rest.
+const MIGRATIONS = [
+  `ALTER TABLE leads ADD COLUMN source   TEXT NOT NULL DEFAULT 'website'`,
+  `ALTER TABLE leads ADD COLUMN priority TEXT NOT NULL DEFAULT 'warm'`,
+  `ALTER TABLE leads ADD COLUMN tags     TEXT NOT NULL DEFAULT ''`
+];
 
-// Runs `query`; if the table does not exist yet, creates it and retries once.
+const errText = (err) => String((err && err.message) || err);
+const isMissingTable  = (err) => /no such table/i.test(errText(err));
+const isMissingColumn = (err) => /no such column|has no column/i.test(errText(err));
+
+// Runs `query`; if the table or a newer column is missing, brings the schema
+// up to date and retries once.
 async function withSchema(env, query) {
   try {
     return await query();
   } catch (err) {
-    if (!isMissingTable(err)) throw err;
-    console.log('leads table missing - creating it');
-    for (const sql of SCHEMA_SQL) await env.DB.prepare(sql).run();
+    const missingTable = isMissingTable(err);
+    if (!missingTable && !isMissingColumn(err)) throw err;
+
+    if (missingTable) {
+      console.log('leads table missing - creating it');
+      for (const sql of SCHEMA_SQL) await env.DB.prepare(sql).run();
+    }
+
+    for (const sql of MIGRATIONS) {
+      try {
+        await env.DB.prepare(sql).run();
+      } catch (e) {
+        // "duplicate column name" just means this one is already applied.
+        if (!/duplicate column/i.test(errText(e))) console.error('migration failed:', e);
+      }
+    }
     return await query();
   }
 }
@@ -180,7 +220,6 @@ function dbErrorMessage(err) {
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[a-zA-Z]{2,}$/;
 
-const LIMITS = { name: 120, email: 200, phone: 40, intent: 80, message: 4000 };
 
 function validPhone(raw) {
   const d = raw.replace(/\D/g, '');
@@ -216,7 +255,7 @@ async function handleContact(request, env) {
   if (!EMAIL_RE.test(email)) errors.email = 'Enter a valid email address.';
   if (!validPhone(phone)) errors.phone = 'Enter a valid 10-digit phone number.';
 
-  for (const [field, max] of Object.entries(LIMITS)) {
+  for (const [field, max] of Object.entries(FIELD_LIMITS)) {
     if (String(data[field] ?? '').length > max) errors[field] = 'That entry is too long.';
   }
 
@@ -297,7 +336,8 @@ async function handleLeadList(request, env) {
   try {
     const { results } = await withSchema(env, () =>
       env.DB.prepare(
-        `SELECT id, name, email, phone, intent, message, status, notes, created_at, updated_at
+        `SELECT id, name, email, phone, intent, message, status, notes,
+                source, priority, tags, created_at, updated_at
            FROM leads
           ORDER BY created_at DESC`
       ).all()
@@ -305,6 +345,68 @@ async function handleLeadList(request, env) {
     return json({ leads: results ?? [], user: auth.email });
   } catch (err) {
     console.error('Lead query failed:', err);
+    return json({ error: dbErrorMessage(err) }, 500);
+  }
+}
+
+// Manually entered leads - open house sign-ins, sign calls, referrals.
+async function handleLeadCreate(request, env) {
+  const auth = await requireAccess(env, request);
+  if (!auth.ok) return json({ error: auth.message }, auth.status);
+  if (!env.DB) return json({ error: 'Lead database is not bound.' }, 503);
+
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return json({ error: 'Invalid JSON.' }, 400);
+  }
+
+  const str = (k, max) => String(body[k] ?? '').trim().slice(0, max);
+  const name    = str('name', FIELD_LIMITS.name);
+  const email   = str('email', FIELD_LIMITS.email);
+  const phone   = str('phone', FIELD_LIMITS.phone);
+  const intent  = str('intent', FIELD_LIMITS.intent);
+  const message = str('message', FIELD_LIMITS.message);
+  const notes   = str('notes', FIELD_LIMITS.notes);
+  const tags    = str('tags', FIELD_LIMITS.tags);
+
+  // Deliberately looser than the public form: a sign call may only leave a
+  // name and a number, and losing that is worse than storing a partial record.
+  const errors = {};
+  if (!name) errors.name = 'Name is required.';
+  if (!email && !phone) errors.email = 'Add an email or a phone number.';
+  if (email && !EMAIL_RE.test(email)) errors.email = 'That email does not look right.';
+
+  const status   = body.status   || 'new';
+  const source   = body.source   || 'other';
+  const priority = body.priority || 'warm';
+  if (!LEAD_STATUSES.has(status))     errors.status = 'Unknown stage.';
+  if (!LEAD_SOURCES.has(source))      errors.source = 'Unknown source.';
+  if (!LEAD_PRIORITIES.has(priority)) errors.priority = 'Unknown priority.';
+
+  if (Object.keys(errors).length) {
+    return json({ error: 'Please check the highlighted fields.', errors }, 400);
+  }
+
+  const now = new Date().toISOString();
+  const id = crypto.randomUUID();
+
+  try {
+    await withSchema(env, () =>
+      env.DB.prepare(
+        `INSERT INTO leads
+           (id, name, email, phone, intent, message, status, notes,
+            source, priority, tags, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      )
+        .bind(id, name, email, phone, intent, message, status, notes,
+              source, priority, tags, now, now)
+        .run()
+    );
+    return json({ success: true, id });
+  } catch (err) {
+    console.error('Lead insert failed:', err);
     return json({ error: dbErrorMessage(err) }, 500);
   }
 }
@@ -324,15 +426,27 @@ async function handleLeadUpdate(request, env, id) {
   const sets = [];
   const binds = [];
 
-  if (body.status !== undefined) {
-    if (!LEAD_STATUSES.has(body.status)) return json({ error: 'Unknown status.' }, 400);
-    sets.push('status = ?');
-    binds.push(body.status);
+  // Enumerated fields are checked against their allowed sets; free text is
+  // length-capped. Anything not sent is left alone.
+  const enums = { status: LEAD_STATUSES, source: LEAD_SOURCES, priority: LEAD_PRIORITIES };
+  for (const [field, allowed] of Object.entries(enums)) {
+    if (body[field] === undefined) continue;
+    if (!allowed.has(body[field])) return json({ error: `Unknown ${field}.` }, 400);
+    sets.push(`${field} = ?`);
+    binds.push(body[field]);
   }
 
-  if (body.notes !== undefined) {
-    sets.push('notes = ?');
-    binds.push(String(body.notes).slice(0, 4000));
+  for (const field of ['name', 'email', 'phone', 'intent', 'message', 'notes', 'tags']) {
+    if (body[field] === undefined) continue;
+    const value = String(body[field]).slice(0, FIELD_LIMITS[field]);
+    if (field === 'name' && !value.trim()) {
+      return json({ error: 'Name cannot be empty.', errors: { name: 'Name is required.' } }, 400);
+    }
+    if (field === 'email' && value.trim() && !EMAIL_RE.test(value.trim())) {
+      return json({ error: 'That email does not look right.', errors: { email: 'Invalid email.' } }, 400);
+    }
+    sets.push(`${field} = ?`);
+    binds.push(value);
   }
 
   if (!sets.length) return json({ error: 'Nothing to update.' }, 400);
