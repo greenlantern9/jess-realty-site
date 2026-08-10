@@ -661,7 +661,6 @@
     </div>
 
     <form class="reveal" id="contactForm" novalidate>
-      <input type="hidden" name="access_key" value="cf65805f-2d7c-4406-91f5-ee5b849be954">
       <input type="checkbox" name="botcheck" style="display:none" tabindex="-1" autocomplete="off">
       <div class="row2">
         <div class="field">
@@ -782,15 +781,16 @@
   }
 
   function setFieldError(input, msg){
-    const field = input.closest('.field');
-    const err = field.querySelector('.field-error');
+    const field = input && input.closest('.field');
+    if (!field) return;
+    const err = field.querySelector('.field-error');   // not every field has one
     if (msg) {
       field.classList.add('invalid');
-      err.textContent = msg;
+      if (err) err.textContent = msg;
       input.setAttribute('aria-invalid', 'true');
     } else {
       field.classList.remove('invalid');
-      err.textContent = '';
+      if (err) err.textContent = '';
       input.removeAttribute('aria-invalid');
     }
   }
@@ -827,31 +827,43 @@
       return;
     }
 
-    const name = f.name.value.trim();
     const btn = f.querySelector('button[type="submit"]');
     const btnLabel = btn.innerHTML;
     btn.disabled = true;
     btn.textContent = 'Sending…';
 
-    const fd = new FormData(f);
-    fd.set('subject', `New inquiry from ${name} — ${f.intent.value}`);
+    const payload = {
+      name: f.name.value.trim(),
+      email: f.email.value.trim(),
+      phone: f.phone.value.trim(),
+      intent: f.intent.value,
+      message: f.message.value.trim(),
+      botcheck: f.botcheck.checked ? '1' : ''
+    };
 
     try {
-      const res = await fetch('https://api.web3forms.com/submit', {
+      const res = await fetch('/api/contact', {
         method: 'POST',
-        headers: { Accept: 'application/json' },
-        body: fd
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify(payload)
       });
-      const result = await res.json();
-      if (result.success) {
+      const result = await res.json().catch(() => ({}));
+
+      if (res.ok && result.success) {
         f.reset();
         formNote.textContent = "Thanks — I'll be in touch soon.";
       } else {
-        formNote.textContent = 'Something went wrong. Please try again or email directly.';
+        // Surface per-field problems the server caught.
+        if (result.errors) {
+          Object.entries(result.errors).forEach(([field, msg]) => {
+            if (f[field]) setFieldError(f[field], msg);
+          });
+        }
+        formNote.textContent = result.message || 'Something went wrong. Please try again or email directly.';
         formNote.classList.add('error');
       }
     } catch (err) {
-      formNote.textContent = 'Something went wrong. Please try again or email directly.';
+      formNote.textContent = 'Something went wrong. Please try again or email jkortumrealtor@gmail.com directly.';
       formNote.classList.add('error');
     } finally {
       btn.disabled = false;

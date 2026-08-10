@@ -1,0 +1,7 @@
+.wrangler/
+node_modules/
+.dev.vars
+
+# Local-only: Pages Git builds read this and a bad database_id fails the deploy.
+# Bindings are configured in the Cloudflare dashboard instead. See ADMIN-SETUP.md.
+wrangler.toml
