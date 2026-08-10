@@ -296,7 +296,14 @@
     box-shadow:0 0 0 3px rgba(205,162,83,.18)}
   select{appearance:none;cursor:pointer}
   form .btn-primary{margin-top:6px;justify-content:center;cursor:pointer;border:0;font-family:var(--sans)}
+  form .btn-primary:disabled{opacity:.6;cursor:default;transform:none}
   .form-note{font-size:.8rem;color:var(--sage);text-align:center}
+  .form-note.error{color:#e2867f}
+
+  .field.invalid input,.field.invalid select,.field.invalid textarea{
+    border-color:#e2867f;box-shadow:0 0 0 3px rgba(226,134,127,.16)}
+  .field-error{display:none;font-size:.78rem;color:#e2867f}
+  .field.invalid .field-error{display:block}
 
   /* ===================== FOOTER ===================== */
   footer{background:var(--ink-3);padding-top:64px;padding-bottom:40px;border-top:1px solid var(--line-soft)}
@@ -657,10 +664,22 @@
       <input type="hidden" name="access_key" value="cf65805f-2d7c-4406-91f5-ee5b849be954">
       <input type="checkbox" name="botcheck" style="display:none" tabindex="-1" autocomplete="off">
       <div class="row2">
-        <div class="field"><label for="fname">Name</label><input id="fname" name="name" type="text" placeholder="Your name" required></div>
-        <div class="field"><label for="fphone">Phone</label><input id="fphone" name="phone" type="tel" placeholder="(555) 555-5555"></div>
+        <div class="field">
+          <label for="fname">Name</label>
+          <input id="fname" name="name" type="text" placeholder="Your name" required aria-describedby="fname-err">
+          <span class="field-error" id="fname-err"></span>
+        </div>
+        <div class="field">
+          <label for="fphone">Phone</label>
+          <input id="fphone" name="phone" type="tel" placeholder="(555) 555-5555" required aria-describedby="fphone-err">
+          <span class="field-error" id="fphone-err"></span>
+        </div>
       </div>
-      <div class="field"><label for="femail">Email</label><input id="femail" name="email" type="email" placeholder="you@email.com" required></div>
+      <div class="field">
+        <label for="femail">Email</label>
+        <input id="femail" name="email" type="email" placeholder="you@email.com" required aria-describedby="femail-err">
+        <span class="field-error" id="femail-err"></span>
+      </div>
       <div class="field"><label for="fintent">I'm looking to</label>
         <select id="fintent" name="intent">
           <option>Buy a home</option>
@@ -739,14 +758,62 @@
   document.getElementById('yr').textContent = new Date().getFullYear();
 
   // contact form -> Web3Forms
-  document.getElementById('contactForm').addEventListener('submit', async (e) => {
+  const contactForm = document.getElementById('contactForm');
+  const formNote = document.getElementById('formNote');
+  const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[a-zA-Z]{2,}$/;
+
+  function digitsOnly(s){ return s.replace(/\D/g, ''); }
+  function isValidPhone(s){
+    const d = digitsOnly(s);
+    return d.length === 10 || (d.length === 11 && d[0] === '1');
+  }
+
+  function setFieldError(input, msg){
+    const field = input.closest('.field');
+    const err = field.querySelector('.field-error');
+    if (msg) {
+      field.classList.add('invalid');
+      err.textContent = msg;
+      input.setAttribute('aria-invalid', 'true');
+    } else {
+      field.classList.remove('invalid');
+      err.textContent = '';
+      input.removeAttribute('aria-invalid');
+    }
+  }
+
+  function validateContactForm(f){
+    const checks = [
+      [f.name, f.name.value.trim() ? '' : 'Please enter your name.'],
+      [f.phone, isValidPhone(f.phone.value) ? '' : 'Enter a valid 10-digit phone number.'],
+      [f.email, EMAIL_RE.test(f.email.value.trim()) ? '' : 'Enter a valid email address.']
+    ];
+    let firstInvalid = null;
+    checks.forEach(([input, msg]) => {
+      setFieldError(input, msg);
+      if (msg && !firstInvalid) firstInvalid = input;
+    });
+    return firstInvalid;
+  }
+
+  ['name', 'phone', 'email'].forEach(n => {
+    contactForm[n].addEventListener('input', () => setFieldError(contactForm[n], ''));
+  });
+
+  contactForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     const f = e.target;
-    const note = document.getElementById('formNote');
-    const name = f.name.value.trim();
-    const email = f.email.value.trim();
-    if(!name || !email){ f.reportValidity(); return; }
+    formNote.classList.remove('error');
 
+    const firstInvalid = validateContactForm(f);
+    if (firstInvalid) {
+      firstInvalid.focus();
+      formNote.textContent = 'Please fix the highlighted fields.';
+      formNote.classList.add('error');
+      return;
+    }
+
+    const name = f.name.value.trim();
     const btn = f.querySelector('button[type="submit"]');
     const btnLabel = btn.innerHTML;
     btn.disabled = true;
@@ -764,12 +831,14 @@
       const result = await res.json();
       if (result.success) {
         f.reset();
-        note.textContent = "Thanks — I'll be in touch soon.";
+        formNote.textContent = "Thanks — I'll be in touch soon.";
       } else {
-        note.textContent = 'Something went wrong. Please try again or email directly.';
+        formNote.textContent = 'Something went wrong. Please try again or email directly.';
+        formNote.classList.add('error');
       }
     } catch (err) {
-      note.textContent = 'Something went wrong. Please try again or email directly.';
+      formNote.textContent = 'Something went wrong. Please try again or email directly.';
+      formNote.classList.add('error');
     } finally {
       btn.disabled = false;
       btn.innerHTML = btnLabel;
