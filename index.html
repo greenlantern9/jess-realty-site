@@ -654,6 +654,8 @@
     </div>
 
     <form class="reveal" id="contactForm" novalidate>
+      <input type="hidden" name="access_key" value="cf65805f-2d7c-4406-91f5-ee5b849be954">
+      <input type="checkbox" name="botcheck" style="display:none" tabindex="-1" autocomplete="off">
       <div class="row2">
         <div class="field"><label for="fname">Name</label><input id="fname" name="name" type="text" placeholder="Your name" required></div>
         <div class="field"><label for="fphone">Phone</label><input id="fphone" name="phone" type="tel" placeholder="(555) 555-5555"></div>
@@ -669,7 +671,7 @@
       </div>
       <div class="field"><label for="fmsg">A little about your move</label><textarea id="fmsg" name="message" placeholder="Neighborhoods you love, timeline, must-haves…"></textarea></div>
       <button class="btn btn-primary" type="submit">Send message <span class="arr">→</span></button>
-      <div class="form-note">Opens in your email app so you can review before sending.</div>
+      <div class="form-note" id="formNote">Sends straight to Jessica's inbox.</div>
     </form>
   </div>
 </section>
@@ -709,9 +711,6 @@
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 <script>
-  // === Replace with your real email so the contact form sends to you ===
-  const AGENT_EMAIL = "jkortumrealtor@gmail.com";
-
   // sticky nav state
   const nav = document.getElementById('nav');
   const onScroll = () => nav.classList.toggle('scrolled', window.scrollY > 24);
@@ -739,18 +738,42 @@
   // year
   document.getElementById('yr').textContent = new Date().getFullYear();
 
-  // contact form -> mailto
-  document.getElementById('contactForm').addEventListener('submit', (e) => {
+  // contact form -> Web3Forms
+  document.getElementById('contactForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const f = e.target;
+    const note = document.getElementById('formNote');
     const name = f.name.value.trim();
     const email = f.email.value.trim();
     if(!name || !email){ f.reportValidity(); return; }
-    const subject = `New inquiry from ${name} — ${f.intent.value}`;
-    const body =
-      `Name: ${name}\nEmail: ${email}\nPhone: ${f.phone.value}\nLooking to: ${f.intent.value}\n\n${f.message.value}`;
-    window.location.href =
-      `mailto:${AGENT_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+
+    const btn = f.querySelector('button[type="submit"]');
+    const btnLabel = btn.innerHTML;
+    btn.disabled = true;
+    btn.textContent = 'Sending…';
+
+    const fd = new FormData(f);
+    fd.set('subject', `New inquiry from ${name} — ${f.intent.value}`);
+
+    try {
+      const res = await fetch('https://api.web3forms.com/submit', {
+        method: 'POST',
+        headers: { Accept: 'application/json' },
+        body: fd
+      });
+      const result = await res.json();
+      if (result.success) {
+        f.reset();
+        note.textContent = "Thanks — I'll be in touch soon.";
+      } else {
+        note.textContent = 'Something went wrong. Please try again or email directly.';
+      }
+    } catch (err) {
+      note.textContent = 'Something went wrong. Please try again or email directly.';
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = btnLabel;
+    }
   });
 
   // Tampa Bay area map
