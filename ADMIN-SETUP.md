@@ -14,9 +14,30 @@ Everything here is done in the Cloudflare dashboard. No Node.js required.
 Cloudflare dashboard → **Storage & Databases → D1** → *Create database*.
 
 - Name: `jess-realty-leads`
+- Location: **Eastern North America** (`enam`)
+- Jurisdiction: **leave unset**
+
+> **Location cannot be changed later** — it is fixed at creation. To move it you
+> would have to create a new database and copy the rows across.
+
+Eastern North America puts the database's primary near Tampa, which is where
+both ends of the traffic are: visitors submitting the form and Jessica reading
+the board. D1 serves writes from a single primary, so that round trip is what
+determines how fast the form and board feel.
+
+Leave jurisdiction unset. The `eu` option pins storage to EU data centres for
+GDPR residency and **overrides the location hint entirely** — it would put
+Tampa leads in Europe for no benefit. `fedramp` is for US government compliance
+workloads and does not apply here.
 
 Open the new database → **Console** tab → paste the contents of
 [`schema.sql`](schema.sql) → run it. That creates the `leads` table.
+
+Equivalent via CLI, if you ever install Node.js:
+
+```bash
+wrangler d1 create jess-realty-leads --location enam
+```
 
 ## 2. Bind the database to the site
 
