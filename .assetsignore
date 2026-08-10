@@ -1,0 +1,9 @@
+# Files here at the repo root would otherwise be uploaded as public static
+# assets, because the asset directory is ".". Keep source and docs out.
+/worker.js
+/wrangler.jsonc
+/.assetsignore
+/.gitignore
+/schema.sql
+/ADMIN-SETUP.md
+/README.md

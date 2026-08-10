@@ -1,0 +1,32 @@
+{
+  // This project deploys as a Cloudflare Worker with static assets
+  // (`npx wrangler deploy`), NOT as a Pages project. Without this file
+  // wrangler generates an assets-only config, which is why the API routes
+  // did not exist and `worker.js` was rejected as a static upload.
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "jess-realty-site",
+  "main": "worker.js",
+  "compatibility_date": "2026-08-01",
+  "observability": { "enabled": true },
+
+  // directory "." keeps the site files where they already live at the repo
+  // root; .assetsignore keeps source and docs out of the public upload.
+  "assets": {
+    "directory": ".",
+    "binding": "ASSETS"
+  }
+
+  // Still to add once the values are known (see ADMIN-SETUP.md):
+  //
+  //   "d1_databases": [
+  //     { "binding": "DB", "database_name": "jess-realty-leads",
+  //       "database_id": "<id from the D1 dashboard>" }
+  //   ],
+  //   "vars": {
+  //     "CF_ACCESS_TEAM_DOMAIN": "<team>.cloudflareaccess.com",
+  //     "CF_ACCESS_AUD": "<audience tag>"
+  //   }
+  //
+  // `wrangler deploy` is declarative: bindings live here rather than in the
+  // dashboard, because a deploy reconciles the Worker to this file.
+}
