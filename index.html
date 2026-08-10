@@ -762,10 +762,22 @@
   const formNote = document.getElementById('formNote');
   const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[a-zA-Z]{2,}$/;
 
+  const MAX_PHONE_DIGITS = 11; // 10-digit number, or 11 with a leading country code 1
   function digitsOnly(s){ return s.replace(/\D/g, ''); }
   function isValidPhone(s){
     const d = digitsOnly(s);
     return d.length === 10 || (d.length === 11 && d[0] === '1');
+  }
+  function capPhoneDigits(input){
+    const val = input.value;
+    let count = 0, cut = val.length;
+    for (let i = 0; i < val.length; i++){
+      if (/\d/.test(val[i])) {
+        count++;
+        if (count > MAX_PHONE_DIGITS){ cut = i; break; }
+      }
+    }
+    if (cut < val.length) input.value = val.slice(0, cut);
   }
 
   function setFieldError(input, msg){
@@ -799,6 +811,7 @@
   ['name', 'phone', 'email'].forEach(n => {
     contactForm[n].addEventListener('input', () => setFieldError(contactForm[n], ''));
   });
+  contactForm.phone.addEventListener('input', () => capPhoneDigits(contactForm.phone));
 
   contactForm.addEventListener('submit', async (e) => {
     e.preventDefault();
