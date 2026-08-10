@@ -72,8 +72,8 @@ working, and the variable just lets you rotate the key without a code change.
 
 ## 4. Lock down /admin with Cloudflare Access
 
-Dashboard → **Zero Trust** → **Access → Applications** → *Add an application* →
-**Self-hosted**.
+Dashboard → **Zero Trust** → **Access controls → Applications** →
+*Add an application* → **Self-hosted**.
 
 - Application name: `Jess Realty Admin`
 - Session duration: your call (24 hours is reasonable)
@@ -95,12 +95,26 @@ There is no password to store, leak, or rotate.
 
 ## 5. Wire Access into the API
 
-Two more environment variables (Settings → Environment variables):
+Two more environment variables, back in the Pages project
+(**Workers & Pages → `jess-realty-site` → Settings → Environment variables**):
 
-| Name | Where to find it |
-|---|---|
-| `CF_ACCESS_TEAM_DOMAIN` | Zero Trust → Settings → Custom Pages (or the URL you log in at). Looks like `yourteam.cloudflareaccess.com`. **Hostname only — no `https://`.** |
-| `CF_ACCESS_AUD` | The Access application → *Overview* → **Application Audience (AUD) Tag**. A long hex string. |
+**`CF_ACCESS_TEAM_DOMAIN`**
+
+> Zero Trust → **Settings** → **Team name and domain**
+
+Looks like `yourteam.cloudflareaccess.com`.
+**Hostname only — no `https://`, no trailing slash.** The code builds the
+issuer URL itself, so including the scheme makes the issuer check fail.
+
+**`CF_ACCESS_AUD`**
+
+> Zero Trust → **Access controls** → **Applications** → click
+> **`Jess Realty Admin`** → **Configure** tab → scroll to
+> **Additional settings** → **Application Audience (AUD) Tag**
+
+`Configure` is a tab *inside* the application, so you have to click into the
+app from the Applications list first — it is not in the left-hand nav. The
+value is a long hex string with a copy button next to it.
 
 These let the API verify Access's signed token itself, so the endpoints stay
 protected even if the Access policy is later changed or removed.
