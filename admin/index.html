@@ -29,9 +29,13 @@
   header.bar{display:flex;align-items:center;gap:16px;flex-wrap:wrap;
     padding:16px 22px;border-bottom:1px solid var(--line-soft);background:var(--ink-3);position:sticky;top:0;z-index:20}
   .bar h1{font-family:var(--serif);font-size:1.3rem;font-weight:500;letter-spacing:-.01em}
-  .bar .who{font-size:.78rem;color:var(--sage);margin-left:auto}
+  .bar-right{margin-left:auto;display:flex;align-items:center;gap:14px}
+  .bar .who{display:inline-flex;align-items:center;gap:7px;font-size:.78rem;color:var(--sage)}
+  .bar .who[hidden]{display:none}
+  .bar .who svg{color:var(--ok);flex-shrink:0}
+  .bar .who b{color:var(--cream-soft);font-weight:600}
   .btn{padding:8px 14px;border-radius:2px;font-size:.82rem;font-weight:600;letter-spacing:.03em;
-    background:var(--brass);color:var(--ink-3);transition:background .2s}
+    background:var(--brass);color:var(--ink-3);transition:background .2s;text-decoration:none}
   .btn:hover{background:var(--brass-bright)}
   .btn.ghost{background:transparent;border:1px solid var(--line);color:var(--cream)}
   .btn.ghost:hover{border-color:var(--brass);color:var(--brass-bright);background:transparent}
@@ -113,7 +117,18 @@
 <header class="bar">
   <h1>Lead Board</h1>
   <button class="btn ghost" id="refresh" type="button">Refresh</button>
-  <span class="who" id="who"></span>
+  <div class="bar-right">
+    <span class="who" id="who" hidden>
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <rect x="4" y="10.5" width="16" height="10" rx="2"/><path d="M8 10.5V7a4 4 0 0 1 8 0v3.5"/>
+      </svg>
+      <span><span class="who-label">Securely signed in as </span><b id="whoEmail"></b></span>
+    </span>
+    <!-- Handled by Cloudflare at the edge before the Worker: clears the
+         Access cookie for this domain only, so it is an instant sign-out. -->
+    <a class="btn ghost" id="signout" href="/cdn-cgi/access/logout">Sign out</a>
+  </div>
 </header>
 
 <div class="banner" id="banner" hidden></div>
@@ -196,6 +211,8 @@
   async function api(path, options){
     const res = await fetch(path, Object.assign({ headers:{ 'Content-Type':'application/json' } }, options));
     if (res.status === 401){
+      // No longer signed in - stop claiming otherwise.
+      el('who').hidden = true;
       showBanner('Your admin session expired. Reload the page to sign in again.');
       throw new Error('unauthorized');
     }
@@ -209,7 +226,13 @@
     try {
       const data = await api('/api/leads');
       leads = data.leads || [];
-      if (data.user) el('who').textContent = data.user;
+      // data.user comes from the Access token the server cryptographically
+      // verified, not from anything the browser asserted - so the badge
+      // reflects a real verified identity.
+      if (data.user) {
+        el('whoEmail').textContent = data.user;
+        el('who').hidden = false;
+      }
       hideBanner();
       render();
     } catch (err) {

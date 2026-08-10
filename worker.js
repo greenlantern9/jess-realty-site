@@ -70,19 +70,26 @@ async function handleApi(request, env, url) {
   return json({ error: 'Not found.' }, 404);
 }
 
+// Second line of defence behind .assetsignore - keep the two in sync.
+// .assetsignore stops these being uploaded at all; this catches anything that
+// slips through, so a rename must be reflected in BOTH places.
 const PRIVATE_FILES = new Set([
+  '/worker.js',
+  '/wrangler.jsonc',
+  '/wrangler.toml',
+  '/.assetsignore',
+  '/.gitignore',
   '/schema.sql',
   '/admin-setup.md',
-  '/readme.md',
-  '/wrangler.toml',
-  '/.gitignore',
-  '/_worker.js'
+  '/readme.md'
 ]);
 
 function isPrivatePath(pathname) {
   const p = pathname.toLowerCase();
   if (PRIVATE_FILES.has(p)) return true;
-  if (p === '/functions' || p.startsWith('/functions/')) return true;
+  for (const dir of ['/functions', '/test']) {
+    if (p === dir || p.startsWith(dir + '/')) return true;
+  }
   return false;
 }
 
@@ -119,6 +126,53 @@ const LEAD_STATUSES = new Set([
   'closed',
   'lost'
 ]);
+
+/* ------------------------------------------------------------------ *
+ * schema
+ *
+ * Kept in sync with schema.sql. Created on demand rather than requiring
+ * someone to run it by hand: if the table is missing, a real inquiry would
+ * otherwise be emailed but never stored, and the lead would be lost.
+ * ------------------------------------------------------------------ */
+
+const SCHEMA_SQL = [
+  `CREATE TABLE IF NOT EXISTS leads (
+     id          TEXT PRIMARY KEY,
+     name        TEXT NOT NULL,
+     email       TEXT NOT NULL,
+     phone       TEXT,
+     intent      TEXT,
+     message     TEXT,
+     status      TEXT NOT NULL DEFAULT 'new',
+     notes       TEXT NOT NULL DEFAULT '',
+     created_at  TEXT NOT NULL,
+     updated_at  TEXT NOT NULL
+   )`,
+  `CREATE INDEX IF NOT EXISTS idx_leads_status  ON leads(status)`,
+  `CREATE INDEX IF NOT EXISTS idx_leads_created ON leads(created_at DESC)`
+];
+
+function isMissingTable(err) {
+  return /no such table/i.test(String((err && err.message) || err));
+}
+
+// Runs `query`; if the table does not exist yet, creates it and retries once.
+async function withSchema(env, query) {
+  try {
+    return await query();
+  } catch (err) {
+    if (!isMissingTable(err)) throw err;
+    console.log('leads table missing - creating it');
+    for (const sql of SCHEMA_SQL) await env.DB.prepare(sql).run();
+    return await query();
+  }
+}
+
+// These endpoints are admin-only, so the real message is more useful to the
+// person reading it than a generic string would be.
+function dbErrorMessage(err) {
+  return 'Database error: ' + String((err && err.message) || err);
+}
 
 /* ------------------------------------------------------------------ *
  * public: contact form
@@ -177,13 +231,15 @@ async function handleContact(request, env) {
   let stored = false;
   if (env.DB) {
     try {
-      await env.DB.prepare(
-        `INSERT INTO leads
-           (id, name, email, phone, intent, message, status, notes, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, 'new', '', ?, ?)`
-      )
-        .bind(crypto.randomUUID(), name, email, phone, intent, message, now, now)
-        .run();
+      await withSchema(env, () =>
+        env.DB.prepare(
+          `INSERT INTO leads
+             (id, name, email, phone, intent, message, status, notes, created_at, updated_at)
+           VALUES (?, ?, ?, ?, ?, ?, 'new', '', ?, ?)`
+        )
+          .bind(crypto.randomUUID(), name, email, phone, intent, message, now, now)
+          .run()
+      );
       stored = true;
     } catch (err) {
       console.error('D1 insert failed:', err);
@@ -238,13 +294,19 @@ async function handleLeadList(request, env) {
   if (!auth.ok) return json({ error: auth.message }, auth.status);
   if (!env.DB) return json({ error: 'Lead database is not bound.' }, 503);
 
-  const { results } = await env.DB.prepare(
-    `SELECT id, name, email, phone, intent, message, status, notes, created_at, updated_at
-       FROM leads
-      ORDER BY created_at DESC`
-  ).all();
-
-  return json({ leads: results ?? [], user: auth.email });
+  try {
+    const { results } = await withSchema(env, () =>
+      env.DB.prepare(
+        `SELECT id, name, email, phone, intent, message, status, notes, created_at, updated_at
+           FROM leads
+          ORDER BY created_at DESC`
+      ).all()
+    );
+    return json({ leads: results ?? [], user: auth.email });
+  } catch (err) {
+    console.error('Lead query failed:', err);
+    return json({ error: dbErrorMessage(err) }, 500);
+  }
 }
 
 async function handleLeadUpdate(request, env, id) {
@@ -279,12 +341,18 @@ async function handleLeadUpdate(request, env, id) {
   binds.push(new Date().toISOString());
   binds.push(id);
 
-  const res = await env.DB.prepare(`UPDATE leads SET ${sets.join(', ')} WHERE id = ?`)
-    .bind(...binds)
-    .run();
-
-  if (!res.meta?.changes) return json({ error: 'Lead not found.' }, 404);
-  return json({ success: true });
+  try {
+    const res = await withSchema(env, () =>
+      env.DB.prepare(`UPDATE leads SET ${sets.join(', ')} WHERE id = ?`)
+        .bind(...binds)
+        .run()
+    );
+    if (!res.meta?.changes) return json({ error: 'Lead not found.' }, 404);
+    return json({ success: true });
+  } catch (err) {
+    console.error('Lead update failed:', err);
+    return json({ error: dbErrorMessage(err) }, 500);
+  }
 }
 
 async function handleLeadDelete(request, env, id) {
@@ -292,9 +360,16 @@ async function handleLeadDelete(request, env, id) {
   if (!auth.ok) return json({ error: auth.message }, auth.status);
   if (!env.DB) return json({ error: 'Lead database is not bound.' }, 503);
 
-  const res = await env.DB.prepare('DELETE FROM leads WHERE id = ?').bind(id).run();
-  if (!res.meta?.changes) return json({ error: 'Lead not found.' }, 404);
-  return json({ success: true });
+  try {
+    const res = await withSchema(env, () =>
+      env.DB.prepare('DELETE FROM leads WHERE id = ?').bind(id).run()
+    );
+    if (!res.meta?.changes) return json({ error: 'Lead not found.' }, 404);
+    return json({ success: true });
+  } catch (err) {
+    console.error('Lead delete failed:', err);
+    return json({ error: dbErrorMessage(err) }, 500);
+  }
 }
 
 /* ------------------------------------------------------------------ *
