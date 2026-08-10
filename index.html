@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Jessica Kortum · Tampa, FL Real Estate</title>
 <meta name="description" content="Jessica Kortum is a Tampa, Florida REALTOR® who helps people buy and sell homes with care, candor, and a sharp read on the market." />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' fill='%2316233a'/%3E%3Cpath d='M3.2 11 12 4l8.8 7' fill='none' stroke='%237fa6d0' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M5.5 10v9h13v-9' fill='none' stroke='%237fa6d0' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3Crect x='10' y='13.5' width='4' height='5.5' fill='%237fa6d0'/%3E%3C/svg%3E" />
 
 <!--
   ============================================================
@@ -140,6 +141,9 @@
   .hero-photo{position:relative;aspect-ratio:4/5;width:100%;max-width:440px;margin-left:auto;
     border-radius:2px;overflow:hidden;background:linear-gradient(155deg,#28405f,#152238)}
   .hero-photo img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 16%}
+  .hero-badge{position:absolute;left:14px;bottom:14px;z-index:3;display:inline-flex;align-items:center;gap:7px;
+    background:var(--brass);color:var(--ink-3);font-weight:700;font-size:.76rem;letter-spacing:.05em;
+    padding:9px 14px;border-radius:2px;box-shadow:0 10px 26px rgba(0,0,0,.4)}
   .hero h1{font-size:clamp(3.1rem,7.5vw,6rem);letter-spacing:-.025em}
   .hero h1 em{font-style:italic;color:var(--brass-bright);font-weight:500}
   .hero .lead{max-width:38ch;margin-top:26px;font-size:clamp(1.05rem,2vw,1.25rem);color:var(--cream-soft);line-height:1.6}
@@ -373,7 +377,7 @@
     <a class="brand" href="#top">
       <span class="mark" aria-hidden="true"><svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3.2 8V3.2H8"/><path d="M20.8 16v4.8H16"/><path d="M6.4 13 12 8.4 17.6 13"/><path d="M8.2 12.4V16.8H15.8V12.4"/></svg></span>
       <b>Jessica&nbsp;Kortum</b>
-      <small>Real&nbsp;Estate</small>
+      <small>REALTOR&reg;</small>
     </a>
     <nav class="links" id="links">
       <a href="#about">About</a>
@@ -394,7 +398,7 @@
   <div class="hero-grid"></div>
   <div class="wrap hero-inner">
     <div class="hero-text">
-      <span class="eyebrow reveal">Tampa, Florida · Buyers &amp; Sellers</span>
+      <span class="eyebrow reveal">Tampa Bay REALTOR&reg; · Buyers &amp; Sellers</span>
       <h1 class="reveal" style="transition-delay:.05s">Your <em>place</em><br>in the sun.</h1>
       <p class="lead reveal" style="transition-delay:.12s">
         I'm Jessica Kortum, a Tampa Bay native who helps people buy and sell with
@@ -412,6 +416,10 @@
 
     <div class="hero-photo framed reveal" style="transition-delay:.1s">
       <img src="jessica-kortum.jpg" alt="Jessica Kortum, Tampa Bay REALTOR®" />
+      <span class="hero-badge">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.2 11 12 4l8.8 7"/><path d="M5.5 10v9h13v-9"/><path d="M10 19v-6h4v6"/></svg>
+        REALTOR&reg;
+      </span>
     </div>
   </div>
 </section>
