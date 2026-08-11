@@ -316,6 +316,25 @@ for (const [path, status] of [
   check(path.padEnd(28) + ' -> ' + status, r.status === status, 'got ' + r.status);
 }
 
+/* ------------------------------------------------------------------ */
+console.log('\n8. transport security');
+
+const insecure = await worker.fetch(new Request('http://x.com/'), staticEnv());
+check('http:// is redirected', insecure.status === 301, 'got ' + insecure.status);
+check('redirect target is https',
+  (insecure.headers.get('location') || '').startsWith('https://x.com/'),
+  insecure.headers.get('location'));
+
+const secureRes = await worker.fetch(req('/'), staticEnv());
+for (const h of ['strict-transport-security', 'x-content-type-options',
+                 'referrer-policy', 'x-frame-options', 'permissions-policy']) {
+  check('sets ' + h, !!secureRes.headers.get(h), 'missing');
+}
+check('nosniff value', secureRes.headers.get('x-content-type-options') === 'nosniff');
+
+const apiRes = await worker.fetch(req('/api/nope'), staticEnv());
+check('API responses are secured too', !!apiRes.headers.get('x-content-type-options'));
+
 globalThis.fetch = realFetch;
 console.log('\n' + pass + ' passed, ' + fail + ' failed\n');
 process.exit(fail ? 1 : 0);

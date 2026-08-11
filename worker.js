@@ -18,28 +18,50 @@
 //   DELETE /api/leads/:id     private  - remove a lead
 //   everything else                    - static assets, untouched
 
+// Plain HTTP was serving the whole site, so contact-form details (name, email,
+// phone) could travel in cleartext and the page could be tampered with in
+// transit. HSTS then stops the browser trying http:// again for a year.
+const SECURITY_HEADERS = {
+  'Strict-Transport-Security': 'max-age=31536000',
+  'X-Content-Type-Options': 'nosniff',
+  'Referrer-Policy': 'strict-origin-when-cross-origin',
+  'X-Frame-Options': 'DENY',
+  'Permissions-Policy': 'geolocation=(), microphone=(), camera=(), payment=()'
+};
+
+function secured(res) {
+  const out = new Response(res.body, res);
+  for (const [k, v] of Object.entries(SECURITY_HEADERS)) out.headers.set(k, v);
+  return out;
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
+
+    if (url.protocol === 'http:') {
+      url.protocol = 'https:';
+      return Response.redirect(url.toString(), 301);
+    }
 
     if (url.pathname.startsWith('/api/')) {
       // Contained on purpose: an API bug returns JSON 500 and never reaches
       // (or breaks) static asset serving for the rest of the site.
       try {
-        return await handleApi(request, env, url);
+        return secured(await handleApi(request, env, url));
       } catch (err) {
         console.error('API error:', err);
-        return json({ error: 'Server error.' }, 500);
+        return secured(json({ error: 'Server error.' }, 500));
       }
     }
 
     // The output directory is the repo root, so every committed file is
     // otherwise reachable over HTTP. Hide the ones that are not site content.
     if (isPrivatePath(url.pathname)) {
-      return new Response('Not found', { status: 404 });
+      return secured(new Response('Not found', { status: 404 }));
     }
 
-    return env.ASSETS.fetch(request);
+    return secured(await env.ASSETS.fetch(request));
   }
 };
 
