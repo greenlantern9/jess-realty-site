@@ -302,6 +302,66 @@
   .pillar p{color:var(--cream-soft);font-size:.97rem;line-height:1.6}
   @media(max-width:760px){.pillars{grid-template-columns:1fr;gap:32px}}
 
+  /* ===================== FAMILIES ===================== */
+  .fam-intro{max-width:62ch}
+  .fam-intro p{color:var(--cream-soft);margin-top:18px;font-size:1.04rem}
+  .fam-intro p strong{color:var(--cream);font-weight:600}
+
+  .fam-sub{font-family:var(--sans);font-size:.72rem;letter-spacing:.18em;
+    text-transform:uppercase;color:var(--brass);font-weight:700;
+    margin-top:clamp(46px,6vw,72px);display:flex;align-items:center;gap:.8em}
+  .fam-sub::after{content:"";flex:1;height:1px;background:var(--line-soft)}
+
+  /* schools: a panel, not a ranking - see the note in the markup */
+  .schools{display:grid;grid-template-columns:1.05fr .95fr;gap:clamp(24px,4vw,48px);
+    margin-top:26px;align-items:start}
+  .schools p{color:var(--cream-soft);margin-top:14px}
+  .schools h3{font-size:1.45rem}
+  .district-list{display:flex;flex-direction:column;gap:2px}
+  .district{display:flex;align-items:center;gap:14px;padding:14px 0;
+    border-bottom:1px solid var(--line-soft)}
+  .district:first-child{border-top:1px solid var(--line-soft)}
+  .district .nm{font-weight:600;color:var(--cream);font-size:.97rem}
+  .district .where{font-size:.8rem;color:var(--sage);margin-top:2px}
+  .district a{margin-left:auto;font-size:.78rem;font-weight:600;color:var(--brass-bright);
+    white-space:nowrap;border:1px solid var(--line);border-radius:2px;padding:7px 12px;
+    transition:background .2s,border-color .2s}
+  .district a:hover{background:rgba(201,162,107,.12);border-color:var(--brass)}
+  .schools-note{margin-top:20px;padding:16px 18px;border-left:2px solid var(--brass);
+    background:var(--ink-2);font-size:.92rem;color:var(--cream-soft)}
+
+  /* things to do */
+  .kidgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:26px}
+  .kid{background:var(--ink-2);border:1px solid var(--line-soft);border-radius:3px;
+    padding:22px 22px 24px;transition:transform .25s,border-color .25s}
+  .kid:hover{transform:translateY(-3px);border-color:var(--line)}
+  .kid .ico{color:var(--brass);margin-bottom:14px}
+  .kid h4{font-family:var(--serif);font-size:1.2rem;font-weight:500;color:var(--cream)}
+  .kid p{color:var(--cream-soft);font-size:.92rem;margin-top:8px;line-height:1.55}
+  .kid .where{margin-top:12px;font-size:.7rem;letter-spacing:.13em;text-transform:uppercase;color:var(--sage)}
+
+  /* the year, by season */
+  .seasons{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:26px}
+  .season{border-top:2px solid var(--brass);padding-top:18px}
+  .season h4{font-family:var(--sans);font-size:.72rem;letter-spacing:.16em;
+    text-transform:uppercase;color:var(--brass);font-weight:700}
+  .season ul{list-style:none;margin-top:14px;display:flex;flex-direction:column;gap:13px}
+  .season li strong{display:block;color:var(--cream);font-size:.95rem;font-weight:600}
+  .season li span{display:block;color:var(--cream-soft);font-size:.85rem;line-height:1.5;margin-top:3px}
+  .season li em{display:block;color:var(--sage);font-size:.72rem;font-style:normal;
+    letter-spacing:.1em;text-transform:uppercase;margin-top:5px}
+
+  @media(max-width:960px){
+    .schools{grid-template-columns:1fr}
+    .kidgrid{grid-template-columns:repeat(2,1fr)}
+    .seasons{grid-template-columns:repeat(2,1fr);gap:26px}
+  }
+  @media(max-width:600px){
+    .kidgrid,.seasons{grid-template-columns:1fr}
+    .district{flex-wrap:wrap;gap:8px}
+    .district a{margin-left:0}
+  }
+
   /* ===================== LIFESTYLE BANNER ===================== */
   /* The plain url() line comes first on purpose: a browser without image-set()
      ignores the second declaration and still gets the JPEG. */
@@ -624,6 +684,7 @@
     <nav class="links" id="links">
       <a href="#about">About</a>
       <a href="#area">Area</a>
+      <a href="#families">Families</a>
       <a href="#process">Process</a>
       <a href="#contact">Contact</a>
     </nav>
@@ -956,6 +1017,256 @@
           <p class="place-static-tags">Sports · Concerts</p>
         </li>
         <li class="place-static">
+<!-- ===================== FAMILIES ===================== -->
+<!-- FAIR HOUSING NOTE - please read before editing this section.
+     Familial status is a protected class, and characterising schools or areas
+     as "good for families" is how steering complaints start. Nothing here
+     ranks a school or recommends a neighbourhood for a family. It explains how
+     assignment works, points at the districts' own data, and lists things that
+     exist. Keep it that way: describe the place, never the people who should
+     live there. -->
+<section class="band" id="families">
+  <div class="wrap">
+    <div class="sec-head fam-intro">
+      <span class="eyebrow reveal">For families</span>
+      <h2 class="reveal" style="transition-delay:.05s">A decade of teaching, put to work on your move.</h2>
+      <p class="reveal" style="transition-delay:.1s">
+        Before real estate, I spent ten years in a classroom. That is not a line on a bio —
+        it is why the questions families ask me are usually ones
+        <strong>I have already had to answer for someone else.</strong> How school assignment
+        actually works here. Which weekends are worth planning around. Where you can take a
+        four-year-old on a Tuesday when it will not stop raining.
+      </p>
+    </div>
+
+    <!-- ---------- schools ---------- -->
+    <div class="fam-sub reveal">Schools</div>
+    <div class="schools">
+      <div class="reveal">
+        <h3>How assignment actually works</h3>
+        <p>
+          Florida districts assign public schools by attendance boundary, and those boundaries
+          get redrawn more often than people expect. A house two streets over can feed a
+          different school. Florida also has open enrollment and magnet programmes, so the
+          assigned school is a starting point rather than the whole picture.
+        </p>
+        <p>
+          <strong>What I will not do is tell you which schools are good.</strong> Ratings are a
+          snapshot, they move year to year, and what fits one child does not fit the next. You
+          are far better served by the district's own data and an actual visit.
+        </p>
+        <p>
+          What I <em>will</em> do is pull the current boundary for any address you are
+          considering, tell you if it is under review, and make sure you are not relying on a
+          listing description that went stale two redistrictings ago.
+        </p>
+        <div class="schools-note">
+          <strong>Verify before you close.</strong> Boundaries can change between contract and
+          closing, and listing sites lag behind the districts. Always confirm assignment with
+          the district directly, for the specific address.
+        </div>
+      </div>
+
+      <div class="district-list reveal" style="transition-delay:.08s">
+        <div class="district">
+          <div>
+            <div class="nm">Hillsborough County Public Schools</div>
+            <div class="where">Tampa, Brandon, Riverview, Westchase</div>
+          </div>
+          <a href="https://www.hillsboroughschools.org/" target="_blank" rel="noopener">District site ↗</a>
+        </div>
+        <div class="district">
+          <div>
+            <div class="nm">Pinellas County Schools</div>
+            <div class="where">St. Petersburg, Clearwater, Dunedin, Palm Harbor</div>
+          </div>
+          <a href="https://www.pcsb.org/" target="_blank" rel="noopener">District site ↗</a>
+        </div>
+        <div class="district">
+          <div>
+            <div class="nm">Pasco County Schools</div>
+            <div class="where">Wesley Chapel, Land O' Lakes, Trinity</div>
+          </div>
+          <a href="https://www.pasco.k12.fl.us/" target="_blank" rel="noopener">District site ↗</a>
+        </div>
+        <div class="district">
+          <div>
+            <div class="nm">School District of Manatee County</div>
+            <div class="where">Bradenton, Lakewood Ranch, Anna Maria</div>
+          </div>
+          <a href="https://www.manateeschools.net/" target="_blank" rel="noopener">District site ↗</a>
+        </div>
+        <div class="district">
+          <div>
+            <div class="nm">Sarasota County Schools</div>
+            <div class="where">Sarasota, Siesta Key, Venice</div>
+          </div>
+          <a href="https://www.sarasotacountyschools.net/" target="_blank" rel="noopener">District site ↗</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- ---------- things to do ---------- -->
+    <div class="fam-sub reveal">Where to take them</div>
+    <div class="kidgrid">
+      <article class="kid reveal">
+        <div class="ico"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 20V9l9-6 9 6v11"/><path d="M3 20h18"/><circle cx="12" cy="13" r="2.5"/></svg></div>
+        <h4>Glazer Children's Museum</h4>
+        <p>Two floors of hands-on everything, built for the under-tens. The one that reliably works on a rainy afternoon.</p>
+        <div class="where">Downtown Tampa</div>
+      </article>
+
+      <article class="kid reveal" style="transition-delay:.05s">
+        <div class="ico"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 18c0-5 3.5-9 8-9s8 4 8 9"/><path d="M8 9V6a4 4 0 0 1 8 0v3"/><circle cx="10" cy="14" r="1"/><circle cx="14" cy="14" r="1"/></svg></div>
+        <h4>ZooTampa at Lowry Park</h4>
+        <p>Manatee rehabilitation, a splash area for when it gets hot, and small enough to do in a morning without a meltdown.</p>
+        <div class="where">Tampa</div>
+      </article>
+
+      <article class="kid reveal" style="transition-delay:.1s">
+        <div class="ico"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 14c2-2 4-2 6 0s4 2 6 0 4-2 6 0"/><path d="M3 19c2-2 4-2 6 0s4 2 6 0 4-2 6 0"/><path d="M12 4c2.5 0 4.5 2 4.5 4.5S14.5 13 12 13 7.5 11 7.5 8.5 9.5 4 12 4z"/></svg></div>
+        <h4>The Florida Aquarium</h4>
+        <p>Sharks, a stingray touch tank and an outdoor splash pad included with entry — worth knowing in August.</p>
+        <div class="where">Channel District</div>
+      </article>
+
+      <article class="kid reveal" style="transition-delay:.15s">
+        <div class="ico"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 3v4M12 17v4M3 12h4M17 12h4"/><circle cx="12" cy="12" r="4.5"/></svg></div>
+        <h4>Busch Gardens &amp; Adventure Island</h4>
+        <p>Coasters for the brave, Sesame Street Safari of Fun for everyone else. Annual passes are common enough here that locals treat it as a Saturday.</p>
+        <div class="where">Tampa</div>
+      </article>
+
+      <article class="kid reveal" style="transition-delay:.2s">
+        <div class="ico"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 20V8l8-4 8 4v12"/><path d="M9 20v-6h6v6"/><path d="M4 20h16"/></svg></div>
+        <h4>Great Explorations &amp; Sunken Gardens</h4>
+        <p>A children's museum and a century-old botanical garden, next door to each other. Easy to pair into one trip across the bay.</p>
+        <div class="where">St. Petersburg</div>
+      </article>
+
+      <article class="kid reveal" style="transition-delay:.25s">
+        <div class="ico"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 17c3-2 5-2 8 0s5 2 8 0l4-2"/><path d="M7 13V5l10 3-10 3"/></svg></div>
+        <h4>Fort De Soto &amp; Honeymoon Island</h4>
+        <p>Two state and county parks with calm, shallow water, shade, and proper facilities — the ones that work with small children rather than against them.</p>
+        <div class="where">Pinellas County</div>
+      </article>
+
+      <article class="kid reveal" style="transition-delay:.3s">
+        <div class="ico"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 19h18"/><path d="M6 19V9l6-5 6 5v10"/><path d="M10 19v-5h4v5"/></svg></div>
+        <h4>Tampa Riverwalk &amp; Curtis Hixon</h4>
+        <p>A free splash pad, a playground and two and a half miles of car-free path along the river. The default when you need out of the house and cannot face a ticket price.</p>
+        <div class="where">Downtown Tampa</div>
+      </article>
+
+      <article class="kid reveal" style="transition-delay:.35s">
+        <div class="ico"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="9"/><path d="M8 13c1.5 1.5 6.5 1.5 8 0"/><circle cx="9" cy="9.5" r="1"/><circle cx="15" cy="9.5" r="1"/></svg></div>
+        <h4>MOSI</h4>
+        <p>Science centre with a planetarium and enough to fill half a day. Skews slightly older than Glazer, so it grows with them.</p>
+        <div class="where">North Tampa</div>
+      </article>
+
+      <article class="kid reveal" style="transition-delay:.4s">
+        <div class="ico"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5 21c0-6 3-10 7-10s7 4 7 10"/><path d="M12 11V7"/><path d="M9 4h6l-1.5 3h-3z"/></svg></div>
+        <h4>Weeki Wachee Springs</h4>
+        <p>The mermaid show has run since 1947, and the spring stays 72 degrees all year. An hour north, and unlike anywhere else.</p>
+        <div class="where">Weeki Wachee</div>
+      </article>
+    </div>
+
+    <!-- ---------- the year ---------- -->
+    <div class="fam-sub reveal">The year, roughly</div>
+    <div class="seasons">
+      <div class="season reveal">
+        <h4>Jan — Feb</h4>
+        <ul>
+          <li>
+            <strong>Gasparilla</strong>
+            <span>A pirate invasion of the bay and a parade down Bayshore. There is a separate Children's Parade the weekend before, which is the one to take small kids to.</span>
+            <em>Tampa · late January</em>
+          </li>
+          <li>
+            <strong>Florida State Fair</strong>
+            <span>Twelve days of livestock, rides and fried everything at the fairgrounds.</span>
+            <em>Tampa · February</em>
+          </li>
+          <li>
+            <strong>Spring training</strong>
+            <span>The Yankees in Tampa, Blue Jays in Dunedin, Phillies in Clearwater, Pirates in Bradenton — all within a short drive.</span>
+            <em>Bay-wide · Feb — Mar</em>
+          </li>
+        </ul>
+      </div>
+
+      <div class="season reveal" style="transition-delay:.06s">
+        <h4>Mar — May</h4>
+        <ul>
+          <li>
+            <strong>Florida Strawberry Festival</strong>
+            <span>Eleven days in Plant City with rides, livestock shows and the shortcake everyone drives out for.</span>
+            <em>Plant City · Feb — Mar</em>
+          </li>
+          <li>
+            <strong>Gasparilla Festival of the Arts</strong>
+            <span>Juried outdoor art show along the Riverwalk, with a children's area.</span>
+            <em>Tampa · March</em>
+          </li>
+          <li>
+            <strong>Beach season starts properly</strong>
+            <span>Water warms up, crowds have not yet peaked. The best stretch of the year on the Gulf.</span>
+            <em>Gulf coast · April — May</em>
+          </li>
+        </ul>
+      </div>
+
+      <div class="season reveal" style="transition-delay:.12s">
+        <h4>Jun — Aug</h4>
+        <ul>
+          <li>
+            <strong>Splash pads and early mornings</strong>
+            <span>It is hot and it rains most afternoons. Locals go out early, come home at two, and go back out at six.</span>
+            <em>Everywhere</em>
+          </li>
+          <li>
+            <strong>Fourth of July on the water</strong>
+            <span>Fireworks over the bay from the Riverwalk, and along most of the Gulf beaches.</span>
+            <em>Bay-wide · July</em>
+          </li>
+          <li>
+            <strong>Hurricane season opens</strong>
+            <span>Runs June through November. Worth knowing before you move, not after — I will walk you through what it actually means for a given address.</span>
+            <em>Jun — Nov</em>
+          </li>
+        </ul>
+      </div>
+
+      <div class="season reveal" style="transition-delay:.18s">
+        <h4>Sep — Dec</h4>
+        <ul>
+          <li>
+            <strong>Saturday Morning Market</strong>
+            <span>St. Pete's outdoor market runs October through May — produce, music and space for kids to roam.</span>
+            <em>St. Petersburg · Oct — May</em>
+          </li>
+          <li>
+            <strong>Busch Gardens after dark</strong>
+            <span>Howl-O-Scream for teenagers and adults; the daytime Sesame Street events stay firmly for the little ones.</span>
+            <em>Tampa · Sep — Oct</em>
+          </li>
+          <li>
+            <strong>Lightning and Bucs season</strong>
+            <span>Hockey downtown at Amalie, football at Raymond James. Both are a genuine part of the calendar here.</span>
+            <em>Tampa · Sep onward</em>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <p class="reveal" style="color:var(--sage);font-size:.85rem;margin-top:26px">
+      Dates shift a little every year — check the organisers before you plan around one.
+    </p>
+  </div>
+</section>
+
           <h3>Tampa International Airport</h3>
           <p>Consistently one of the easier large airports in the country to get through, and close enough to most of the city to be a genuine selling point.</p>
           <p class="place-static-tags">Travel · Convenience</p>
@@ -1115,7 +1426,7 @@
         <div class="foot-col">
           <h4>Explore</h4>
           <a href="#about">About</a><a href="#area">Area</a>
-          <a href="#process">Process</a>
+          <a href="#families">Families</a><a href="#process">Process</a>
         </div>
         <div class="foot-col">
           <h4>Connect</h4>

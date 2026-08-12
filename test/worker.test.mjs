@@ -447,6 +447,7 @@ check('nosniff value', secureRes.headers.get('x-content-type-options') === 'nosn
 // Shareable section URLs for link-in-bio tools that drop #fragments.
 for (const [path, target] of [['/contact', '/#contact'], ['/about', '/#about'],
                               ['/area', '/#area'], ['/process', '/#process'],
+                              ['/families', '/#families'], ['/schools', '/#families'],
                               ['/contact/', '/#contact'], ['/CONTACT', '/#contact']]) {
   const r = await worker.fetch(req(path), staticEnv());
   const loc = r.headers.get('location') || '';

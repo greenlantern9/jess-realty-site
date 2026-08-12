@@ -116,6 +116,8 @@ const SECTION_LINKS = {
   '/contact': '/#contact',
   '/about':   '/#about',
   '/area':    '/#area',
+  '/families': '/#families',
+  '/schools':  '/#families',
   '/neighborhoods': '/#area',
   '/process': '/#process'
 };
