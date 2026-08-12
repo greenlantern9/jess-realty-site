@@ -153,6 +153,8 @@
 
   *{box-sizing:border-box;margin:0;padding:0}
   html{scroll-behavior:smooth}
+  /* The nav is fixed, so an anchor would otherwise land underneath it. */
+  section[id]{scroll-margin-top:76px}
   body{
     background:var(--ink);
     color:var(--cream);
@@ -383,9 +385,16 @@
   .stars{color:var(--brass);letter-spacing:.2em;margin-bottom:16px;font-size:.9rem}
 
   /* ===================== CONTACT ===================== */
-  .contact-grid{display:grid;grid-template-columns:1fr 1fr;gap:clamp(36px,6vw,84px);align-items:start}
-  .contact-info h2{font-size:clamp(2.1rem,5vw,3.2rem);margin-top:16px}
-  .contact-info p{color:var(--cream-soft);margin-top:18px;max-width:42ch}
+  /* Grid areas rather than source order: desktop keeps copy left / form right,
+     while mobile can slot the form between the heading and the details. */
+  .contact-grid{display:grid;grid-template-columns:1fr 1fr;align-items:start;
+    gap:clamp(18px,3vw,26px) clamp(36px,6vw,84px);
+    grid-template-areas:"head form" "details form"}
+  .contact-head{grid-area:head}
+  .contact-details{grid-area:details}
+  .contact-grid form{grid-area:form}
+  .contact-head h2{font-size:clamp(2.1rem,5vw,3.2rem);margin-top:16px}
+  .contact-details p{color:var(--cream-soft);max-width:42ch}
   .info-list{margin-top:34px;display:flex;flex-direction:column;gap:2px}
   .info-row{display:flex;gap:16px;align-items:center;padding:16px 0;border-bottom:1px solid var(--line-soft)}
   .info-row .ico{color:var(--brass);flex-shrink:0}
@@ -441,7 +450,14 @@
     .hero .lead{max-width:46ch}
     .cards3,.listing-grid{grid-template-columns:1fr;}
     .quotes{grid-template-columns:1fr}
-    .contact-grid{grid-template-columns:1fr;gap:48px}
+    /* Form directly under the heading; the blurb and contact rows move below,
+       so someone arriving at /contact sees the first input straight away. */
+    .contact-grid{grid-template-columns:1fr;gap:22px;
+      grid-template-areas:"head" "form" "details"}
+    .contact-head h2{font-size:clamp(1.8rem,7vw,2.3rem)}
+    .contact-details{margin-top:6px}
+    /* the band's usual 80-140px of top padding pushes the form off-screen */
+    #contact{padding-top:clamp(44px,7vh,64px)}
   }
   @media(max-width:760px){
     nav.links{position:fixed;inset:0 0 0 auto;width:min(80vw,320px);background:var(--ink-3);
@@ -1009,12 +1025,17 @@
 <!-- ===================== CONTACT ===================== -->
 <section class="band alt" id="contact">
   <div class="wrap contact-grid">
-    <div class="contact-info">
+    <!-- Split into head / details so the form can sit between them on mobile.
+         Landing on /contact should show the form, not a screen of copy. -->
+    <div class="contact-head">
       <span class="eyebrow reveal">Let's talk</span>
       <h2 class="reveal" style="transition-delay:.05s">Tell me about your dream home.</h2>
+    </div>
+
+    <div class="contact-details">
       <p class="reveal" style="transition-delay:.1s">
         Thinking about a move this year — or just curious what your home is worth today?
-        Reach out. First conversations are always free, friendly, and pressure-free.
+        Reach out.
       </p>
       <div class="info-list">
         <div class="info-row reveal">
