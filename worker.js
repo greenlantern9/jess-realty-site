@@ -32,13 +32,17 @@
 // site cannot be framed, forms cannot be repointed at another origin, <base>
 // cannot be hijacked, and plugins are off. Real defence in depth, but it is
 // not a substitute for the escaping already in place.
+// static.cloudflareinsights.com is Cloudflare's Web Analytics beacon. It is
+// injected by the edge, not by our HTML, so it does not show up anywhere in
+// the source - the report-only pass is what caught it. Enforcing without it
+// would have silently killed the analytics.
 const CSP = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline' https://unpkg.com",
+  "script-src 'self' 'unsafe-inline' https://unpkg.com https://static.cloudflareinsights.com",
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com",
   "font-src 'self' https://fonts.gstatic.com",
   "img-src 'self' data: https://unpkg.com https://*.basemaps.cartocdn.com",
-  "connect-src 'self'",
+  "connect-src 'self' https://cloudflareinsights.com",
   "form-action 'self'",
   "frame-ancestors 'none'",
   "base-uri 'self'",
@@ -51,9 +55,7 @@ const SECURITY_HEADERS = {
   'Referrer-Policy': 'strict-origin-when-cross-origin',
   'X-Frame-Options': 'DENY',
   'Permissions-Policy': 'geolocation=(), microphone=(), camera=(), payment=()',
-  // Report-Only for one deploy: violations surface in the console without
-  // anything being blocked, so a missed host cannot break the live site.
-  'Content-Security-Policy-Report-Only': CSP
+  'Content-Security-Policy': CSP
 };
 
 function secured(res) {
