@@ -153,8 +153,9 @@
 
   *{box-sizing:border-box;margin:0;padding:0}
   html{scroll-behavior:smooth}
-  /* The nav is fixed, so an anchor would otherwise land underneath it. */
-  section[id]{scroll-margin-top:76px}
+  /* The nav is fixed, so an anchor would otherwise land underneath it.
+     Kept tight to the scrolled nav height - any more is wasted screen. */
+  section[id]{scroll-margin-top:58px}
   body{
     background:var(--ink);
     color:var(--cream);
@@ -452,12 +453,24 @@
     .quotes{grid-template-columns:1fr}
     /* Form directly under the heading; the blurb and contact rows move below,
        so someone arriving at /contact sees the first input straight away. */
-    .contact-grid{grid-template-columns:1fr;gap:22px;
+    .contact-grid{grid-template-columns:1fr;gap:16px;
       grid-template-areas:"head" "form" "details"}
-    .contact-head h2{font-size:clamp(1.8rem,7vw,2.3rem)}
-    .contact-details{margin-top:6px}
+    .contact-head h2{font-size:clamp(1.7rem,6.4vw,2.1rem);margin-top:10px}
+    .contact-details{margin-top:10px}
     /* the band's usual 80-140px of top padding pushes the form off-screen */
-    #contact{padding-top:clamp(44px,7vh,64px)}
+    #contact{padding-top:clamp(20px,3vh,32px)}
+
+    /* Tightened so the whole form, Send button included, fits one phone
+       screen when someone lands on /contact. */
+    #contactForm{gap:12px}
+    #contactForm .field{gap:5px}
+    #contactForm input,#contactForm select,#contactForm textarea{padding:11px 12px}
+    #contactForm textarea{min-height:84px}
+
+    /* Reveal on scroll was sliding every element up 26px as it entered view.
+       Harmless on desktop, but on a phone you trigger dozens of them while
+       scrolling and it reads as jumpy. Fade only here. */
+    .reveal{transform:none}
   }
   @media(max-width:760px){
     nav.links{position:fixed;inset:0 0 0 auto;width:min(80vw,320px);background:var(--ink-3);
