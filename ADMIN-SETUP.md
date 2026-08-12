@@ -96,6 +96,37 @@ Zero Trust → Access controls → Applications → **Jess Realty Admin**
 
 Team domain: `kortumskingdom.cloudflareaccess.com`
 
+## Search indexing
+
+Nothing in the site blocks crawlers: no `noindex`, clean canonical, valid
+sitemap, permissive `robots.txt`. Getting found is a discovery problem, not a
+technical one.
+
+**IndexNow (done).** `7cb7efe3bc02daac8b0bfcdb16a3b0d7.txt` at the site root
+proves ownership to Bing, Yandex, Seznam and DuckDuckGo. Do not delete or
+rename it. After adding pages:
+
+```bash
+node tools/ping-indexnow.mjs https://jessicakortum.com/new-page
+```
+
+**Google Search Console (still needs doing — Google ignores IndexNow).**
+
+1. [search.google.com/search-console](https://search.google.com/search-console) →
+   *Add property* → **Domain** → `jessicakortum.com`
+2. It gives you a TXT record. Cloudflare → **DNS** → *Add record*:
+   type `TXT`, name `@`, content = the `google-site-verification=…` string
+3. Back in Search Console, click **Verify**
+4. **Sitemaps** → submit `sitemap.xml`
+5. **URL Inspection** → paste `https://jessicakortum.com/` → **Request
+   Indexing**. This is the step that actually gets Google to come and look.
+
+Use the Domain property rather than the URL-prefix one — it covers every
+subdomain and both protocols in a single verification.
+
+After that, Search Console is where you see which queries the site appears
+for, which is the only reliable feedback loop for what content to write next.
+
 ## Local development
 
 Node.js is installed. From the repo root:
