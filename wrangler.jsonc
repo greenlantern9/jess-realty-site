@@ -11,9 +11,29 @@
 
   // directory "." keeps the site files where they already live at the repo
   // root; .assetsignore keeps source and docs out of the public upload.
+  // run_worker_first matters: by default a request matching an uploaded file is
+  // served straight from the edge and the Worker never runs, so the http->https
+  // redirect and security headers were being skipped on every actual page and
+  // only applied to /api/*. This routes everything through worker.js first,
+  // which then serves the file via env.ASSETS.
   "assets": {
     "directory": ".",
-    "binding": "ASSETS"
+    "binding": "ASSETS",
+    "run_worker_first": true
+  },
+
+  // Per-IP throttle on the public contact endpoint. Without it anyone can
+  // script submissions, filling the database and burning the Web3Forms free
+  // tier (250/month) - which would silently stop her real email notifications.
+  "unsafe": {
+    "bindings": [
+      {
+        "name": "CONTACT_RATE_LIMIT",
+        "type": "ratelimit",
+        "namespace_id": "1001",
+        "simple": { "limit": 5, "period": 60 }
+      }
+    ]
   },
 
   // `wrangler deploy` is declarative: it reconciles the Worker to this file

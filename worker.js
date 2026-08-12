@@ -291,7 +291,41 @@ function validPhone(raw) {
   return d.length === 10 || (d.length === 11 && d[0] === '1');
 }
 
+// Per-IP throttle on the public form.
+//
+// Fails OPEN on purpose: if the limiter is unavailable or errors, a real buyer
+// still gets through. Losing genuine enquiries is a worse outcome than letting
+// some spam past, and the honeypot plus validation still apply.
+async function isRateLimited(env, request) {
+  if (!env.CONTACT_RATE_LIMIT) return false;
+  const key = request.headers.get('CF-Connecting-IP') || 'unknown';
+  try {
+    const { success } = await env.CONTACT_RATE_LIMIT.limit({ key });
+    return !success;
+  } catch (err) {
+    console.error('Rate limit check failed:', err);
+    return false;
+  }
+}
+
 async function handleContact(request, env) {
+  if (await isRateLimited(env, request)) {
+    return new Response(
+      JSON.stringify({
+        success: false,
+        message: "That's a few messages in a row — give it a minute and try again."
+      }),
+      {
+        status: 429,
+        headers: {
+          'Content-Type': 'application/json; charset=utf-8',
+          'Retry-After': '60',
+          'Cache-Control': 'no-store'
+        }
+      }
+    );
+  }
+
   let data;
   try {
     const ct = request.headers.get('content-type') || '';

@@ -317,6 +317,42 @@ for (const [path, status] of [
 }
 
 /* ------------------------------------------------------------------ */
+console.log('\n7b. contact form rate limiting');
+
+const contactBody = {
+  name: 'Test', email: 'a@b.com', phone: '8135550142', intent: 'Buy', message: 'hi'
+};
+const okDbRl = { prepare: () => ({ bind() { return this; },
+  run: async () => ({ meta: { changes: 1 } }), all: async () => ({ results: [] }) }) };
+
+let limited = await worker.fetch(
+  req('/api/contact', 'POST', contactBody),
+  { ...staticEnv(), DB: okDbRl, CONTACT_RATE_LIMIT: { limit: async () => ({ success: false }) } }
+);
+check('over the limit -> 429', limited.status === 429, 'got ' + limited.status);
+check('sends Retry-After', limited.headers.get('retry-after') === '60',
+  limited.headers.get('retry-after'));
+
+let allowed = await worker.fetch(
+  req('/api/contact', 'POST', contactBody),
+  { ...staticEnv(), DB: okDbRl, CONTACT_RATE_LIMIT: { limit: async () => ({ success: true }) } }
+);
+check('under the limit -> 200', allowed.status === 200, 'got ' + allowed.status);
+
+// A broken limiter must not take the contact form offline.
+let brokenLimiter = await worker.fetch(
+  req('/api/contact', 'POST', contactBody),
+  { ...staticEnv(), DB: okDbRl,
+    CONTACT_RATE_LIMIT: { limit: async () => { throw new Error('limiter down'); } } }
+);
+check('limiter error fails open', brokenLimiter.status === 200, 'got ' + brokenLimiter.status);
+
+let noLimiter = await worker.fetch(
+  req('/api/contact', 'POST', contactBody), { ...staticEnv(), DB: okDbRl }
+);
+check('missing binding fails open', noLimiter.status === 200, 'got ' + noLimiter.status);
+
+/* ------------------------------------------------------------------ */
 console.log('\n8. transport security');
 
 const insecure = await worker.fetch(new Request('http://x.com/'), staticEnv());
