@@ -368,6 +368,22 @@ for (const h of ['strict-transport-security', 'x-content-type-options',
 }
 check('nosniff value', secureRes.headers.get('x-content-type-options') === 'nosniff');
 
+// Shareable section URLs for link-in-bio tools that drop #fragments.
+for (const [path, target] of [['/contact', '/#contact'], ['/about', '/#about'],
+                              ['/area', '/#area'], ['/process', '/#process'],
+                              ['/contact/', '/#contact'], ['/CONTACT', '/#contact']]) {
+  const r = await worker.fetch(req(path), staticEnv());
+  const loc = r.headers.get('location') || '';
+  check(path.padEnd(11) + ' -> ' + target, r.status === 302 && loc.endsWith(target),
+    r.status + ' ' + loc);
+}
+// Must not shadow the public form endpoint.
+const stillPost = await worker.fetch(
+  req('/api/contact', 'POST', { name: '', email: 'bad', phone: '1' }),
+  { ...staticEnv(), DB: { prepare: stmt } }
+);
+check('/api/contact is untouched by /contact', stillPost.status === 400, 'got ' + stillPost.status);
+
 const apiRes = await worker.fetch(req('/api/nope'), staticEnv());
 check('API responses are secured too', !!apiRes.headers.get('x-content-type-options'));
 

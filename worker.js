@@ -73,6 +73,16 @@ export default {
       return Response.redirect(url.toString(), 301);
     }
 
+    // Shareable section links. Link-in-bio tools (Linktree, Instagram) route
+    // clicks through their own redirector, and a #fragment can get dropped on
+    // the way - landing people at the top of the page instead of the section.
+    // These give out a plain URL that survives that, and the fragment is
+    // re-attached here at the last hop.
+    const section = SECTION_LINKS[url.pathname.toLowerCase().replace(/\/+$/, '')];
+    if (section) {
+      return Response.redirect(new URL(section, url.origin).toString(), 302);
+    }
+
     if (url.pathname.startsWith('/api/')) {
       // Contained on purpose: an API bug returns JSON 500 and never reaches
       // (or breaks) static asset serving for the rest of the site.
@@ -101,6 +111,15 @@ export default {
 // Trade-off: filenames are not content-hashed, so replacing a photo under the
 // same name can show the old one to returning visitors for up to a week. Add a
 // query string (?v=2) or a new filename when swapping an image.
+// /contact is safe alongside /api/contact - different paths, no collision.
+const SECTION_LINKS = {
+  '/contact': '/#contact',
+  '/about':   '/#about',
+  '/area':    '/#area',
+  '/neighborhoods': '/#area',
+  '/process': '/#process'
+};
+
 const LONG_CACHE = /\.(jpg|jpeg|png|webp|avif|gif|svg|ico|woff2?|ttf)$/i;
 
 function cached(pathname, res) {
