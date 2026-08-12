@@ -148,6 +148,49 @@
   .tl-add select{flex:0 0 108px}
   .tl-add input{flex:1}
 
+  /* An explicit display: on these beats the UA's [hidden]{display:none},
+     so toggling the attribute alone would leave both views on screen. */
+  .board[hidden],.tablewrap[hidden],.tbl-foot[hidden]{display:none}
+
+  /* ---------------- view toggle ---------------- */
+  .viewtoggle{display:inline-flex;padding:3px;gap:3px;border-radius:4px;
+    background:var(--ink-2);border:1px solid var(--line-soft)}
+  .viewtoggle button{display:inline-flex;align-items:center;gap:6px;padding:7px 13px;
+    border-radius:3px;font-size:.8rem;font-weight:600;color:var(--cream-soft);transition:.2s}
+  .viewtoggle button:hover{color:var(--brass-bright)}
+  .viewtoggle button[aria-pressed="true"]{background:var(--brass);color:var(--ink-3)}
+
+  /* ---------------- table view ---------------- */
+  .tablewrap{flex:1;overflow:auto;padding:0 22px 8px;
+    scrollbar-width:thin;scrollbar-color:var(--line) transparent}
+  table.leads{width:100%;border-collapse:separate;border-spacing:0;font-size:.86rem}
+  table.leads th,table.leads td{text-align:left;padding:9px 12px;
+    border-bottom:1px solid var(--line-soft);white-space:nowrap}
+  table.leads thead th{position:sticky;top:0;z-index:3;background:var(--ink-3);
+    font-size:.68rem;letter-spacing:.12em;text-transform:uppercase;color:var(--sage);
+    font-weight:700;cursor:pointer;user-select:none}
+  table.leads thead th:hover{color:var(--cream)}
+  table.leads thead th .arrow{opacity:.3;margin-left:5px}
+  table.leads thead th[aria-sort] .arrow{opacity:1;color:var(--brass)}
+  table.leads thead tr.filters th{top:35px;padding:6px 8px;cursor:default;z-index:2}
+  table.leads thead tr.filters input,table.leads thead tr.filters select{
+    width:100%;min-width:98px;padding:5px 7px;border-radius:3px;font-size:.78rem;
+    background:var(--ink);border:1px solid var(--line-soft);color:var(--cream)}
+  table.leads thead tr.filters input:focus,table.leads thead tr.filters select:focus{
+    outline:none;border-color:var(--brass)}
+  table.leads tbody tr{cursor:pointer;transition:background .15s}
+  table.leads tbody tr:hover{background:var(--ink-2)}
+  table.leads td.nm{font-weight:600;color:var(--cream);white-space:normal;min-width:150px}
+  table.leads td.muted{color:var(--sage)}
+  table.leads td.tagcell{white-space:normal;max-width:210px}
+  .pill{display:inline-flex;align-items:center;gap:6px;padding:3px 9px;border-radius:11px;
+    font-size:.7rem;font-weight:600;background:rgba(201,162,107,.14);color:var(--cream-soft)}
+  .pill .dot{width:7px;height:7px;border-radius:50%;background:var(--pill);flex-shrink:0}
+  .overdue{color:var(--hot);font-weight:700}
+  .tbl-empty{padding:34px 12px;text-align:center;color:var(--sage);font-style:italic}
+  .tbl-foot{padding:11px 22px;font-size:.78rem;color:var(--sage);
+    border-top:1px solid var(--line-soft);display:flex;gap:14px;flex-wrap:wrap}
+
   /* ---------------- drawer ---------------- */
   .drawer-bg{position:fixed;inset:0;background:rgba(6,12,20,.72);z-index:40;display:none}
   .drawer-bg.open{display:block}
@@ -235,6 +278,17 @@
     <option value="week">Due this week</option>
     <option value="none">No date set</option>
   </select>
+  <span class="viewtoggle" role="group" aria-label="View">
+    <button id="viewBoard" type="button" aria-pressed="true">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true">
+        <rect x="3" y="4" width="5" height="16" rx="1"/><rect x="10" y="4" width="5" height="11" rx="1"/><rect x="17" y="4" width="4" height="7" rx="1"/>
+      </svg>Board</button>
+    <button id="viewTable" type="button" aria-pressed="false">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true">
+        <rect x="3" y="4" width="18" height="16" rx="1.5"/><path d="M3 9.5h18M3 15h18M9 4v16"/>
+      </svg>Table</button>
+  </span>
+
   <button class="btn" id="addLead" type="button">+ New lead</button>
   <button class="btn ghost" id="exportCsv" type="button">Export CSV</button>
 
@@ -250,6 +304,8 @@
 <div class="banner" id="banner" hidden></div>
 <div class="skeleton" id="skeleton">Loading leads…</div>
 <div class="board" id="board" hidden></div>
+<div class="tablewrap" id="tablewrap" hidden></div>
+<div class="tbl-foot" id="tblFoot" hidden></div>
 
 <div class="drawer-bg" id="drawerBg"></div>
 <aside class="drawer" id="drawer" aria-hidden="true" aria-label="Lead detail">
@@ -399,6 +455,11 @@
   ];
   const SOURCE_LABEL = Object.fromEntries(SOURCES.map(s => [s.id, s.label]));
   const PRIO_COLOR = { hot:'var(--hot)', warm:'var(--warm)', cold:'var(--cold)' };
+  const PRIORITIES = [
+    { id:'hot',  label:'Hot' },
+    { id:'warm', label:'Warm' },
+    { id:'cold', label:'Cold' }
+  ];
 
   const el = (id) => document.getElementById(id);
   const board = el('board'), banner = el('banner'), skeleton = el('skeleton');
@@ -511,8 +572,7 @@
       if (err.message !== 'unauthorized') showBanner(err.message);
     } finally {
       skeleton.hidden = true;
-      board.hidden = false;
-      render();
+      render();   // render() owns which view is visible
     }
   }
 
@@ -648,9 +708,8 @@
     return card;
   }
 
-  function render(){
+  function renderBoard(){
     const list = visibleLeads();
-    renderStats(list);
     board.textContent = '';
 
     for (const stage of STAGES){
@@ -700,6 +759,214 @@
       col.append(head, body);
       board.appendChild(col);
     }
+  }
+
+  /* ---------------- table view ----------------
+     Same dataset and same drawer as the board; this is a second lens for
+     scanning and triage rather than a separate feature.                */
+
+  const COLUMNS = [
+    { key:'name',           label:'Name',       filter:'text' },
+    { key:'status',         label:'Stage',      filter:'enum', options:STAGES },
+    { key:'priority',       label:'Priority',   filter:'enum', options:PRIORITIES },
+    { key:'source',         label:'Source',     filter:'enum', options:SOURCES },
+    { key:'intent',         label:'Looking to', filter:'text' },
+    { key:'budget',         label:'Budget',     filter:'none', numeric:true },
+    { key:'next_follow_up', label:'Follow-up',  filter:'none' },
+    { key:'tags',           label:'Tags',       filter:'text' },
+    { key:'created_at',     label:'Added',      filter:'none' }
+  ];
+
+  // Persisted so the board does not forget how you like to work between visits.
+  const store = {
+    get(k, fallback){
+      try { const v = localStorage.getItem('leadboard.' + k); return v ? JSON.parse(v) : fallback; }
+      catch { return fallback; }
+    },
+    set(k, v){ try { localStorage.setItem('leadboard.' + k, JSON.stringify(v)); } catch {} }
+  };
+
+  let view    = store.get('view', 'board');           // board is the default
+  let sortBy  = store.get('sort', { key:'created_at', dir:'desc' });
+  let colFilt = store.get('colFilters', {});
+
+  function sortLeads(list){
+    const { key, dir } = sortBy;
+    const col = COLUMNS.find(c => c.key === key);
+    const mul = dir === 'asc' ? 1 : -1;
+    return [...list].sort((a, b) => {
+      let x = a[key], y = b[key];
+      if (col && col.numeric) return ((Number(x)||0) - (Number(y)||0)) * mul;
+      // Blank follow-up dates sort last either way rather than pretending to be
+      // the oldest date in the list.
+      if (key === 'next_follow_up'){
+        if (!x && !y) return 0;
+        if (!x) return 1;
+        if (!y) return -1;
+      }
+      x = String(x ?? '').toLowerCase();
+      y = String(y ?? '').toLowerCase();
+      return x < y ? -mul : x > y ? mul : 0;
+    });
+  }
+
+  function applyColumnFilters(list){
+    return list.filter(l => COLUMNS.every(c => {
+      const want = (colFilt[c.key] || '').trim().toLowerCase();
+      if (!want) return true;
+      const have = String(l[c.key] ?? '').toLowerCase();
+      return c.filter === 'enum' ? have === want : have.includes(want);
+    }));
+  }
+
+  function cell(row, text, cls){
+    const td = document.createElement('td');
+    if (cls) td.className = cls;
+    td.textContent = text;
+    row.appendChild(td);
+    return td;
+  }
+
+  function renderTable(){
+    const wrap = el('tablewrap');
+    const rows = sortLeads(applyColumnFilters(visibleLeads()));
+    wrap.textContent = '';
+
+    const table = document.createElement('table');
+    table.className = 'leads';
+    const thead = document.createElement('thead');
+
+    const headRow = document.createElement('tr');
+    COLUMNS.forEach(c => {
+      const th = document.createElement('th');
+      th.textContent = c.label;
+      if (sortBy.key === c.key) th.setAttribute('aria-sort', sortBy.dir === 'asc' ? 'ascending' : 'descending');
+      const arrow = document.createElement('span');
+      arrow.className = 'arrow';
+      arrow.textContent = sortBy.key === c.key ? (sortBy.dir === 'asc' ? '▲' : '▼') : '↕';
+      th.appendChild(arrow);
+      th.addEventListener('click', () => {
+        sortBy = sortBy.key === c.key
+          ? { key: c.key, dir: sortBy.dir === 'asc' ? 'desc' : 'asc' }
+          : { key: c.key, dir: 'asc' };
+        store.set('sort', sortBy);
+        renderTable();
+      });
+      headRow.appendChild(th);
+    });
+    thead.appendChild(headRow);
+
+    const filterRow = document.createElement('tr');
+    filterRow.className = 'filters';
+    COLUMNS.forEach(c => {
+      const th = document.createElement('th');
+      if (c.filter === 'text' || c.filter === 'enum'){
+        const input = c.filter === 'enum'
+          ? document.createElement('select')
+          : document.createElement('input');
+        input.setAttribute('aria-label', 'Filter by ' + c.label);
+        if (c.filter === 'enum'){
+          fillSelect(input, [{ id:'', label:'All' }].concat(c.options), 'id', 'label');
+        } else {
+          input.type = 'search';
+          input.placeholder = 'Filter…';
+        }
+        input.value = colFilt[c.key] || '';
+        const onChange = () => {
+          colFilt[c.key] = input.value;
+          store.set('colFilters', colFilt);
+          renderTable();
+          // re-focus so typing is not interrupted by the re-render
+          const again = wrap.querySelector(`[aria-label="Filter by ${c.label}"]`);
+          if (again){ again.focus(); if (again.setSelectionRange && again.type === 'search') {
+            const n = again.value.length; again.setSelectionRange(n, n);
+          } }
+        };
+        input.addEventListener(c.filter === 'enum' ? 'change' : 'input', onChange);
+        th.appendChild(input);
+      }
+      filterRow.appendChild(th);
+    });
+    thead.appendChild(filterRow);
+    table.appendChild(thead);
+
+    const tbody = document.createElement('tbody');
+    rows.forEach(l => {
+      const tr = document.createElement('tr');
+      tr.addEventListener('click', () => openDrawer(l.id));
+
+      cell(tr, l.name, 'nm');
+
+      const stage = STAGES.find(s => s.id === l.status);
+      const stageTd = document.createElement('td');
+      const pill = document.createElement('span');
+      pill.className = 'pill';
+      pill.style.setProperty('--pill', stage ? stage.color : 'var(--sage)');
+      const dot = document.createElement('span');
+      dot.className = 'dot';
+      pill.append(dot, document.createTextNode(stage ? stage.label : l.status));
+      stageTd.appendChild(pill);
+      tr.appendChild(stageTd);
+
+      const prioTd = document.createElement('td');
+      const prio = document.createElement('span');
+      prio.className = 'pill';
+      prio.style.setProperty('--pill', PRIO_COLOR[l.priority] || 'var(--warm)');
+      const pdot = document.createElement('span');
+      pdot.className = 'dot';
+      prio.append(pdot, document.createTextNode(l.priority || 'warm'));
+      prioTd.appendChild(prio);
+      tr.appendChild(prioTd);
+
+      cell(tr, SOURCE_LABEL[l.source] || 'Other', 'muted');
+      cell(tr, l.intent || '—', l.intent ? '' : 'muted');
+      cell(tr, Number(l.budget) ? money(Number(l.budget)) : '—', Number(l.budget) ? '' : 'muted');
+
+      const due = daysUntil(l.next_follow_up);
+      const dueTd = cell(tr, l.next_follow_up || '—', l.next_follow_up ? '' : 'muted');
+      if (due !== null && due < 0) dueTd.className = 'overdue';
+
+      cell(tr, splitTags(l.tags).join(', ') || '—', splitTags(l.tags).length ? 'tagcell' : 'muted');
+      cell(tr, ago(l.created_at), 'muted');
+
+      tbody.appendChild(tr);
+    });
+    table.appendChild(tbody);
+
+    if (!rows.length){
+      const empty = document.createElement('div');
+      empty.className = 'tbl-empty';
+      empty.textContent = leads.length
+        ? 'No leads match these filters.'
+        : 'No leads yet.';
+      wrap.append(table, empty);
+    } else {
+      wrap.appendChild(table);
+    }
+
+    const activeFilters = Object.values(colFilt).filter(v => (v || '').trim()).length;
+    el('tblFoot').textContent =
+      rows.length + ' of ' + leads.length + ' leads' +
+      (activeFilters ? '  ·  ' + activeFilters + ' column filter' + (activeFilters > 1 ? 's' : '') + ' active' : '') +
+      '  ·  sorted by ' + (COLUMNS.find(c => c.key === sortBy.key) || {}).label +
+      ' ' + (sortBy.dir === 'asc' ? 'ascending' : 'descending');
+  }
+
+  function setView(next){
+    view = next;
+    store.set('view', next);
+    el('viewBoard').setAttribute('aria-pressed', String(next === 'board'));
+    el('viewTable').setAttribute('aria-pressed', String(next === 'table'));
+    render();
+  }
+
+  function render(){
+    renderStats(visibleLeads());
+    const isTable = view === 'table';
+    board.hidden = isTable;
+    el('tablewrap').hidden = !isTable;
+    el('tblFoot').hidden = !isTable;
+    if (isTable) renderTable(); else renderBoard();
   }
 
   async function setStatus(id, status){
@@ -957,6 +1224,12 @@
     [{ id:'', label:'All sources' }].concat(SOURCES), 'id', 'label');
 
   el('refresh').addEventListener('click', load);
+  el('viewBoard').addEventListener('click', () => setView('board'));
+  el('viewTable').addEventListener('click', () => setView('table'));
+  // Reflect the persisted choice before the first paint.
+  el('viewBoard').setAttribute('aria-pressed', String(view === 'board'));
+  el('viewTable').setAttribute('aria-pressed', String(view === 'table'));
+
   el('addLead').addEventListener('click', () => openDrawer(null));
   el('dClose').addEventListener('click', closeDrawer);
   el('dCancel').addEventListener('click', closeDrawer);

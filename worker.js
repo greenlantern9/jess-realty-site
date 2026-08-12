@@ -397,6 +397,36 @@ function toE164(raw) {
   return null;
 }
 
+// Free alternative to Twilio: a push notification via ntfy. Lands on the lock
+// screen like a text, costs nothing, needs no card.
+//
+// The topic URL is the credential - anyone holding it can read and post - so
+// it lives in a secret and should be long and random. Even if it leaked, the
+// message deliberately carries no lead details, so the worst case is knowing
+// that an enquiry arrived. Set NTFY_TOKEN too for an account-protected topic.
+async function sendLeadPush(env) {
+  const url = env.NTFY_TOPIC_URL;
+  if (!url) return;
+
+  const headers = {
+    'Content-Type': 'text/plain; charset=utf-8',
+    Title: 'New lead - jessicakortum.com',
+    Priority: 'high',
+    Tags: 'house',
+    Click: 'https://jessicakortum.com/admin'
+  };
+  if (env.NTFY_TOKEN) headers.Authorization = 'Bearer ' + env.NTFY_TOKEN;
+
+  const res = await fetch(url, { method: 'POST', headers, body: SMS_BODY });
+  if (!res.ok) throw new Error(`ntfy -> ${res.status} ${(await res.text()).slice(0, 200)}`);
+}
+
+// Whichever channels are configured fire; none configured is a no-op.
+async function notifyNewLead(env) {
+  const results = await Promise.allSettled([sendLeadSms(env), sendLeadPush(env)]);
+  for (const r of results) if (r.status === 'rejected') console.error('Lead alert failed:', r.reason);
+}
+
 async function sendLeadSms(env) {
   const sid   = env.TWILIO_ACCOUNT_SID;
   const token = env.TWILIO_AUTH_TOKEN;
@@ -539,8 +569,8 @@ async function handleContact(request, env, ctx) {
   // must never turn a lead we already captured into an error on their screen.
   // Honeypot hits and rate-limited requests return earlier, so bots do not
   // trigger this.
-  if (ctx && typeof ctx.waitUntil === 'function') ctx.waitUntil(sendLeadSms(env));
-  else sendLeadSms(env).catch((err) => console.error('SMS failed:', err));
+  if (ctx && typeof ctx.waitUntil === 'function') ctx.waitUntil(notifyNewLead(env));
+  else notifyNewLead(env).catch((err) => console.error('Lead alert failed:', err));
 
   return json({ success: true });
 }
