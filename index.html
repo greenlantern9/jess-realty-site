@@ -460,12 +460,19 @@
     /* the band's usual 80-140px of top padding pushes the form off-screen */
     #contact{padding-top:clamp(20px,3vh,32px)}
 
-    /* Tightened so the whole form, Send button included, fits one phone
-       screen when someone lands on /contact. */
-    #contactForm{gap:12px}
-    #contactForm .field{gap:5px}
-    #contactForm input,#contactForm select,#contactForm textarea{padding:11px 12px}
-    #contactForm textarea{min-height:84px}
+    /* Sized for the visible area of a phone browser, not the device height:
+       iOS Safari's toolbars take ~170px, so an iPhone showing 812 device
+       pixels only paints about 630 of them until you scroll. */
+    #contactForm{gap:10px}
+    #contactForm .field{gap:4px}
+    #contactForm input,#contactForm select,#contactForm textarea{padding:10px 12px}
+    #contactForm textarea{min-height:66px}
+    /* Name and phone share a row - reclaims a whole field's height, and the
+       two shortest values are the natural pair to sit together. */
+    #contactForm .row2{grid-template-columns:1fr 1fr;gap:10px}
+    /* "Let's talk" is decoration; the heading already says it. */
+    .contact-head .eyebrow{display:none}
+    .form-note{font-size:.74rem}
 
     /* Reveal on scroll was sliding every element up 26px as it entered view.
        Harmless on desktop, but on a phone you trigger dozens of them while
