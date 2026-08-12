@@ -115,11 +115,21 @@
   ============================================================
 -->
 
-<link rel="preload" as="image" href="jessica-kortum.jpg" fetchpriority="high" />
+<!-- imagesrcset/type so the preload matches whichever source <picture> picks,
+     rather than warming the JPEG the browser then ignores. -->
+<link rel="preload" as="image" href="jessica-kortum.jpg"
+      imagesrcset="jessica-kortum.webp" type="image/webp" fetchpriority="high" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400;1,9..144,500&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+<!-- Leaflet's stylesheet is only needed by the map, which is well below the
+     fold. Loaded as print (non-blocking), then switched to all once fetched,
+     so it stops delaying first paint. -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""
+      media="print" onload="this.media='all';this.onload=null" />
+<noscript><link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" /></noscript>
 
 <style>
   :root{
@@ -290,10 +300,16 @@
   @media(max-width:760px){.pillars{grid-template-columns:1fr;gap:32px}}
 
   /* ===================== LIFESTYLE BANNER ===================== */
+  /* The plain url() line comes first on purpose: a browser without image-set()
+     ignores the second declaration and still gets the JPEG. */
   .lifestyle{position:relative;min-height:clamp(340px,52vh,500px);display:flex;align-items:center;
     background:
       linear-gradient(90deg, rgba(20,17,12,.86) 0%, rgba(24,21,15,.58) 52%, rgba(24,21,15,.24) 100%),
-      url('tampa-sunset.jpg') center/cover no-repeat;}
+      url('tampa-sunset.jpg') center/cover no-repeat;
+    background:
+      linear-gradient(90deg, rgba(20,17,12,.86) 0%, rgba(24,21,15,.58) 52%, rgba(24,21,15,.24) 100%),
+      image-set(url('tampa-sunset.webp') type('image/webp'),
+                url('tampa-sunset.jpg')  type('image/jpeg')) center/cover no-repeat;}
   .lifestyle-inner{position:relative;z-index:2;max-width:620px}
   .lifestyle h2{font-size:clamp(2rem,4.6vw,3.3rem);margin-top:14px;color:#fff;line-height:1.08}
   .lifestyle p{color:#f0eadd;margin-top:16px;max-width:44ch;font-size:1.05rem}
@@ -301,12 +317,20 @@
     .lifestyle{background:
       linear-gradient(180deg, rgba(20,17,12,.80) 0%, rgba(24,21,15,.55) 60%, rgba(24,21,15,.72) 100%),
       url('tampa-sunset.jpg') center/cover no-repeat;text-align:left}
+    .lifestyle{background:
+      linear-gradient(180deg, rgba(20,17,12,.80) 0%, rgba(24,21,15,.55) 60%, rgba(24,21,15,.72) 100%),
+      image-set(url('tampa-sunset.webp') type('image/webp'),
+                url('tampa-sunset.jpg')  type('image/jpeg')) center/cover no-repeat;text-align:left}
   }
 
   /* dusk photo behind contact */
   #contact{background:
     linear-gradient(rgba(24,21,15,.91), rgba(20,17,12,.95)),
     url('dusk-contact.jpg') center/cover no-repeat;}
+  #contact{background:
+    linear-gradient(rgba(24,21,15,.91), rgba(20,17,12,.95)),
+    image-set(url('dusk-contact.webp') type('image/webp'),
+              url('dusk-contact.jpg')  type('image/jpeg')) center/cover no-repeat;}
   .about-body p{color:var(--cream-soft);margin-top:18px}
   .about-body p strong{color:var(--cream);font-weight:600}
 
@@ -603,8 +627,11 @@
     <div class="hero-photo framed reveal" style="transition-delay:.1s">
       <!-- Intrinsic size + fetchpriority: this is the LCP image, so it should
            be reserved and fetched early rather than lazily. -->
-      <img src="jessica-kortum.jpg" width="1200" height="1800" decoding="async" fetchpriority="high"
-           alt="Jessica Kortum, a Tampa Bay REALTOR®, photographed outdoors" />
+      <picture>
+        <source srcset="jessica-kortum.webp" type="image/webp" />
+        <img src="jessica-kortum.jpg" width="900" height="1350" decoding="async" fetchpriority="high"
+             alt="Jessica Kortum, a Tampa Bay REALTOR®, photographed outdoors" />
+      </picture>
       <span class="hero-badge">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.2 11 12 4l8.8 7"/><path d="M5.5 10v9h13v-9"/><path d="M10 19v-6h4v6"/></svg>
         REALTOR&reg;

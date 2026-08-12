@@ -90,9 +90,25 @@ export default {
       return secured(new Response('Not found', { status: 404 }));
     }
 
-    return secured(await env.ASSETS.fetch(request));
+    return secured(cached(url.pathname, await env.ASSETS.fetch(request)));
   }
 };
+
+// Static assets were all being served `max-age=0, must-revalidate`, so every
+// visit re-checked ~665 KB of photos. These files change rarely, so cache them
+// in the browser for a week.
+//
+// Trade-off: filenames are not content-hashed, so replacing a photo under the
+// same name can show the old one to returning visitors for up to a week. Add a
+// query string (?v=2) or a new filename when swapping an image.
+const LONG_CACHE = /\.(jpg|jpeg|png|webp|avif|gif|svg|ico|woff2?|ttf)$/i;
+
+function cached(pathname, res) {
+  if (!res.ok || !LONG_CACHE.test(pathname)) return res;
+  const out = new Response(res.body, res);
+  out.headers.set('Cache-Control', 'public, max-age=604800, stale-while-revalidate=86400');
+  return out;
+}
 
 /* ------------------------------------------------------------------ *
  * routing
