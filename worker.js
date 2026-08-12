@@ -21,12 +21,39 @@
 // Plain HTTP was serving the whole site, so contact-form details (name, email,
 // phone) could travel in cleartext and the page could be tampered with in
 // transit. HSTS then stops the browser trying http:// again for a year.
+// Content-Security-Policy.
+//
+// 'unsafe-inline' is required because both pages carry inline <style> and
+// <script>. Removing it would mean per-request nonces via HTMLRewriter, which
+// makes the HTML uncacheable - not worth it here, since neither page ever
+// renders user-supplied markup (the admin builds every node with textContent).
+//
+// So what this actually buys: injected *external* scripts are blocked, the
+// site cannot be framed, forms cannot be repointed at another origin, <base>
+// cannot be hijacked, and plugins are off. Real defence in depth, but it is
+// not a substitute for the escaping already in place.
+const CSP = [
+  "default-src 'self'",
+  "script-src 'self' 'unsafe-inline' https://unpkg.com",
+  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com",
+  "font-src 'self' https://fonts.gstatic.com",
+  "img-src 'self' data: https://unpkg.com https://*.basemaps.cartocdn.com",
+  "connect-src 'self'",
+  "form-action 'self'",
+  "frame-ancestors 'none'",
+  "base-uri 'self'",
+  "object-src 'none'"
+].join('; ');
+
 const SECURITY_HEADERS = {
   'Strict-Transport-Security': 'max-age=31536000',
   'X-Content-Type-Options': 'nosniff',
   'Referrer-Policy': 'strict-origin-when-cross-origin',
   'X-Frame-Options': 'DENY',
-  'Permissions-Policy': 'geolocation=(), microphone=(), camera=(), payment=()'
+  'Permissions-Policy': 'geolocation=(), microphone=(), camera=(), payment=()',
+  // Report-Only for one deploy: violations surface in the console without
+  // anything being blocked, so a missed host cannot break the live site.
+  'Content-Security-Policy-Report-Only': CSP
 };
 
 function secured(res) {
