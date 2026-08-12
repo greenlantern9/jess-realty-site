@@ -65,7 +65,7 @@ function secured(res) {
 }
 
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     const url = new URL(request.url);
 
     if (url.protocol === 'http:') {
@@ -87,7 +87,7 @@ export default {
       // Contained on purpose: an API bug returns JSON 500 and never reaches
       // (or breaks) static asset serving for the rest of the site.
       try {
-        return secured(await handleApi(request, env, url));
+        return secured(await handleApi(request, env, url, ctx));
       } catch (err) {
         console.error('API error:', err);
         return secured(json({ error: 'Server error.' }, 500));
@@ -133,12 +133,12 @@ function cached(pathname, res) {
  * routing
  * ------------------------------------------------------------------ */
 
-async function handleApi(request, env, url) {
+async function handleApi(request, env, url, ctx) {
   const path = url.pathname.replace(/\/+$/, '') || '/';
 
   if (path === '/api/contact') {
     if (request.method !== 'POST') return methodNotAllowed('POST');
-    return handleContact(request, env);
+    return handleContact(request, env, ctx);
   }
 
   if (path === '/api/leads') {
@@ -372,7 +372,58 @@ async function isRateLimited(env, request) {
   }
 }
 
-async function handleContact(request, env) {
+/* ------------------------------------------------------------------ *
+ * SMS alert on a new lead (Twilio)
+ *
+ * Every value here is read from encrypted secrets, never from
+ * wrangler.jsonc - this repo is public, and both the auth token and the
+ * recipients' personal numbers would otherwise be committed in the clear.
+ *
+ * Deliberately no lead details in the message: an SMS is not a private
+ * channel, and it sits on a lock screen. It says a lead arrived and where
+ * to read it.
+ * ------------------------------------------------------------------ */
+
+const SMS_BODY =
+  'A lead has sent you a message via jessicakortum.com, navigate to jessicakortum.com/admin';
+
+// Twilio wants E.164. Accept 10-digit US numbers and +1-prefixed alike.
+function toE164(raw) {
+  const s = String(raw).trim();
+  if (s.startsWith('+')) return s;
+  const d = s.replace(/\D/g, '');
+  if (d.length === 10) return '+1' + d;
+  if (d.length === 11 && d[0] === '1') return '+' + d;
+  return null;
+}
+
+async function sendLeadSms(env) {
+  const sid   = env.TWILIO_ACCOUNT_SID;
+  const token = env.TWILIO_AUTH_TOKEN;
+  const from  = env.TWILIO_FROM_NUMBER;
+  const to    = String(env.ALERT_SMS_TO || '').split(',').map(toE164).filter(Boolean);
+
+  if (!sid || !token || !from || !to.length) return;   // not configured yet
+
+  const results = await Promise.allSettled(to.map(async (number) => {
+    const res = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${sid}/Messages.json`, {
+      method: 'POST',
+      headers: {
+        Authorization: 'Basic ' + btoa(`${sid}:${token}`),
+        'Content-Type': 'application/x-www-form-urlencoded'
+      },
+      body: new URLSearchParams({ To: number, From: from, Body: SMS_BODY })
+    });
+    if (!res.ok) {
+      // Log the last 4 digits only - full numbers do not belong in logs.
+      throw new Error(`…${number.slice(-4)} -> ${res.status} ${(await res.text()).slice(0, 200)}`);
+    }
+  }));
+
+  for (const r of results) if (r.status === 'rejected') console.error('SMS failed:', r.reason);
+}
+
+async function handleContact(request, env, ctx) {
   if (await isRateLimited(env, request)) {
     return new Response(
       JSON.stringify({
@@ -483,6 +534,13 @@ async function handleContact(request, env) {
       502
     );
   }
+
+  // Fire and forget. The visitor should not wait on Twilio, and a failed text
+  // must never turn a lead we already captured into an error on their screen.
+  // Honeypot hits and rate-limited requests return earlier, so bots do not
+  // trigger this.
+  if (ctx && typeof ctx.waitUntil === 'function') ctx.waitUntil(sendLeadSms(env));
+  else sendLeadSms(env).catch((err) => console.error('SMS failed:', err));
 
   return json({ success: true });
 }

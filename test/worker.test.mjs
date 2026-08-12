@@ -353,6 +353,82 @@ let noLimiter = await worker.fetch(
 check('missing binding fails open', noLimiter.status === 200, 'got ' + noLimiter.status);
 
 /* ------------------------------------------------------------------ */
+console.log('\n7c. SMS alert on a new lead');
+
+const smsDb = { prepare: () => ({ bind() { return this; },
+  run: async () => ({ meta: { changes: 1 } }), all: async () => ({ results: [] }) }) };
+const goodLead = { name:'Dana', email:'d@e.com', phone:'8135550142', intent:'Buy', message:'hi' };
+const smsEnv = (extra = {}) => ({
+  ...staticEnv(), DB: smsDb,
+  TWILIO_ACCOUNT_SID: 'ACtest', TWILIO_AUTH_TOKEN: 'tok',
+  TWILIO_FROM_NUMBER: '+15005550006',
+  ALERT_SMS_TO: '8134944125, 9419629677',
+  ...extra
+});
+// ctx.waitUntil is how the Workers runtime keeps background work alive.
+const capturingCtx = () => { const p = []; return { waitUntil: (x) => p.push(x), settle: () => Promise.allSettled(p) }; };
+
+let smsCalls = [];
+const savedFetch = globalThis.fetch;
+globalThis.fetch = async (input, init) => {
+  const url = typeof input === 'string' ? input : input.url;
+  if (url.includes('api.twilio.com')) {
+    smsCalls.push({ url, body: init.body.toString(), auth: init.headers.Authorization });
+    return new Response('{"sid":"SM1"}', { status: 201 });
+  }
+  if (url.includes('/cdn-cgi/access/certs')) return new Response(JSON.stringify(JWKS));
+  return new Response('{"success":true}', { status: 200 });
+};
+
+let ctx = capturingCtx();
+let smsRes = await worker.fetch(req('/api/contact', 'POST', goodLead), smsEnv(), ctx);
+await ctx.settle();
+check('submission succeeds', smsRes.status === 200, 'got ' + smsRes.status);
+check('texts both numbers', smsCalls.length === 2, 'sent ' + smsCalls.length);
+check('numbers normalised to E.164',
+  smsCalls.every(c => /To=%2B1(8134944125|9419629677)/.test(c.body)),
+  smsCalls.map(c=>c.body).join(' | '));
+// Parse as form data: URLSearchParams encodes spaces as '+', which
+// decodeURIComponent does not reverse.
+const smsBody = smsCalls[0] && new URLSearchParams(smsCalls[0].body).get('Body');
+check('message body is the agreed wording',
+  smsBody === 'A lead has sent you a message via jessicakortum.com, navigate to jessicakortum.com/admin',
+  JSON.stringify(smsBody));
+check('no lead details leak into the text',
+  smsCalls.every(c => !/Dana|d%40e\.com|8135550142/.test(c.body)));
+
+// A bot tripping the honeypot must not wake anyone up at 3am.
+smsCalls = []; ctx = capturingCtx();
+await worker.fetch(req('/api/contact', 'POST', { ...goodLead, botcheck: '1' }), smsEnv(), ctx);
+await ctx.settle();
+check('honeypot hit sends no text', smsCalls.length === 0, 'sent ' + smsCalls.length);
+
+// Invalid submissions must not either.
+smsCalls = []; ctx = capturingCtx();
+await worker.fetch(req('/api/contact', 'POST', { name:'', email:'bad', phone:'1' }), smsEnv(), ctx);
+await ctx.settle();
+check('invalid submission sends no text', smsCalls.length === 0, 'sent ' + smsCalls.length);
+
+// Unconfigured must be silent, not broken.
+smsCalls = []; ctx = capturingCtx();
+smsRes = await worker.fetch(req('/api/contact', 'POST', goodLead), { ...staticEnv(), DB: smsDb }, ctx);
+await ctx.settle();
+check('no credentials -> no text, still 200', smsCalls.length === 0 && smsRes.status === 200);
+
+// Twilio being down must never cost us the lead.
+globalThis.fetch = async (input, init) => {
+  const url = typeof input === 'string' ? input : input.url;
+  if (url.includes('api.twilio.com')) return new Response('boom', { status: 500 });
+  return new Response('{"success":true}', { status: 200 });
+};
+ctx = capturingCtx();
+smsRes = await worker.fetch(req('/api/contact', 'POST', goodLead), smsEnv(), ctx);
+await ctx.settle();
+check('Twilio failure still returns success to the visitor', smsRes.status === 200, 'got ' + smsRes.status);
+
+globalThis.fetch = savedFetch;
+
+/* ------------------------------------------------------------------ */
 console.log('\n8. transport security');
 
 const insecure = await worker.fetch(new Request('http://x.com/'), staticEnv());

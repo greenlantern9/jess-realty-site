@@ -86,6 +86,42 @@ design; if the form attracts spam, generate a new key and set that variable.
 
 Storing and emailing are independent — one failing does not lose the other.
 
+## Text alerts on a new lead
+
+When a contact form submission succeeds, the worker texts:
+
+> A lead has sent you a message via jessicakortum.com, navigate to
+> jessicakortum.com/admin
+
+No lead details go in the text on purpose — an SMS is not private and it shows
+on a lock screen. It says a lead arrived and where to read it.
+
+**This is inactive until the four values below are set.** Nothing breaks
+without them; the form just does not text anyone.
+
+> **These must be added as encrypted Secrets, not plain variables.** This repo
+> is public, so both the Twilio token and the personal phone numbers would be
+> exposed if they went into `wrangler.jsonc`. In the Cloudflare dashboard:
+> Settings → Variables and Secrets → Add → **type: Secret**.
+
+| Secret | Value |
+|---|---|
+| `TWILIO_ACCOUNT_SID` | starts `AC…`, from the Twilio console |
+| `TWILIO_AUTH_TOKEN` | from the Twilio console |
+| `TWILIO_FROM_NUMBER` | the Twilio number you buy, e.g. `+18135550123` |
+| `ALERT_SMS_TO` | comma separated recipients, e.g. `8134944125,9419629677` |
+
+Recipients may be 10-digit or `+1` form; the worker normalises to E.164.
+
+Getting a Twilio account and a number is the part that needs a card — roughly
+$1.15/month for the number plus $0.0079 per message, so two texts per lead is
+about 1.6 cents.
+
+Sending happens in `ctx.waitUntil()` after the reply is already on its way to
+the visitor, so Twilio never adds latency and a Twilio outage can never turn a
+captured lead into an error. Bots tripping the honeypot and rate-limited or
+invalid submissions do not trigger a text.
+
 ## Access application
 
 Zero Trust → Access controls → Applications → **Jess Realty Admin**
