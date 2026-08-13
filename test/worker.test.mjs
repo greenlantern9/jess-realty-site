@@ -443,6 +443,12 @@ for (const h of ['strict-transport-security', 'x-content-type-options',
   check('sets ' + h, !!secureRes.headers.get(h), 'missing');
 }
 check('nosniff value', secureRes.headers.get('x-content-type-options') === 'nosniff');
+check('HSTS covers subdomains',
+  (secureRes.headers.get('strict-transport-security') || '').includes('includeSubDomains'),
+  secureRes.headers.get('strict-transport-security'));
+// preload is a months-to-reverse commitment; assert we have NOT opted in
+check('HSTS does not claim preload',
+  !(secureRes.headers.get('strict-transport-security') || '').includes('preload'));
 
 // Shareable section URLs for link-in-bio tools that drop #fragments.
 for (const [path, target] of [['/contact', '/#contact'], ['/about', '/#about'],

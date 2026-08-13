@@ -1,6 +1,7 @@
 User-agent: *
 Allow: /
-Disallow: /admin
-Disallow: /api/
+
+# /admin and /api are intentionally not listed. Cloudflare Access already
+# blocks crawlers from both, and naming them here only advertises the paths.
 
 Sitemap: https://jessicakortum.com/sitemap.xml

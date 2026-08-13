@@ -50,7 +50,11 @@ const CSP = [
 ].join('; ');
 
 const SECURITY_HEADERS = {
-  'Strict-Transport-Security': 'max-age=31536000',
+  // includeSubDomains is safe here: no subdomain resolves, so nothing can be
+  // locked out. preload is deliberately omitted - it is a submission to a
+  // browser-baked list that takes months to reverse, and is not worth the
+  // commitment for a site this size.
+  'Strict-Transport-Security': 'max-age=31536000; includeSubDomains',
   'X-Content-Type-Options': 'nosniff',
   'Referrer-Policy': 'strict-origin-when-cross-origin',
   'X-Frame-Options': 'DENY',

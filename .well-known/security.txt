@@ -1,0 +1,5 @@
+# https://securitytxt.org - where to report a security problem with this site.
+Contact: mailto:jkortumrealtor@gmail.com
+Expires: 2027-08-12T00:00:00.000Z
+Preferred-Languages: en
+Canonical: https://jessicakortum.com/.well-known/security.txt
