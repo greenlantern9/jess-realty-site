@@ -540,10 +540,21 @@
     .reveal{transform:none}
   }
   @media(max-width:760px){
+    /* backdrop-filter on the header makes it the containing block for its
+       position:fixed children, so this panel sized itself to the 64px header
+       instead of the viewport - the links spilled out past the painted
+       background and sat unreadable over the page. Drop the blur here and
+       carry the header on a near-opaque colour instead. */
+    header.nav.scrolled{backdrop-filter:none;background:rgba(24,21,15,.97)}
+
     nav.links{position:fixed;inset:0 0 0 auto;width:min(80vw,320px);background:var(--ink-3);
+      /* viewport units, so the panel stays full height even if some future
+         ancestor re-introduces a containing block */
+      height:100dvh;
       flex-direction:column;align-items:flex-start;justify-content:center;gap:28px;padding:0 40px;
       transform:translateX(100%);transition:transform .4s cubic-bezier(.5,0,0,1);
-      border-left:1px solid var(--line-soft);z-index:45}
+      border-left:1px solid var(--line-soft);z-index:45;
+      box-shadow:-18px 0 40px rgba(0,0,0,.45)}
     nav.links.open{transform:none}
     nav.links a{font-size:1.1rem}
     .burger{display:block;z-index:46}
