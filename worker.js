@@ -72,6 +72,16 @@ export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
 
+    // One canonical hostname. Both www and the apex resolve to this worker, so
+    // without this the same pages exist at two origins and search engines split
+    // their signals between them. Upgrades the scheme in the same hop so
+    // http://www never costs two redirects.
+    if (url.hostname.startsWith('www.')) {
+      url.hostname = url.hostname.slice(4);
+      url.protocol = 'https:';
+      return Response.redirect(url.toString(), 301);
+    }
+
     if (url.protocol === 'http:') {
       url.protocol = 'https:';
       return Response.redirect(url.toString(), 301);

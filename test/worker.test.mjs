@@ -431,6 +431,21 @@ globalThis.fetch = savedFetch;
 /* ------------------------------------------------------------------ */
 console.log('\n8. transport security');
 
+// www must fold into the apex, and do it in one hop from http.
+for (const [from, expected] of [
+  ['https://www.jessicakortum.com/',            'https://jessicakortum.com/'],
+  ['http://www.jessicakortum.com/contact',      'https://jessicakortum.com/contact'],
+  ['https://www.jessicakortum.com/?a=1',        'https://jessicakortum.com/?a=1']
+]) {
+  const r = await worker.fetch(new Request(from), staticEnv());
+  check('www -> apex: ' + from.replace('https://www.jessicakortum.com','').replace('http://www.jessicakortum.com','http:'),
+    r.status === 301 && r.headers.get('location') === expected,
+    r.status + ' ' + r.headers.get('location'));
+}
+// the apex itself must not be caught by the www rule
+const apex = await worker.fetch(req('/'), staticEnv());
+check('apex is served, not redirected', apex.status === 200, 'got ' + apex.status);
+
 const insecure = await worker.fetch(new Request('http://x.com/'), staticEnv());
 check('http:// is redirected', insecure.status === 301, 'got ' + insecure.status);
 check('redirect target is https',
