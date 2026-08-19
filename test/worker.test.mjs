@@ -463,6 +463,139 @@ check('campaign value is sanitised to slug characters',
   JSON.stringify(capturedInsert && capturedInsert.args));
 
 /* ------------------------------------------------------------------ */
+console.log('\n6d. tasks: auth, validation, batches, completion stamp');
+
+let taskSql = [];
+const taskDb = { prepare: (sql) => {
+  taskSql.push(sql);
+  return {
+    bind(...a){ this.args = a; taskSql[taskSql.length - 1] = { sql, args: a }; return this; },
+    run: async () => ({ meta:{ changes: /WHERE id = \?$/.test(sql) && this?.args?.[this.args.length-1] === 'missing' ? 0 : 1 } }),
+    all: async () => ({ results: [
+      { id:'t1', title:'Call the Whitfields back', notes:'', status:'todo', priority:'high',
+        assignee:'Jessica', due_on:'2026-08-20', lead_id:'l1', campaign_id:'',
+        created_at:'2026-08-18T00:00:00Z', updated_at:'2026-08-18T00:00:00Z', completed_at:'',
+        lead_name:'Dana Whitfield', campaign_name:null }
+    ] }),
+    first: async () => null
+  };
+} };
+
+// Same lock as every other admin route.
+for (const [method, body] of [['GET', null], ['POST', { title:'X' }]]) {
+  let r = await worker.fetch(req('/api/tasks', method, body), { ...staticEnv(), DB: taskDb });
+  check(method + ' /api/tasks -> 503 unconfigured', r.status === 503, 'got ' + r.status);
+  r = await worker.fetch(req('/api/tasks', method, body), authEnv(taskDb));
+  check(method + ' /api/tasks -> 401 without token', r.status === 401, 'got ' + r.status);
+}
+for (const method of ['PATCH', 'DELETE']) {
+  const r = await worker.fetch(req('/api/tasks/t1', method, { status:'done' }), authEnv(taskDb));
+  check(method + ' /api/tasks/:id -> 401 without token', r.status === 401, 'got ' + r.status);
+}
+const taskBadMethod = await worker.fetch(authReq('/api/tasks', 'PUT', {}), authEnv(taskDb));
+check('PUT /api/tasks -> 405', taskBadMethod.status === 405, 'got ' + taskBadMethod.status);
+
+let tRes = await worker.fetch(authReq('/api/tasks'), authEnv(taskDb));
+let tBody = await tRes.json();
+check('GET /api/tasks -> 200 with token', tRes.status === 200, 'got ' + tRes.status);
+check('the linked lead name comes back with the task',
+  tBody.tasks?.[0]?.lead_name === 'Dana Whitfield', JSON.stringify(tBody.tasks?.[0]));
+// A task must outlive the lead it pointed at, so the joins have to be LEFT.
+const listSql = taskSql.map((s) => (typeof s === 'string' ? s : s.sql)).find((s) => /FROM tasks/i.test(s));
+check('list uses LEFT JOIN so deleting a lead cannot hide tasks',
+  /LEFT JOIN leads/i.test(listSql) && /LEFT JOIN campaigns/i.test(listSql), listSql);
+
+for (const [label, body, expected] of [
+  ['no title',      { notes:'x' },                            400],
+  ['blank title',   { title:'   ' },                          400],
+  ['bad status',    { title:'X', status:'someday' },          400],
+  ['bad priority',  { title:'X', priority:'urgent' },         400],
+  ['bad due date',  { title:'X', due_on:'next tuesday' },     400],
+  ['valid',         { title:'Order the survey', status:'todo', priority:'high',
+                      assignee:'Jessica', due_on:'2026-08-25', lead_id:'l1' }, 200]
+]) {
+  const r = await worker.fetch(authReq('/api/tasks', 'POST', body), authEnv(taskDb));
+  check('create: ' + label.padEnd(12) + ' -> ' + expected, r.status === expected, 'got ' + r.status);
+}
+
+// The whole point of a workflow template: one request, the whole job.
+taskSql = [];
+const batch = await worker.fetch(authReq('/api/tasks', 'POST', {
+  tasks: Array.from({ length: 10 }, (_, i) => ({ title: 'Step ' + i, due_on: '2026-09-0' + (i % 9) }))
+}), authEnv(taskDb));
+check('a batch of 10 creates 10', (await batch.json()).created === 10, 'got ' + batch.status);
+const inserts = taskSql.filter((s) => /INSERT INTO tasks/i.test(typeof s === 'string' ? s : s.sql));
+check('one INSERT per task in the batch', inserts.length === 10, 'got ' + inserts.length);
+// The bug class that has bitten this file before: a column added without a
+// matching placeholder or bind.
+const ins = inserts[0];
+const cols = ins.sql.match(/INSERT INTO tasks\s*\(([\s\S]*?)\)\s*VALUES/i)[1].split(',').length;
+const marks = (ins.sql.match(/\?/g) || []).length;
+check('INSERT columns, placeholders and binds agree',
+  cols === marks && marks === ins.args.length, cols + '/' + marks + '/' + ins.args.length);
+
+// One malformed entry must not leave half a workflow behind.
+taskSql = [];
+const halfBad = await worker.fetch(authReq('/api/tasks', 'POST', {
+  tasks: [{ title:'Fine' }, { title:'Also fine', status:'nonsense' }]
+}), authEnv(taskDb));
+check('a bad entry rejects the whole batch', halfBad.status === 400, 'got ' + halfBad.status);
+check('and writes nothing',
+  !taskSql.some((s) => /INSERT INTO tasks/i.test(typeof s === 'string' ? s : s.sql)));
+
+const tooMany = await worker.fetch(authReq('/api/tasks', 'POST', {
+  tasks: Array.from({ length: 41 }, (_, i) => ({ title: 'Step ' + i }))
+}), authEnv(taskDb));
+check('an absurd batch is refused', tooMany.status === 400, 'got ' + tooMany.status);
+
+// Finishing a task stamps it; reopening one clears the stamp.
+const stampOf = async (status) => {
+  taskSql = [];
+  await worker.fetch(authReq('/api/tasks/t1', 'PATCH', { status }), authEnv(taskDb));
+  const upd = taskSql.find((s) => /UPDATE tasks/i.test(typeof s === 'string' ? s : s.sql));
+  const at = upd.sql.split('SET ')[1].split(/,\s*/).findIndex((f) => /completed_at/.test(f));
+  return { sql: upd.sql, value: upd.args[at] };
+};
+const doneStamp = await stampOf('done');
+check('finishing a task records when', /completed_at = \?/.test(doneStamp.sql) && !!doneStamp.value,
+  JSON.stringify(doneStamp));
+const reopened = await stampOf('todo');
+check('reopening one clears it', reopened.value === '', JSON.stringify(reopened));
+
+taskSql = [];
+await worker.fetch(authReq('/api/tasks/t1', 'PATCH', { notes:'called, left a message' }), authEnv(taskDb));
+const notesUpd = taskSql.find((s) => /UPDATE tasks/i.test(typeof s === 'string' ? s : s.sql));
+check('a patch touches only the fields it was given',
+  /SET notes = \?, updated_at = \?/.test(notesUpd.sql), notesUpd.sql);
+check('and never stamps completed_at by accident',
+  !/completed_at/.test(notesUpd.sql), notesUpd.sql);
+
+const emptyPatch = await worker.fetch(authReq('/api/tasks/t1', 'PATCH', {}), authEnv(taskDb));
+check('an empty patch is a 400, not a silent no-op', emptyPatch.status === 400, 'got ' + emptyPatch.status);
+const blankTitle = await worker.fetch(authReq('/api/tasks/t1', 'PATCH', { title:'  ' }), authEnv(taskDb));
+check('a task cannot be renamed to nothing', blankTitle.status === 400, 'got ' + blankTitle.status);
+
+const gone = { prepare: () => ({ bind(){ return this; },
+  run: async () => ({ meta:{ changes: 0 } }), all: async () => ({ results: [] }) }) };
+for (const method of ['PATCH', 'DELETE']) {
+  const r = await worker.fetch(authReq('/api/tasks/missing', method, { status:'done' }), authEnv(gone));
+  check(method + ' a task that is not there -> 404', r.status === 404, 'got ' + r.status);
+}
+const del = await worker.fetch(authReq('/api/tasks/t1', 'DELETE'), authEnv(taskDb));
+check('DELETE /api/tasks/:id -> 200', del.status === 200, 'got ' + del.status);
+
+// Long free text is truncated rather than rejected - losing what someone typed
+// is worse than storing a shortened version of it.
+taskSql = [];
+await worker.fetch(authReq('/api/tasks', 'POST', {
+  title: 'T'.repeat(500), notes: 'N'.repeat(9000), assignee: 'A'.repeat(400)
+}), authEnv(taskDb));
+const longIns = taskSql.find((s) => /INSERT INTO tasks/i.test(typeof s === 'string' ? s : s.sql));
+check('over-long fields are capped, not refused',
+  longIns.args[1].length === 200 && longIns.args[2].length === 4000 && longIns.args[5].length === 80,
+  [longIns.args[1].length, longIns.args[2].length, longIns.args[5].length].join('/'));
+
+/* ------------------------------------------------------------------ */
 console.log('\n7c. SMS alert on a new lead');
 
 const smsDb = { prepare: () => ({ bind() { return this; },

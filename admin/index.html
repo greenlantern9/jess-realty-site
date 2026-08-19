@@ -263,6 +263,41 @@
   .status-pill.draft{background:rgba(154,144,129,.18);color:var(--sage)}
   .status-pill.paused{background:rgba(221,127,74,.16);color:var(--hot)}
 
+  /* ---------------- tasks ----------------
+     Reuses .board / .col / .card wholesale; only what differs lives here. */
+  .card .ttitle{font-weight:600;font-size:.92rem;line-height:1.4;word-break:break-word}
+  .card.tdone .ttitle{color:var(--sage);text-decoration:line-through}
+  .card .tlinks{display:flex;flex-wrap:wrap;gap:4px 6px;margin-top:8px}
+  .chip.lead{background:rgba(201,162,107,.16);color:var(--brass-bright);text-transform:none;
+    letter-spacing:.02em;font-size:.68rem}
+  .chip.camp{background:rgba(183,155,212,.16);color:#cbb6e3;text-transform:none;
+    letter-spacing:.02em;font-size:.68rem}
+  .chip.who{background:transparent;border:1px solid var(--line-soft);color:var(--sage);
+    text-transform:none;letter-spacing:.02em;font-size:.68rem}
+  .tnote{font-size:.75rem;color:var(--sage);margin-top:7px;line-height:1.5;
+    display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+
+  /* workflow picker */
+  .wf-intro{font-size:.87rem;color:var(--cream-soft);line-height:1.6}
+  .wf-list{display:flex;flex-direction:column;gap:9px}
+  .wf{display:block;width:100%;text-align:left;background:var(--ink-2);
+    border:1px solid var(--line-soft);border-radius:4px;padding:13px 15px;transition:.2s}
+  .wf:hover{border-color:var(--line)}
+  .wf[aria-pressed="true"]{border-color:var(--brass);background:var(--ink-4)}
+  .wf .nm{font-weight:650;font-size:.92rem;color:var(--cream);display:flex;gap:9px;align-items:baseline}
+  .wf .n{margin-left:auto;font-size:.68rem;color:var(--sage);letter-spacing:.08em;
+    text-transform:uppercase;white-space:nowrap}
+  .wf .blurb{font-size:.79rem;color:var(--sage);line-height:1.55;margin-top:5px}
+  .wf-preview{background:var(--ink-3);border:1px solid var(--line-soft);border-radius:4px;
+    padding:12px 14px;display:flex;flex-direction:column;gap:0;max-height:260px;overflow-y:auto;
+    scrollbar-width:thin;scrollbar-color:var(--line) transparent}
+  .wf-step{display:grid;grid-template-columns:74px 1fr;gap:10px;padding:7px 0;
+    border-bottom:1px solid var(--line-soft);font-size:.82rem;color:var(--cream-soft)}
+  .wf-step:last-child{border-bottom:0}
+  .wf-step .d{font-size:.7rem;color:var(--sage);letter-spacing:.06em;text-transform:uppercase;
+    white-space:nowrap;padding-top:2px}
+  .wf-step.hi .d{color:var(--brass-bright)}
+
   /* ---------------- view toggle ---------------- */
   .viewtoggle{display:inline-flex;padding:3px;gap:3px;border-radius:4px;
     background:var(--ink-2);border:1px solid var(--line-soft)}
@@ -356,6 +391,7 @@
   <h1 id="moduleTitle">Lead Board</h1>
   <nav class="modules" aria-label="Sections">
     <button id="modLeads" type="button" title="Your pipeline" aria-current="page">Leads</button>
+    <button id="modTasks" type="button" title="What has to get done, and by when">Tasks</button>
     <button id="modCampaigns" type="button" title="Advertising, spend and what it actually produced">Campaigns</button>
     <button id="modCalc" type="button" title="Payment, affordability, seller net and investment numbers">Calculators</button>
   </nav>
@@ -367,7 +403,7 @@
       </svg>
       <span><span class="who-label">Securely signed in as </span><b id="whoEmail"></b></span>
     </span>
-    <a class="btn ghost" href="/admin/guide.html" title="How the board and campaigns work">
+    <a class="btn ghost" href="/admin/guide.html" title="How leads, tasks, campaigns and the calculators work">
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
            stroke-width="2.2" stroke-linecap="round" aria-hidden="true">
         <circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3 2.45V14"/><path d="M12 17.5h.01"/>
@@ -410,10 +446,34 @@
       </svg>Table</button>
   </span>
 
+  <span class="search" id="tqWrap" hidden>
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         stroke-width="2" stroke-linecap="round" aria-hidden="true">
+      <circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>
+    </svg>
+    <input id="tq" type="search" title="Searches titles, notes, who it's for and what it's linked to" placeholder="Search tasks, notes, people…" aria-label="Search tasks">
+  </span>
+  <select id="fTaskWho" aria-label="Filter by who it's for" title="Only show tasks assigned to one person" hidden></select>
+  <select id="fTaskDue" aria-label="Filter by due date" title="Narrow to what is actually pressing" hidden>
+    <option value="">Any due date</option>
+    <option value="overdue">Overdue</option>
+    <option value="today">Due today</option>
+    <option value="week">Due this week</option>
+    <option value="none">No date set</option>
+  </select>
+  <select id="fTaskLink" aria-label="Filter by what it's attached to" title="Tasks attached to a lead, a campaign, or neither" hidden>
+    <option value="">Anything attached</option>
+    <option value="lead">Attached to a lead</option>
+    <option value="campaign">Attached to a campaign</option>
+    <option value="none">Not attached</option>
+  </select>
+
   <button class="btn" id="addLead" type="button" title="Log someone who never used the website - open house, sign call, referral">+ New lead</button>
   <button class="btn ghost" id="exportCsv" type="button" title="Download every lead and field. Your backup.">Export CSV</button>
   <button class="btn" id="newCampaign" type="button" title="Plan an ad, mailer or open house and measure what it produces" hidden>+ New campaign</button>
   <button class="btn ghost" id="mailerCsv" type="button" title="Mail-merge list built from your own contacts" hidden>Mailer CSV</button>
+  <button class="btn" id="addTask" type="button" title="One thing that has to get done" hidden>+ New task</button>
+  <button class="btn ghost" id="runWorkflow" type="button" title="Lay out every step of a standard job at once, with dates already set" hidden>Start a workflow</button>
 
   <div class="stats">
     <span class="stat">Total <b id="stTotal">0</b></span>
@@ -422,6 +482,13 @@
     <span class="stat is-due">Overdue <b id="stDue">0</b></span>
     <span class="stat">Pipeline <b id="stValue">$0</b></span>
   </div>
+
+  <div class="stats" id="taskStats" hidden>
+    <span class="stat">Open <b id="tsOpen">0</b></span>
+    <span class="stat">Due today <b id="tsToday">0</b></span>
+    <span class="stat is-due">Overdue <b id="tsLate">0</b></span>
+    <span class="stat">Done this week <b id="tsDone">0</b></span>
+  </div>
 </div>
 
 <div class="banner" id="banner" hidden></div>
@@ -429,6 +496,7 @@
 <div class="board" id="board" hidden></div>
 <div class="tablewrap" id="tablewrap" hidden></div>
 <div class="tbl-foot" id="tblFoot" hidden></div>
+<div class="board" id="taskBoard" hidden></div>
 
 <div class="calc-wrap" id="calcWrap" hidden>
   <div class="calc-tabs" id="calcTabs" role="tablist"></div>
@@ -546,6 +614,117 @@
     <span class="saved" id="cSaved" hidden>Saved</span>
     <span class="spacer"></span>
     <button class="btn danger" id="cDelete" type="button">Delete</button>
+  </div>
+</aside>
+
+<aside class="drawer" id="taskDrawer" aria-hidden="true" aria-label="Task detail">
+  <div class="drawer-head">
+    <h2 id="tTitleHead">Task</h2>
+    <button class="x" id="tClose" type="button" aria-label="Close">×</button>
+  </div>
+  <div class="drawer-body">
+    <div class="fset" id="tfs-title">
+      <label for="tTitle">What needs doing</label>
+      <input id="tTitle" type="text" placeholder="Call the Alvarez family back about 4412 Bayshore">
+      <span class="err" id="terr-title"></span>
+    </div>
+
+    <div class="grid2">
+      <div class="fset">
+        <label for="tStatus">Status</label>
+        <select id="tStatus" title="Waiting on means it is out of your hands - the lender, the inspector, the client"></select>
+      </div>
+      <div class="fset">
+        <label for="tPriority">Priority</label>
+        <select id="tPriority" title="Shows as the coloured stripe down the left of the card"></select>
+      </div>
+    </div>
+
+    <div class="grid2">
+      <div class="fset">
+        <label for="tAssignee">Who it's for</label>
+        <input id="tAssignee" type="text" placeholder="Jessica" list="assigneeList">
+        <datalist id="assigneeList"></datalist>
+      </div>
+      <div class="fset" id="tfs-due_on">
+        <label for="tDue">Due</label>
+        <input id="tDue" type="date" title="Anything past due is flagged in orange on the board and counted at the top">
+        <span class="err" id="terr-due_on"></span>
+      </div>
+    </div>
+
+    <div class="fset">
+      <label for="tLead">Attached to a lead <span style="text-transform:none;letter-spacing:0">(optional)</span></label>
+      <select id="tLead" title="Ties this task to someone in the pipeline so you can see it from their card"></select>
+    </div>
+
+    <div class="fset">
+      <label for="tCampaign">Attached to a campaign <span style="text-transform:none;letter-spacing:0">(optional)</span></label>
+      <select id="tCampaign" title="For the work a campaign creates - setting it up, checking spend, writing it up"></select>
+    </div>
+
+    <div class="fset">
+      <label for="tNotes">Notes</label>
+      <textarea id="tNotes" placeholder="Details, phone numbers, what you already tried…"></textarea>
+    </div>
+
+    <div class="meta-line" id="tMeta"></div>
+  </div>
+  <div class="drawer-foot">
+    <button class="btn" id="tSave" type="button">Save</button>
+    <button class="btn ghost" id="tCancel" type="button">Cancel</button>
+    <span class="saved" id="tSaved" hidden>Saved</span>
+    <span class="spacer"></span>
+    <button class="btn danger" id="tDelete" type="button">Delete</button>
+  </div>
+</aside>
+
+<aside class="drawer" id="wfDrawer" aria-hidden="true" aria-label="Start a workflow">
+  <div class="drawer-head">
+    <h2>Start a workflow</h2>
+    <button class="x" id="wfClose" type="button" aria-label="Close">×</button>
+  </div>
+  <div class="drawer-body">
+    <p class="wf-intro">
+      A workflow is a job you do the same way every time. Pick one and it creates the
+      whole set of tasks at once, already dated and in order, so nothing quietly falls
+      off. Edit or delete any of them afterwards — they are ordinary tasks from then on.
+    </p>
+
+    <div class="fset">
+      <label>Which job</label>
+      <div class="wf-list" id="wfList" role="group" aria-label="Workflow templates"></div>
+    </div>
+
+    <div class="grid2">
+      <div class="fset">
+        <label for="wfStart">Start from</label>
+        <input id="wfStart" type="date" title="Every due date is counted forward from this day">
+      </div>
+      <div class="fset">
+        <label for="wfWho">Who it's for</label>
+        <input id="wfWho" type="text" placeholder="Jessica" list="assigneeList">
+      </div>
+    </div>
+
+    <div class="fset">
+      <label for="wfLead">Attach to a lead <span style="text-transform:none;letter-spacing:0">(optional)</span></label>
+      <select id="wfLead"></select>
+    </div>
+
+    <div class="fset">
+      <label for="wfCampaign">Attach to a campaign <span style="text-transform:none;letter-spacing:0">(optional)</span></label>
+      <select id="wfCampaign"></select>
+    </div>
+
+    <div class="fset">
+      <label>What you'll get</label>
+      <div class="wf-preview" id="wfPreview"></div>
+    </div>
+  </div>
+  <div class="drawer-foot">
+    <button class="btn" id="wfCreate" type="button">Create tasks</button>
+    <button class="btn ghost" id="wfCancel" type="button">Cancel</button>
   </div>
 </aside>
 
@@ -1871,13 +2050,16 @@
   let activeCampaign = null;   // null while creating
   let module = 'leads';
 
-  const MODULE_TITLES = { leads:'Lead Board', campaigns:'Campaigns', calc:'Calculators' };
+  const MODULE_TITLES = {
+    leads:'Lead Board', tasks:'Tasks', campaigns:'Campaigns', calc:'Calculators'
+  };
 
   function setModule(next){
     module = next;
-    const isLeads = next === 'leads', isCamp = next === 'campaigns', isCalc = next === 'calc';
+    const isLeads = next === 'leads', isCamp = next === 'campaigns',
+          isCalc  = next === 'calc',  isTask = next === 'tasks';
 
-    [['modLeads', isLeads], ['modCampaigns', isCamp], ['modCalc', isCalc]]
+    [['modLeads', isLeads], ['modTasks', isTask], ['modCampaigns', isCamp], ['modCalc', isCalc]]
       .forEach(([id, on]) => el(id).setAttribute('aria-current', on ? 'page' : 'false'));
     el('moduleTitle').textContent = MODULE_TITLES[next] || 'Lead Board';
     store.set('module', next);
@@ -1890,17 +2072,26 @@
       const target = e.closest('.search') || e;
       target.hidden = !isLeads;
     });
+    ['tq','fTaskWho','fTaskDue','fTaskLink','addTask','runWorkflow'].forEach(id => {
+      const e = el(id);
+      if (!e) return;
+      const target = e.closest('.search') || e;
+      target.hidden = !isTask;
+    });
     document.querySelector('.viewtoggle').hidden = !isLeads;
-    document.querySelector('.stats').hidden = !isLeads;
+    el('stTotal').closest('.stats').hidden = !isLeads;
+    el('taskStats').hidden = !isTask;
     el('newCampaign').hidden = !isCamp;
     el('mailerCsv').hidden = !isCamp;
 
     el('campWrap').hidden = !isCamp;
     el('calcWrap').hidden = !isCalc;
+    el('taskBoard').hidden = !isTask;
     if (!isLeads){ board.hidden = true; el('tablewrap').hidden = true; el('tblFoot').hidden = true; }
 
     if (isCamp) loadCampaigns();
     else if (isCalc) renderCalc();
+    else if (isTask) loadTasks();
     else render();
   }
 
@@ -2111,7 +2302,642 @@
   fillSelect(el('cObjective'), OBJECTIVES, 'id', 'label');
   fillSelect(el('cStatus'), CAMP_STATUSES, 'id', 'label');
 
+  /* ================= tasks =================
+     Same shape as the lead board on purpose: a card you drag between columns,
+     a drawer to edit it. The difference is what a column means - a lead moves
+     through a sale, a task just moves toward done.                          */
+
+  const TASK_COLS = [
+    { id:'todo',    label:'To do',       color:'#c9a26b' },
+    { id:'doing',   label:'In progress', color:'#dd7f4a' },
+    { id:'waiting', label:'Waiting on',  color:'#b79bd4' },
+    { id:'done',    label:'Done',        color:'#8fbf9a' }
+  ];
+  const TASK_PRIOS = [
+    { id:'high',   label:'High' },
+    { id:'normal', label:'Normal' },
+    { id:'low',    label:'Low' }
+  ];
+  const TASK_PRIO_COLOR = { high:'var(--hot)', normal:'var(--brass)', low:'var(--cold)' };
+
+  // Finished work is history, not a queue. Keeping every closed task on screen
+  // would eventually make Done the only column you can read.
+  const DONE_SHOWN = 20;
+
+  let tasks = [];
+  let activeTask = null;   // null while creating
+
+  /* ---- workflow templates ----
+     Each step is (days from the start date, priority, title). These are the
+     jobs that get done the same way every time; laying them all out at once is
+     the point, so a step is never remembered late.                           */
+  const WORKFLOWS = [
+    {
+      id:'new_lead', label:'New lead follow-up', attach:'lead',
+      blurb:'The first fortnight after someone gets in touch — the window where speed, not polish, decides whether you get the appointment.',
+      steps:[
+        { d:0,  p:'high',   t:'Call within five minutes of the enquiry' },
+        { d:0,  p:'high',   t:'Text an introduction if the call went to voicemail' },
+        { d:0,  p:'normal', t:'Email a personal note and a saved search' },
+        { d:1,  p:'normal', t:'Second call attempt, different time of day' },
+        { d:3,  p:'normal', t:'Send three listings matched to what they actually asked for' },
+        { d:7,  p:'normal', t:'Check in — ask what they thought of the listings' },
+        { d:14, p:'low',    t:'Decide: appointment booked, long-term nurture, or mark cold' }
+      ]
+    },
+    {
+      id:'listing', label:'New listing launch', attach:'lead',
+      blurb:'Signed listing agreement through the first week on market. Most of the traffic a listing ever gets arrives in that week, so nothing here waits.',
+      steps:[
+        { d:0, p:'high',   t:'File the signed listing agreement and seller disclosures' },
+        { d:0, p:'normal', t:'Book photography, and a floor plan if the layout needs one' },
+        { d:1, p:'normal', t:'Write the listing copy; confirm the price with the seller in writing' },
+        { d:2, p:'high',   t:'Enter in the MLS — verify beds, baths, square footage and tax data' },
+        { d:2, p:'normal', t:'Install the sign and the lockbox' },
+        { d:3, p:'normal', t:'Push to Zillow, social and the website' },
+        { d:5, p:'normal', t:'Schedule the first open house' },
+        { d:7, p:'normal', t:'Send the seller the first week of showing feedback' }
+      ]
+    },
+    {
+      id:'closing', label:'Under contract → closing', attach:'lead',
+      blurb:'A thirty-day contract laid out day by day. Every deadline here is one that costs the client money or the deal if it slips.',
+      steps:[
+        { d:0,  p:'high',   t:'Deliver the executed contract to title and to the lender' },
+        { d:1,  p:'high',   t:'Confirm the escrow deposit landed — get the receipt in writing' },
+        { d:3,  p:'normal', t:'Schedule the inspection' },
+        { d:10, p:'high',   t:'Inspection response deadline — negotiate repairs or credits' },
+        { d:14, p:'normal', t:'Confirm the appraisal is ordered and scheduled' },
+        { d:21, p:'high',   t:'Check the loan is clear to close' },
+        { d:25, p:'normal', t:'Confirm the survey is in and insurance is bound' },
+        { d:28, p:'normal', t:'Schedule the final walkthrough' },
+        { d:29, p:'high',   t:'Review the settlement statement with the client, line by line' },
+        { d:30, p:'high',   t:'Closing day — confirm funding, hand over the keys' }
+      ]
+    },
+    {
+      id:'open_house', label:'Open house', attach:'lead',
+      blurb:'Nine days built around one Sunday. The follow-up steps at the end are where the leads actually come from.',
+      steps:[
+        { d:0, p:'normal', t:'Confirm the date with the seller; order directional signs' },
+        { d:2, p:'normal', t:'Post the open house to social and the neighbourhood groups' },
+        { d:5, p:'normal', t:'Print sign-in sheets, flyers and a net sheet' },
+        { d:6, p:'normal', t:'Remind the neighbours; confirm the seller will be out' },
+        { d:7, p:'high',   t:'Open house — capture contact details for every visitor' },
+        { d:8, p:'high',   t:'Add every attendee to the lead board and follow up' },
+        { d:9, p:'normal', t:'Send the seller a written traffic and feedback report' }
+      ]
+    },
+    {
+      id:'campaign', label:'Campaign launch', attach:'campaign',
+      blurb:'Getting an ad live and then actually judging it. Most campaigns fail quietly because nobody looked at the numbers on day seven.',
+      steps:[
+        { d:0,  p:'high',   t:'Point the ad at the campaign tracking link — without it nothing is attributable' },
+        { d:0,  p:'high',   t:'Confirm the ad is flagged Special Ad Category: Housing' },
+        { d:0,  p:'normal', t:'Set the budget and the end date in the ad platform' },
+        { d:3,  p:'normal', t:'First check — reach and cost per click' },
+        { d:7,  p:'normal', t:'Compare spend against leads attributed on the board' },
+        { d:14, p:'normal', t:'Refresh the creative or move the budget to what is working' },
+        { d:30, p:'normal', t:'Write up what worked before planning the next one' }
+      ]
+    }
+  ];
+
+  let activeWorkflow = WORKFLOWS[0].id;
+
+  async function loadTasks(){
+    try {
+      const data = await api('/api/tasks');
+      tasks = data.tasks || [];
+      hideBanner();
+    } catch (err) {
+      if (err.message !== 'unauthorized') showBanner(err.message);
+    }
+    // Needed for the "attach to a campaign" pickers; a failure here should not
+    // stop the board from rendering.
+    if (!campaigns.length){
+      try { campaigns = (await api('/api/campaigns')).campaigns || []; } catch {}
+    }
+    refreshAssignees();
+    renderTasks();
+  }
+
+  // The assignee list is whatever names have actually been used, so it fills
+  // itself in rather than needing a staff list to be configured up front.
+  function assigneeNames(){
+    return [...new Set(tasks.map(t => (t.assignee || '').trim()).filter(Boolean))]
+      .sort((a, b) => a.localeCompare(b));
+  }
+
+  function refreshAssignees(){
+    const names = assigneeNames();
+
+    const dl = el('assigneeList');
+    dl.textContent = '';
+    names.forEach(n => {
+      const o = document.createElement('option');
+      o.value = n;
+      dl.appendChild(o);
+    });
+
+    const sel = el('fTaskWho');
+    const keep = sel.value;
+    sel.textContent = '';
+    [['', 'Anyone'], ['__none', 'Nobody assigned']].concat(names.map(n => [n, n]))
+      .forEach(([v, l]) => {
+        const o = document.createElement('option');
+        o.value = v; o.textContent = l;
+        sel.appendChild(o);
+      });
+    sel.value = [...sel.options].some(o => o.value === keep) ? keep : '';
+  }
+
+  function taskMatchesDue(t, mode){
+    if (!mode) return true;
+    const d = daysUntil(t.due_on);
+    if (mode === 'none')    return d === null;
+    if (d === null)         return false;
+    if (mode === 'overdue') return d < 0;
+    if (mode === 'today')   return d === 0;
+    if (mode === 'week')    return d >= 0 && d <= 7;
+    return true;
+  }
+
+  function visibleTasks(){
+    const q    = el('tq').value.trim().toLowerCase();
+    const who  = el('fTaskWho').value;
+    const due  = el('fTaskDue').value;
+    const link = el('fTaskLink').value;
+
+    return tasks.filter(t => {
+      if (who === '__none' && (t.assignee || '').trim()) return false;
+      if (who && who !== '__none' && t.assignee !== who) return false;
+      if (!taskMatchesDue(t, due)) return false;
+
+      if (link === 'lead'     && !t.lead_id) return false;
+      if (link === 'campaign' && !t.campaign_id) return false;
+      if (link === 'none'     && (t.lead_id || t.campaign_id)) return false;
+
+      if (!q) return true;
+      return [t.title, t.notes, t.assignee, t.lead_name, t.campaign_name]
+        .some(v => String(v || '').toLowerCase().includes(q));
+    });
+  }
+
+  function renderTaskStats(){
+    const open  = tasks.filter(t => t.status !== 'done');
+    const late  = open.filter(t => { const d = daysUntil(t.due_on); return d !== null && d < 0; });
+    const today = open.filter(t => daysUntil(t.due_on) === 0);
+
+    const weekAgo = Date.now() - 7 * 86400000;
+    const doneWk  = tasks.filter(t =>
+      t.status === 'done' && t.completed_at &&
+      new Date(t.completed_at).getTime() >= weekAgo);
+
+    el('tsOpen').textContent  = open.length;
+    el('tsToday').textContent = today.length;
+    el('tsLate').textContent  = late.length;
+    el('tsDone').textContent  = doneWk.length;
+  }
+
+  function makeTaskCard(t){
+    const card = document.createElement('article');
+    card.className = 'card' + (t.status === 'done' ? ' tdone' : '');
+    card.draggable = true;
+    card.dataset.id = t.id;
+    card.style.setProperty('--prio', TASK_PRIO_COLOR[t.priority] || 'var(--brass)');
+
+    const title = document.createElement('div');
+    title.className = 'ttitle';
+    title.textContent = t.title;
+    card.appendChild(title);
+
+    if (t.notes && t.notes.trim()){
+      const n = document.createElement('div');
+      n.className = 'tnote';
+      n.textContent = t.notes.trim();
+      card.appendChild(n);
+    }
+
+    const links = document.createElement('div');
+    links.className = 'tlinks';
+    if (t.lead_name){
+      const c = document.createElement('span');
+      c.className = 'chip lead';
+      c.textContent = '◆ ' + t.lead_name;
+      links.appendChild(c);
+    }
+    if (t.campaign_name){
+      const c = document.createElement('span');
+      c.className = 'chip camp';
+      c.textContent = '▲ ' + t.campaign_name;
+      links.appendChild(c);
+    }
+    if (t.assignee){
+      const c = document.createElement('span');
+      c.className = 'chip who';
+      c.textContent = t.assignee;
+      links.appendChild(c);
+    }
+    if (links.childElementCount) card.appendChild(links);
+
+    // A finished task's date is no longer a deadline, so it stops shouting.
+    if (t.status === 'done'){
+      if (t.completed_at){
+        const when = document.createElement('div');
+        when.className = 'tnote';
+        when.textContent = 'Done ' + ago(t.completed_at) + ' ago';
+        card.appendChild(when);
+      }
+    } else {
+      const badge = dueBadge({ next_follow_up: t.due_on });
+      if (badge) card.appendChild(badge);
+    }
+
+    const foot = document.createElement('div');
+    foot.className = 'card-foot';
+    const sel = document.createElement('select');
+    sel.setAttribute('aria-label', 'Move task to column');
+    fillSelect(sel, TASK_COLS, 'id', 'label');
+    sel.value = t.status;
+    sel.addEventListener('click', (e) => e.stopPropagation());
+    sel.addEventListener('change', () => setTaskStatus(t.id, sel.value));
+    foot.appendChild(sel);
+    card.appendChild(foot);
+
+    card.addEventListener('click', () => openTask(t.id));
+    card.addEventListener('dragstart', (e) => {
+      card.classList.add('dragging');
+      e.dataTransfer.setData('text/plain', t.id);
+      e.dataTransfer.effectAllowed = 'move';
+    });
+    card.addEventListener('dragend', () => card.classList.remove('dragging'));
+    return card;
+  }
+
+  function renderTasks(){
+    const list = visibleTasks();
+    const wrap = el('taskBoard');
+    wrap.textContent = '';
+    renderTaskStats();
+
+    for (const colDef of TASK_COLS){
+      let items = list.filter(t => t.status === colDef.id);
+      let trimmed = 0;
+      if (colDef.id === 'done'){
+        items = items.slice().sort((a, b) =>
+          String(b.completed_at || b.updated_at).localeCompare(String(a.completed_at || a.updated_at)));
+        if (items.length > DONE_SHOWN){
+          trimmed = items.length - DONE_SHOWN;
+          items = items.slice(0, DONE_SHOWN);
+        }
+      }
+
+      const col = document.createElement('section');
+      col.className = 'col';
+      col.style.setProperty('--stage', colDef.color);
+
+      const head = document.createElement('div');
+      head.className = 'col-head';
+      const h2 = document.createElement('h2');
+      h2.textContent = colDef.label;
+      const n = document.createElement('span');
+      n.className = 'n';
+      n.textContent = items.length + trimmed;
+      head.append(h2, n);
+
+      const late = items.filter(t =>
+        t.status !== 'done' && (() => { const d = daysUntil(t.due_on); return d !== null && d < 0; })()).length;
+      if (late){
+        const v = document.createElement('span');
+        v.className = 'val';
+        v.style.color = '#eda071';
+        v.textContent = late + ' late';
+        head.insertBefore(v, n);
+      }
+
+      const body = document.createElement('div');
+      body.className = 'col-body';
+      if (!items.length){
+        const empty = document.createElement('div');
+        empty.className = 'col-empty';
+        empty.textContent = colDef.id === 'done' ? 'Nothing finished yet' : 'Nothing here';
+        body.appendChild(empty);
+      } else {
+        items.forEach(t => body.appendChild(makeTaskCard(t)));
+        if (trimmed){
+          const more = document.createElement('div');
+          more.className = 'col-empty';
+          more.textContent = '+ ' + trimmed + ' older, hidden';
+          body.appendChild(more);
+        }
+      }
+
+      col.addEventListener('dragover', (e) => { e.preventDefault(); col.classList.add('dragover'); });
+      col.addEventListener('dragleave', () => col.classList.remove('dragover'));
+      col.addEventListener('drop', (e) => {
+        e.preventDefault();
+        col.classList.remove('dragover');
+        const id = e.dataTransfer.getData('text/plain');
+        if (id) setTaskStatus(id, colDef.id);
+      });
+
+      col.append(head, body);
+      wrap.appendChild(col);
+    }
+  }
+
+  async function setTaskStatus(id, status){
+    const t = tasks.find(x => x.id === id);
+    if (!t || t.status === status) return;
+    const prev = { status: t.status, completed_at: t.completed_at };
+    t.status = status;
+    t.completed_at = status === 'done' ? new Date().toISOString() : '';
+    renderTasks();
+    try {
+      await api('/api/tasks/' + encodeURIComponent(id), {
+        method:'PATCH', body: JSON.stringify({ status })
+      });
+      hideBanner();
+    } catch (err) {
+      Object.assign(t, prev);   // put the card back where it was
+      renderTasks();
+      if (err.message !== 'unauthorized') showBanner('Could not move that task: ' + err.message);
+    }
+  }
+
+  function setTaskError(name, msg){
+    const fs = el('tfs-' + name);
+    if (fs) fs.classList.toggle('invalid', !!msg);
+    const e = el('terr-' + name);
+    if (e) e.textContent = msg || '';
+  }
+
+  // Both drawers and the workflow picker choose from the same two lists.
+  function fillLinkSelects(){
+    [el('tLead'), el('wfLead')].forEach(sel => {
+      sel.textContent = '';
+      const none = document.createElement('option');
+      none.value = ''; none.textContent = '— none —';
+      sel.appendChild(none);
+      leads.slice()
+        .sort((a, b) => String(a.name).localeCompare(String(b.name)))
+        .forEach(l => {
+          const o = document.createElement('option');
+          o.value = l.id;
+          const stage = STAGES.find(s => s.id === l.status);
+          o.textContent = l.name + (stage ? ' · ' + stage.label : '');
+          sel.appendChild(o);
+        });
+    });
+
+    [el('tCampaign'), el('wfCampaign')].forEach(sel => {
+      sel.textContent = '';
+      const none = document.createElement('option');
+      none.value = ''; none.textContent = '— none —';
+      sel.appendChild(none);
+      campaigns.forEach(c => {
+        const o = document.createElement('option');
+        o.value = c.id; o.textContent = c.name;
+        sel.appendChild(o);
+      });
+    });
+  }
+
+  function openTaskDrawer(which){
+    fillLinkSelects();
+    el(which).classList.add('open');
+    el(which).setAttribute('aria-hidden', 'false');
+    el('drawerBg').classList.add('open');
+    drawerOpen = true;
+  }
+
+  function openTask(id){
+    ['title','due_on'].forEach(n => setTaskError(n, ''));
+    el('tSaved').hidden = true;
+    activeTask = id;
+    const t = id ? tasks.find(x => x.id === id) : null;
+    if (id && !t) return;
+
+    el('tTitleHead').textContent = t ? 'Task' : 'New task';
+    openTaskDrawer('taskDrawer');
+
+    el('tTitle').value    = t ? t.title : '';
+    el('tStatus').value   = t ? t.status : 'todo';
+    el('tPriority').value = t ? t.priority : 'normal';
+    el('tAssignee').value = t ? (t.assignee || '') : (assigneeNames()[0] || '');
+    el('tDue').value      = t ? (t.due_on || '') : todayISO();
+    // Set after the options exist, or the value silently fails to stick.
+    el('tLead').value     = t ? (t.lead_id || '') : '';
+    el('tCampaign').value = t ? (t.campaign_id || '') : '';
+    el('tNotes').value    = t ? (t.notes || '') : '';
+
+    el('tDelete').style.display = t ? '' : 'none';
+    el('tMeta').textContent = t
+      ? 'Added ' + fullDate(t.created_at) +
+        (t.completed_at ? '  ·  finished ' + fullDate(t.completed_at) : '')
+      : '';
+
+    setTimeout(() => el('tTitle').focus(), 120);
+  }
+
+  function closeTask(){
+    activeTask = null;
+    drawerOpen = false;
+    el('taskDrawer').classList.remove('open');
+    el('taskDrawer').setAttribute('aria-hidden', 'true');
+    el('drawerBg').classList.remove('open');
+  }
+
+  async function saveTask(){
+    ['title','due_on'].forEach(n => setTaskError(n, ''));
+    const payload = {
+      title:       el('tTitle').value.trim(),
+      status:      el('tStatus').value,
+      priority:    el('tPriority').value,
+      assignee:    el('tAssignee').value.trim(),
+      due_on:      el('tDue').value,
+      lead_id:     el('tLead').value,
+      campaign_id: el('tCampaign').value,
+      notes:       el('tNotes').value
+    };
+    if (!payload.title){
+      setTaskError('title', 'Say what needs doing.');
+      el('tTitle').focus();
+      return;
+    }
+
+    const btn = el('tSave');
+    btn.disabled = true; btn.textContent = 'Saving…';
+    try {
+      if (activeTask){
+        await api('/api/tasks/' + encodeURIComponent(activeTask), {
+          method:'PATCH', body: JSON.stringify(payload)
+        });
+      } else {
+        await api('/api/tasks', { method:'POST', body: JSON.stringify(payload) });
+      }
+      await loadTasks();
+      closeTask();
+      hideBanner();
+    } catch (err) {
+      if (err.fieldErrors) Object.entries(err.fieldErrors).forEach(([f, m]) => setTaskError(f, m));
+      if (err.message !== 'unauthorized') showBanner(err.message);
+    } finally {
+      btn.disabled = false; btn.textContent = 'Save';
+    }
+  }
+
+  async function deleteTask(){
+    if (!activeTask) return;
+    const t = tasks.find(x => x.id === activeTask);
+    if (!t) return;
+    if (!confirm('Delete "' + t.title + '"? This cannot be undone.')) return;
+    try {
+      await api('/api/tasks/' + encodeURIComponent(activeTask), { method:'DELETE' });
+      closeTask();
+      await loadTasks();
+    } catch (err) {
+      if (err.message !== 'unauthorized') showBanner('Could not delete: ' + err.message);
+    }
+  }
+
+  /* ---- workflows ---- */
+
+  function addDays(iso, n){
+    const d = new Date((iso || todayISO()) + 'T00:00:00');
+    if (Number.isNaN(d.getTime())) return '';
+    d.setDate(d.getDate() + n);
+    return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+  }
+
+  const dayLabel = (n) => n === 0 ? 'Same day' : n === 1 ? 'Next day' : 'Day ' + n;
+
+  function renderWorkflowList(){
+    const list = el('wfList');
+    list.textContent = '';
+    WORKFLOWS.forEach(w => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'wf';
+      b.setAttribute('aria-pressed', String(w.id === activeWorkflow));
+
+      const nm = document.createElement('div');
+      nm.className = 'nm';
+      const label = document.createElement('span');
+      label.textContent = w.label;
+      const n = document.createElement('span');
+      n.className = 'n';
+      n.textContent = w.steps.length + ' tasks';
+      nm.append(label, n);
+
+      const blurb = document.createElement('div');
+      blurb.className = 'blurb';
+      blurb.textContent = w.blurb;
+
+      b.append(nm, blurb);
+      b.addEventListener('click', () => {
+        activeWorkflow = w.id;
+        renderWorkflowList();
+        renderWorkflowPreview();
+      });
+      list.appendChild(b);
+    });
+  }
+
+  function renderWorkflowPreview(){
+    const w = WORKFLOWS.find(x => x.id === activeWorkflow);
+    const box = el('wfPreview');
+    box.textContent = '';
+    if (!w) return;
+    const start = el('wfStart').value || todayISO();
+
+    w.steps.forEach(s => {
+      const row = document.createElement('div');
+      row.className = 'wf-step' + (s.p === 'high' ? ' hi' : '');
+      const d = document.createElement('span');
+      d.className = 'd';
+      const on = addDays(start, s.d);
+      d.textContent = on
+        ? new Date(on + 'T00:00:00').toLocaleDateString(undefined, { month:'short', day:'numeric' })
+        : dayLabel(s.d);
+      const t = document.createElement('span');
+      t.textContent = s.t;
+      row.append(d, t);
+      box.appendChild(row);
+    });
+  }
+
+  function openWorkflow(){
+    el('wfStart').value = todayISO();
+    el('wfWho').value = assigneeNames()[0] || '';
+    openTaskDrawer('wfDrawer');
+    el('wfLead').value = '';
+    el('wfCampaign').value = '';
+    renderWorkflowList();
+    renderWorkflowPreview();
+  }
+
+  function closeWorkflow(){
+    drawerOpen = false;
+    el('wfDrawer').classList.remove('open');
+    el('wfDrawer').setAttribute('aria-hidden', 'true');
+    el('drawerBg').classList.remove('open');
+  }
+
+  async function createWorkflow(){
+    const w = WORKFLOWS.find(x => x.id === activeWorkflow);
+    if (!w) return;
+    const start    = el('wfStart').value || todayISO();
+    const assignee = el('wfWho').value.trim();
+    const leadId   = el('wfLead').value;
+    const campId   = el('wfCampaign').value;
+
+    const batch = w.steps.map(s => ({
+      title:       s.t,
+      notes:       '',
+      status:      'todo',
+      priority:    s.p,
+      assignee,
+      due_on:      addDays(start, s.d),
+      lead_id:     leadId,
+      campaign_id: campId
+    }));
+
+    const btn = el('wfCreate');
+    btn.disabled = true; btn.textContent = 'Creating…';
+    try {
+      await api('/api/tasks', { method:'POST', body: JSON.stringify({ tasks: batch }) });
+      closeWorkflow();
+      await loadTasks();
+      hideBanner();
+    } catch (err) {
+      if (err.message !== 'unauthorized') showBanner(err.message);
+    } finally {
+      btn.disabled = false; btn.textContent = 'Create tasks';
+    }
+  }
+
+  fillSelect(el('tStatus'), TASK_COLS, 'id', 'label');
+  fillSelect(el('tPriority'), TASK_PRIOS, 'id', 'label');
+
+  el('addTask').addEventListener('click', () => openTask(null));
+  el('runWorkflow').addEventListener('click', openWorkflow);
+  el('tClose').addEventListener('click', closeTask);
+  el('tCancel').addEventListener('click', closeTask);
+  el('tSave').addEventListener('click', saveTask);
+  el('tDelete').addEventListener('click', deleteTask);
+  el('wfClose').addEventListener('click', closeWorkflow);
+  el('wfCancel').addEventListener('click', closeWorkflow);
+  el('wfCreate').addEventListener('click', createWorkflow);
+  el('wfStart').addEventListener('change', renderWorkflowPreview);
+
+  el('tq').addEventListener('input', renderTasks);
+  ['fTaskWho','fTaskDue','fTaskLink'].forEach(id =>
+    el(id).addEventListener('change', renderTasks));
+
   el('modLeads').addEventListener('click', () => setModule('leads'));
+  el('modTasks').addEventListener('click', () => setModule('tasks'));
   el('modCampaigns').addEventListener('click', () => setModule('campaigns'));
   el('modCalc').addEventListener('click', () => setModule('calc'));
   el('newCampaign').addEventListener('click', () => openCampaign(null));
@@ -2142,7 +2968,11 @@
     finally { btn.disabled = false; btn.textContent = 'Mailer CSV'; }
   });
 
-  el('refresh').addEventListener('click', () => module === 'campaigns' ? loadCampaigns() : load());
+  el('refresh').addEventListener('click', () => {
+    if (module === 'campaigns') loadCampaigns();
+    else if (module === 'tasks') loadTasks();
+    else load();
+  });
   el('viewBoard').addEventListener('click', () => setView('board'));
   el('viewTable').addEventListener('click', () => setView('table'));
   // Reflect the persisted choice before the first paint.
@@ -2152,8 +2982,9 @@
   el('addLead').addEventListener('click', () => openDrawer(null));
   el('dClose').addEventListener('click', closeDrawer);
   el('dCancel').addEventListener('click', closeDrawer);
-  // one backdrop, two drawers
-  el('drawerBg').addEventListener('click', () => { closeDrawer(); closeCampaign(); });
+  // one backdrop, four drawers
+  const closeAllDrawers = () => { closeDrawer(); closeCampaign(); closeTask(); closeWorkflow(); };
+  el('drawerBg').addEventListener('click', closeAllDrawers);
   el('dSave').addEventListener('click', saveDrawer);
   el('dDelete').addEventListener('click', deleteLead);
   el('dStamp').addEventListener('click', stampNote);
@@ -2198,11 +3029,14 @@
   });
 
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && drawerOpen) { closeDrawer(); closeCampaign(); }
-    // Ctrl/Cmd+S saves while the drawer is open.
+    if (e.key === 'Escape' && drawerOpen) closeAllDrawers();
+    // Ctrl/Cmd+S saves whichever drawer is open.
     if (drawerOpen && (e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 's'){
       e.preventDefault();
-      saveDrawer();
+      if (el('taskDrawer').classList.contains('open')) saveTask();
+      else if (el('campDrawer').classList.contains('open')) saveCampaign();
+      else if (el('wfDrawer').classList.contains('open')) createWorkflow();
+      else saveDrawer();
     }
   });
 

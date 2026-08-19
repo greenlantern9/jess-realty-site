@@ -180,6 +180,20 @@ async function handleApi(request, env, url, ctx) {
     return handleMailer(request, env);
   }
 
+  if (path === '/api/tasks') {
+    if (request.method === 'GET')  return handleTaskList(request, env);
+    if (request.method === 'POST') return handleTaskCreate(request, env);
+    return methodNotAllowed('GET, POST');
+  }
+
+  const task = path.match(/^\/api\/tasks\/([^/]+)$/);
+  if (task) {
+    const id = decodeURIComponent(task[1]);
+    if (request.method === 'PATCH')  return handleTaskUpdate(request, env, id);
+    if (request.method === 'DELETE') return handleTaskDelete(request, env, id);
+    return methodNotAllowed('PATCH, DELETE');
+  }
+
   const camp = path.match(/^\/api\/campaigns\/([^/]+)$/);
   if (camp) {
     const id = decodeURIComponent(camp[1]);
@@ -349,7 +363,24 @@ const SCHEMA_SQL = [
      updated_at  TEXT NOT NULL
    )`,
   `CREATE INDEX IF NOT EXISTS idx_campaigns_slug ON campaigns(slug)`,
-  `CREATE INDEX IF NOT EXISTS idx_leads_campaign ON leads(campaign)`
+  `CREATE INDEX IF NOT EXISTS idx_leads_campaign ON leads(campaign)`,
+  `CREATE TABLE IF NOT EXISTS tasks (
+     id           TEXT PRIMARY KEY,
+     title        TEXT NOT NULL,
+     notes        TEXT NOT NULL DEFAULT '',
+     status       TEXT NOT NULL DEFAULT 'todo',
+     priority     TEXT NOT NULL DEFAULT 'normal',
+     assignee     TEXT NOT NULL DEFAULT '',
+     due_on       TEXT NOT NULL DEFAULT '',
+     lead_id      TEXT NOT NULL DEFAULT '',
+     campaign_id  TEXT NOT NULL DEFAULT '',
+     created_at   TEXT NOT NULL,
+     updated_at   TEXT NOT NULL,
+     completed_at TEXT NOT NULL DEFAULT ''
+   )`,
+  `CREATE INDEX IF NOT EXISTS idx_tasks_status ON tasks(status)`,
+  `CREATE INDEX IF NOT EXISTS idx_tasks_due    ON tasks(due_on)`,
+  `CREATE INDEX IF NOT EXISTS idx_tasks_lead   ON tasks(lead_id)`
 ];
 
 // Columns added after the table already existed in production. Applied lazily
@@ -372,6 +403,14 @@ const SCHEMA_SQL = [
  * that would put a campaign on the wrong side of that line. Do not "improve"
  * this by adding demographic targeting fields.
  * ------------------------------------------------------------------ */
+
+/* ------------------------------------------------------------------ *
+ * Tasks - a work queue for Jessica or whoever helps her
+ * ------------------------------------------------------------------ */
+
+const TASK_STATUSES   = new Set(['todo', 'doing', 'waiting', 'done']);
+const TASK_PRIORITIES = new Set(['high', 'normal', 'low']);
+const TASK_LIMITS     = { title: 200, notes: 4000, assignee: 80 };
 
 const CAMPAIGN_CHANNELS = new Set([
   'facebook', 'instagram', 'google', 'direct_mail', 'email',
@@ -759,6 +798,161 @@ async function handleExport(request, env) {
     });
   } catch (err) {
     console.error('Export failed:', err);
+    return json({ error: dbErrorMessage(err) }, 500);
+  }
+}
+
+/* ------------------------------------------------------------------ *
+ * tasks
+ * ------------------------------------------------------------------ */
+
+function readTaskBody(body) {
+  const str = (k, max) => String(body[k] ?? '').trim().slice(0, max);
+  const out = {
+    title:       str('title', TASK_LIMITS.title),
+    notes:       str('notes', TASK_LIMITS.notes),
+    assignee:    str('assignee', TASK_LIMITS.assignee),
+    due_on:      str('due_on', 10),
+    lead_id:     str('lead_id', 64),
+    campaign_id: str('campaign_id', 64),
+    status:      body.status   ?? 'todo',
+    priority:    body.priority ?? 'normal'
+  };
+  const errors = {};
+  if (!out.title) errors.title = 'Give the task a title.';
+  if (!TASK_STATUSES.has(out.status))     errors.status = 'Unknown status.';
+  if (!TASK_PRIORITIES.has(out.priority)) errors.priority = 'Unknown priority.';
+  if (out.due_on && !DATE_RE.test(out.due_on)) errors.due_on = 'Use a calendar date.';
+  return { out, errors };
+}
+
+async function handleTaskList(request, env) {
+  const auth = await requireAccess(env, request);
+  if (!auth.ok) return json({ error: auth.message }, auth.status);
+  if (!env.DB) return json({ error: 'Lead database is not bound.' }, 503);
+
+  try {
+    // Join so a card can show "Dana Whitfield" rather than a bare id. LEFT so a
+    // task survives the lead or campaign it pointed at being deleted.
+    const { results } = await withSchema(env, () =>
+      env.DB.prepare(
+        `SELECT t.*, l.name AS lead_name, c.name AS campaign_name
+           FROM tasks t
+           LEFT JOIN leads     l ON l.id = t.lead_id
+           LEFT JOIN campaigns c ON c.id = t.campaign_id
+          ORDER BY CASE WHEN t.due_on = '' THEN 1 ELSE 0 END, t.due_on, t.created_at DESC`
+      ).all()
+    );
+    return json({ tasks: results ?? [], user: auth.email });
+  } catch (err) {
+    console.error('Task query failed:', err);
+    return json({ error: dbErrorMessage(err) }, 500);
+  }
+}
+
+async function handleTaskCreate(request, env) {
+  const auth = await requireAccess(env, request);
+  if (!auth.ok) return json({ error: auth.message }, auth.status);
+  if (!env.DB) return json({ error: 'Lead database is not bound.' }, 503);
+
+  let body;
+  try { body = await request.json(); } catch { return json({ error: 'Invalid JSON.' }, 400); }
+
+  // A workflow template posts several at once; a single task is just a list of one.
+  const items = Array.isArray(body.tasks) ? body.tasks : [body];
+  if (!items.length) return json({ error: 'Nothing to create.' }, 400);
+  if (items.length > 40) return json({ error: 'Too many tasks in one go.' }, 400);
+
+  const parsed = [];
+  for (const item of items) {
+    const { out, errors } = readTaskBody(item);
+    if (Object.keys(errors).length) {
+      return json({ error: 'Please check the highlighted fields.', errors }, 400);
+    }
+    parsed.push(out);
+  }
+
+  const now = new Date().toISOString();
+  try {
+    for (const t of parsed) {
+      await withSchema(env, () =>
+        env.DB.prepare(
+          `INSERT INTO tasks
+             (id, title, notes, status, priority, assignee, due_on,
+              lead_id, campaign_id, created_at, updated_at, completed_at)
+           VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`
+        ).bind(
+          crypto.randomUUID(), t.title, t.notes, t.status, t.priority, t.assignee,
+          t.due_on, t.lead_id, t.campaign_id, now, now,
+          t.status === 'done' ? now : ''
+        ).run()
+      );
+    }
+    return json({ success: true, created: parsed.length });
+  } catch (err) {
+    console.error('Task insert failed:', err);
+    return json({ error: dbErrorMessage(err) }, 500);
+  }
+}
+
+async function handleTaskUpdate(request, env, id) {
+  const auth = await requireAccess(env, request);
+  if (!auth.ok) return json({ error: auth.message }, auth.status);
+  if (!env.DB) return json({ error: 'Lead database is not bound.' }, 503);
+
+  let body;
+  try { body = await request.json(); } catch { return json({ error: 'Invalid JSON.' }, 400); }
+
+  const { out, errors } = readTaskBody({ title: 'placeholder', ...body });
+  if (body.title !== undefined && !String(body.title).trim()) {
+    return json({ error: 'Give the task a title.', errors: { title: 'Required.' } }, 400);
+  }
+  delete errors.title;
+  if (Object.keys(errors).length) {
+    return json({ error: 'Please check the highlighted fields.', errors }, 400);
+  }
+
+  const sets = [], binds = [];
+  for (const f of ['title','notes','status','priority','assignee','due_on','lead_id','campaign_id']) {
+    if (body[f] === undefined) continue;
+    sets.push(`${f} = ?`); binds.push(out[f]);
+  }
+  if (!sets.length) return json({ error: 'Nothing to update.' }, 400);
+
+  const now = new Date().toISOString();
+  // Stamp when it was finished, and clear it if the task is reopened.
+  if (body.status !== undefined) {
+    sets.push('completed_at = ?');
+    binds.push(out.status === 'done' ? now : '');
+  }
+  sets.push('updated_at = ?'); binds.push(now);
+  binds.push(id);
+
+  try {
+    const res = await withSchema(env, () =>
+      env.DB.prepare(`UPDATE tasks SET ${sets.join(', ')} WHERE id = ?`).bind(...binds).run()
+    );
+    if (!res.meta?.changes) return json({ error: 'Task not found.' }, 404);
+    return json({ success: true });
+  } catch (err) {
+    console.error('Task update failed:', err);
+    return json({ error: dbErrorMessage(err) }, 500);
+  }
+}
+
+async function handleTaskDelete(request, env, id) {
+  const auth = await requireAccess(env, request);
+  if (!auth.ok) return json({ error: auth.message }, auth.status);
+  if (!env.DB) return json({ error: 'Lead database is not bound.' }, 503);
+
+  try {
+    const res = await withSchema(env, () =>
+      env.DB.prepare('DELETE FROM tasks WHERE id = ?').bind(id).run()
+    );
+    if (!res.meta?.changes) return json({ error: 'Task not found.' }, 404);
+    return json({ success: true });
+  } catch (err) {
+    console.error('Task delete failed:', err);
     return json({ error: dbErrorMessage(err) }, 500);
   }
 }
