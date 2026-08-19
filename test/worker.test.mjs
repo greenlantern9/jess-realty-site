@@ -282,6 +282,57 @@ r2 = await worker.fetch(
   authReq('/api/leads/abc', 'PATCH', { activityAppend: { type:'call', text:'   ' } }), authEnv(activityDb));
 check('empty activity text rejected', r2.status === 400, 'got ' + r2.status);
 
+// Stage moves are logged by the server. Everything Analytics says about how
+// long a deal took rests on these entries existing.
+const stageDb = (currentStatus) => ({ prepare: (sql) => ({
+  _sql: sql,
+  bind(...a){ this._binds = a; return this; },
+  first: async () => ({ status: currentStatus, activity: '[]' }),
+  run: async function(){
+    if (/UPDATE/i.test(this._sql)) storedActivity = this._binds.find(b => typeof b === 'string' && b.startsWith('['));
+    return { meta: { changes: 1 } };
+  },
+  all: async () => ({ results: [] })
+}) });
+
+storedActivity = null;
+r2 = await worker.fetch(
+  authReq('/api/leads/abc', 'PATCH', { status:'under_contract' }), authEnv(stageDb('contacted')));
+check('stage move -> 200', r2.status === 200, 'got ' + r2.status);
+const stageLog = JSON.parse(storedActivity || '[]');
+check('a stage move writes a log entry',
+  stageLog[0]?.type === 'stage' && /Under Contract/.test(stageLog[0].text), storedActivity);
+// Analytics reads `to`, never the prose - renaming a stage must not break it.
+check('the entry carries the stage ids, not just words',
+  stageLog[0]?.to === 'under_contract' && stageLog[0]?.from === 'contacted', storedActivity);
+check('stamped with a server time', !Number.isNaN(Date.parse(stageLog[0]?.at)));
+
+storedActivity = null;
+r2 = await worker.fetch(
+  authReq('/api/leads/abc', 'PATCH', { status:'contacted' }), authEnv(stageDb('contacted')));
+check('re-saving the same stage logs nothing', !storedActivity, String(storedActivity));
+
+// Full-form saves send every field at once; the log must not double up.
+storedActivity = null;
+r2 = await worker.fetch(authReq('/api/leads/abc', 'PATCH', {
+  status:'closed', activityAppend:{ type:'note', text:'Keys handed over' }
+}), authEnv(stageDb('under_contract')));
+const bothLog = JSON.parse(storedActivity || '[]');
+check('a move logged alongside a note keeps both', bothLog.length === 2, storedActivity);
+check('the typed note stays on top',
+  bothLog[0]?.text === 'Keys handed over' && bothLog[1]?.type === 'stage', storedActivity);
+
+// 'stage' is the server's to write, not something a client may forge.
+r2 = await worker.fetch(
+  authReq('/api/leads/abc', 'PATCH', { activityAppend:{ type:'stage', text:'Moved to Closed' } }),
+  authEnv(stageDb('new')));
+check('a client cannot post a fake stage entry', r2.status === 400, 'got ' + r2.status);
+
+const missingLead = { prepare: () => ({ bind(){ return this; },
+  first: async () => null, run: async () => ({ meta:{ changes:0 } }), all: async () => ({ results: [] }) }) };
+r2 = await worker.fetch(authReq('/api/leads/nope', 'PATCH', { status:'closed' }), authEnv(missingLead));
+check('moving a lead that is not there -> 404', r2.status === 404, 'got ' + r2.status);
+
 /* ------------------------------------------------------------------ */
 console.log('\n8. CSV export');
 

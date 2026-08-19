@@ -173,6 +173,7 @@
      toggled by the attribute needs this or it stays on screen. Bitten by this
      twice already - .board, then the whole leads toolbar. */
   .board[hidden],.tablewrap[hidden],.tbl-foot[hidden],.camp-wrap[hidden],.calc-wrap[hidden],
+  .an-wrap[hidden],
   .stats[hidden],.viewtoggle[hidden],.btn[hidden],.search[hidden]{display:none}
 
   /* ---------------- module switch (Leads | Campaigns) ---------------- */
@@ -276,6 +277,87 @@
     text-transform:none;letter-spacing:.02em;font-size:.68rem}
   .tnote{font-size:.75rem;color:var(--sage);margin-top:7px;line-height:1.5;
     display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+
+  /* ---------------- analytics ---------------- */
+  .an-wrap{flex:1;overflow-y:auto;padding:18px 22px 44px}
+  .an-inner{max-width:1180px;display:flex;flex-direction:column;gap:18px}
+  .an-caveat{font-size:.79rem;color:var(--sage);line-height:1.6;border-left:2px solid var(--line-soft);
+    padding-left:12px}
+  .an-caveat b{color:var(--cream-soft);font-weight:600}
+
+  .an-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(168px,1fr));gap:11px}
+  .kpi{background:var(--ink-2);border:1px solid var(--line-soft);border-radius:4px;padding:14px 16px}
+  .kpi .v{font-family:var(--serif);font-size:1.75rem;color:var(--cream);line-height:1.15;
+    font-variant-numeric:tabular-nums}
+  .kpi .l{font-size:.66rem;letter-spacing:.11em;text-transform:uppercase;color:var(--sage);margin-top:6px}
+  .kpi .d{font-size:.72rem;margin-top:7px;color:var(--sage);display:flex;align-items:center;gap:5px}
+  .kpi .d.up{color:var(--ok)} .kpi .d.down{color:var(--hot)}
+  .kpi .sub{font-size:.72rem;color:var(--sage);margin-top:7px}
+
+  .an-card{background:var(--ink-2);border:1px solid var(--line-soft);border-radius:4px;
+    padding:16px 18px 18px}
+  .an-card > h3{font-size:.92rem;font-weight:650;color:var(--cream)}
+  .an-card > .sub{font-size:.78rem;color:var(--sage);margin-top:4px;line-height:1.55;max-width:64ch}
+  .an-card > .body{margin-top:14px}
+  .an-2{display:grid;grid-template-columns:repeat(auto-fit,minmax(400px,1fr));gap:14px}
+  .an-empty{font-size:.83rem;color:var(--sage);font-style:italic;padding:14px 0}
+
+  .an-chart{width:100%;height:auto;display:block;overflow:visible}
+  .an-chart .grid{stroke:var(--line-soft);stroke-width:1}
+  .an-chart .axis{fill:var(--sage);font-size:10px;font-family:var(--sans)}
+  .an-chart .b1{fill:var(--brass)} .an-chart .b2{fill:var(--ok)}
+  .an-legend{display:flex;gap:16px;flex-wrap:wrap;margin-top:10px;font-size:.74rem;color:var(--sage)}
+  .an-legend span{display:inline-flex;align-items:center;gap:6px}
+  .an-legend i{width:9px;height:9px;border-radius:2px;display:inline-block}
+
+  /* Horizontal bar rows - funnel, sources, response spread.
+     One grid for the whole list, rows as display:contents, so every track and
+     every value lines up. A grid per row sizes each row's columns on its own
+     content and the bars come out ragged. */
+  .hb-list{display:grid;grid-template-columns:minmax(80px,max-content) 1fr max-content;
+    column-gap:11px;align-items:center}
+  .hb{display:contents}
+  .hb > *{padding:6px 0}
+  .hb .k{font-size:.8rem;color:var(--cream-soft)}
+  .hb .track{background:var(--ink-3);border-radius:2px;height:20px;position:relative;overflow:hidden}
+  .hb .fill{position:absolute;inset:0 auto 0 0;background:var(--brass);border-radius:2px;
+    transition:width .3s}
+  .hb .fill.won{background:var(--ok)}
+  .hb .fill.late{background:var(--hot)}
+  .hb .fill.dim{background:var(--ink-4)}
+  .hb .v{font-size:.8rem;color:var(--cream);text-align:right;font-variant-numeric:tabular-nums;
+    white-space:nowrap}
+  .hb .v small{color:var(--sage);font-size:.88em}
+  .hb-drop{grid-column:2/-1;font-size:.7rem;color:var(--sage);padding:0 0 4px;letter-spacing:.02em}
+  .hb-drop b{color:#eda071;font-weight:600}
+
+  table.an{width:100%;border-collapse:separate;border-spacing:0;font-size:.83rem}
+  table.an th{text-align:left;padding:7px 10px;font-size:.65rem;letter-spacing:.11em;
+    text-transform:uppercase;color:var(--sage);border-bottom:1px solid var(--line-soft);font-weight:700}
+  table.an td{padding:9px 10px;border-bottom:1px solid var(--line-soft);white-space:nowrap}
+  table.an td.nm{white-space:normal;color:var(--cream);font-weight:600;min-width:150px}
+  table.an td.num{text-align:right;font-variant-numeric:tabular-nums}
+  table.an tr:last-child td{border-bottom:0}
+  table.an td.good{color:var(--ok)} table.an td.bad{color:var(--hot)}
+
+  /* insights */
+  .ins-list{display:flex;flex-direction:column;gap:10px}
+  .ins{background:var(--ink-3);border:1px solid var(--line-soft);border-left:3px solid var(--sage);
+    border-radius:3px;padding:13px 15px}
+  .ins.warn{border-left-color:var(--hot)}
+  .ins.win{border-left-color:var(--ok)}
+  .ins.act{border-left-color:var(--brass)}
+  .ins h4{font-size:.88rem;font-weight:650;color:var(--cream)}
+  .ins p{font-size:.83rem;color:var(--cream-soft);line-height:1.6;margin-top:5px}
+  .ins .do{font-size:.83rem;color:var(--brass-bright);line-height:1.6;margin-top:7px}
+  .ins .do b{color:var(--brass-bright);font-weight:650}
+  .ins .jump{margin-top:9px}
+
+  @media(max-width:700px){
+    .an-wrap{padding:14px 15px 34px}
+    .hb-list{grid-template-columns:minmax(66px,max-content) 1fr max-content;column-gap:8px}
+    .hb .k,.hb .v{font-size:.75rem}
+  }
 
   /* workflow picker */
   .wf-intro{font-size:.87rem;color:var(--cream-soft);line-height:1.6}
@@ -393,6 +475,7 @@
     <button id="modLeads" type="button" title="Your pipeline" aria-current="page">Leads</button>
     <button id="modTasks" type="button" title="What has to get done, and by when">Tasks</button>
     <button id="modCampaigns" type="button" title="Advertising, spend and what it actually produced">Campaigns</button>
+    <button id="modAnalytics" type="button" title="What the numbers say, and what to do about it">Analytics</button>
     <button id="modCalc" type="button" title="Payment, affordability, seller net and investment numbers">Calculators</button>
   </nav>
   <div class="bar-right">
@@ -475,6 +558,9 @@
   <button class="btn" id="addTask" type="button" title="One thing that has to get done" hidden>+ New task</button>
   <button class="btn ghost" id="runWorkflow" type="button" title="Lay out every step of a standard job at once, with dates already set" hidden>Start a workflow</button>
 
+  <select id="anRange" aria-label="Period" title="Everything below is measured over this period" hidden></select>
+  <button class="btn ghost" id="anCopy" type="button" title="Put a plain-text summary on the clipboard" hidden>Copy summary</button>
+
   <div class="stats">
     <span class="stat">Total <b id="stTotal">0</b></span>
     <span class="stat">New <b id="stNew">0</b></span>
@@ -497,6 +583,10 @@
 <div class="tablewrap" id="tablewrap" hidden></div>
 <div class="tbl-foot" id="tblFoot" hidden></div>
 <div class="board" id="taskBoard" hidden></div>
+
+<div class="an-wrap" id="anWrap" hidden>
+  <div class="an-inner" id="anInner"></div>
+</div>
 
 <div class="calc-wrap" id="calcWrap" hidden>
   <div class="calc-tabs" id="calcTabs" role="tablist"></div>
@@ -912,7 +1002,8 @@
   }
   const splitTags = (s) => String(s || '').split(',').map(t => t.trim()).filter(Boolean);
 
-  const ACTIVITY_ICON = { call:'📞', text:'💬', email:'✉️', showing:'🏠', offer:'📄', note:'✎' };
+  // 'stage' is written by the server on a stage move, never chosen by hand.
+  const ACTIVITY_ICON = { call:'📞', text:'💬', email:'✉️', showing:'🏠', offer:'📄', note:'✎', stage:'⇢' };
 
   const todayISO = () => {
     const d = new Date();
@@ -2051,15 +2142,18 @@
   let module = 'leads';
 
   const MODULE_TITLES = {
-    leads:'Lead Board', tasks:'Tasks', campaigns:'Campaigns', calc:'Calculators'
+    leads:'Lead Board', tasks:'Tasks', campaigns:'Campaigns',
+    analytics:'Analytics', calc:'Calculators'
   };
 
   function setModule(next){
     module = next;
     const isLeads = next === 'leads', isCamp = next === 'campaigns',
-          isCalc  = next === 'calc',  isTask = next === 'tasks';
+          isCalc  = next === 'calc',  isTask = next === 'tasks',
+          isAn    = next === 'analytics';
 
-    [['modLeads', isLeads], ['modTasks', isTask], ['modCampaigns', isCamp], ['modCalc', isCalc]]
+    [['modLeads', isLeads], ['modTasks', isTask], ['modCampaigns', isCamp],
+     ['modAnalytics', isAn], ['modCalc', isCalc]]
       .forEach(([id, on]) => el(id).setAttribute('aria-current', on ? 'page' : 'false'));
     el('moduleTitle').textContent = MODULE_TITLES[next] || 'Lead Board';
     store.set('module', next);
@@ -2078,6 +2172,7 @@
       const target = e.closest('.search') || e;
       target.hidden = !isTask;
     });
+    ['anRange','anCopy'].forEach(id => { el(id).hidden = !isAn; });
     document.querySelector('.viewtoggle').hidden = !isLeads;
     el('stTotal').closest('.stats').hidden = !isLeads;
     el('taskStats').hidden = !isTask;
@@ -2087,11 +2182,13 @@
     el('campWrap').hidden = !isCamp;
     el('calcWrap').hidden = !isCalc;
     el('taskBoard').hidden = !isTask;
+    el('anWrap').hidden = !isAn;
     if (!isLeads){ board.hidden = true; el('tablewrap').hidden = true; el('tblFoot').hidden = true; }
 
     if (isCamp) loadCampaigns();
     else if (isCalc) renderCalc();
     else if (isTask) loadTasks();
+    else if (isAn) loadAnalytics();
     else render();
   }
 
@@ -2099,6 +2196,7 @@
     try {
       const data = await api('/api/campaigns');
       campaigns = data.campaigns || [];
+      campaignsLoaded = true;
       hideBanner();
     } catch (err) {
       if (err.message !== 'unauthorized') showBanner(err.message);
@@ -2409,6 +2507,7 @@
     try {
       const data = await api('/api/tasks');
       tasks = data.tasks || [];
+      tasksLoaded = true;
       hideBanner();
     } catch (err) {
       if (err.message !== 'unauthorized') showBanner(err.message);
@@ -2918,6 +3017,833 @@
     }
   }
 
+  /* ================= analytics =================
+     Computed in the browser from the same three fetches the other modules
+     make. No new endpoint, no rollup table, and no number on this screen that
+     you could not get to by opening the rows behind it.
+
+     Two honesty rules, because a confident wrong figure is worse than no
+     figure: anything resting on data that may not have been recorded says so
+     on the card, and nothing is inferred about *who* leads are - only where
+     they came from and what happened next. Do not add demographic breakdowns
+     here; see the fair-housing note above the campaigns module. */
+
+  const AN_RANGES = [
+    { id:'30',  label:'Last 30 days',   days:30 },
+    { id:'90',  label:'Last 90 days',   days:90 },
+    { id:'365', label:'Last 12 months', days:365 },
+    { id:'all', label:'All time',       days:null }
+  ];
+  let anRange = store.get('anRange', '90');
+  let campaignsLoaded = false, tasksLoaded = false;
+
+  // 'lost' is deliberately absent - it is where leads leave the ladder, not a
+  // rung on it.
+  const STAGE_ORDER = ['new', 'contacted', 'active', 'under_contract', 'closed'];
+  const STAGE_LABEL = Object.fromEntries(STAGES.map(s => [s.id, s.label]));
+  const TOUCH_TYPES = new Set(['call', 'text', 'email']);
+  const DAY = 86400000;
+
+  const ts = (v) => { const n = Date.parse(v); return Number.isNaN(n) ? null : n; };
+  const pct = (n, d) => (d > 0 ? Math.round((n / d) * 100) : 0);
+  function median(list){
+    if (!list.length) return null;
+    const s = list.slice().sort((a, b) => a - b);
+    const m = Math.floor(s.length / 2);
+    return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
+  }
+  function humanDur(ms){
+    if (ms === null || ms === undefined) return '—';
+    const mins = ms / 60000;
+    if (mins < 60)  return Math.round(mins) + ' min';
+    const hrs = mins / 60;
+    if (hrs < 48)   return (hrs < 10 ? hrs.toFixed(1) : Math.round(hrs)) + ' hr';
+    return Math.round(hrs / 24) + ' days';
+  }
+  // money0() comes from the calculators block above - same format, and it
+  // already handles negatives.
+
+  function anWindow(){
+    const r = AN_RANGES.find((x) => x.id === anRange) || AN_RANGES[1];
+    const to = Date.now();
+    if (!r.days) return { from:-Infinity, to, prevFrom:null, prevTo:null, days:null, label:r.label };
+    const from = to - r.days * DAY;
+    return { from, to, prevFrom: from - r.days * DAY, prevTo: from, days: r.days, label: r.label };
+  }
+
+  // Everything time-based about a lead, read once from its contact log.
+  function leadFacts(l){
+    const created = ts(l.created_at);
+    const log = readActivity(l.activity);
+    let firstTouch = null, closedAt = null, lostAt = null;
+    let reached = STAGE_ORDER.indexOf(l.status);
+
+    for (const e of log){
+      const at = ts(e.at);
+      if (at === null) continue;
+      if (TOUCH_TYPES.has(e.type)) firstTouch = firstTouch === null ? at : Math.min(firstTouch, at);
+      if (e.type === 'stage'){
+        const i = STAGE_ORDER.indexOf(e.to);
+        if (i > reached) reached = i;
+        if (e.to === 'closed' && (closedAt === null || at < closedAt)) closedAt = at;
+        if (e.to === 'lost'  && (lostAt  === null || at < lostAt))  lostAt  = at;
+      }
+    }
+    if (reached < 0) reached = 0;   // lost, or a stage this build does not know
+
+    // Stage logging started partway through this system's life, so a deal that
+    // closed before it existed has no entry. Falling back to the row's last
+    // update dates it roughly rather than dropping it - flagged as approximate.
+    const closedOn = closedAt ?? (l.status === 'closed' ? ts(l.updated_at) : null);
+    const lostOn   = lostAt   ?? (l.status === 'lost'   ? ts(l.updated_at) : null);
+
+    return {
+      created, firstTouch, reached, closedOn, lostOn,
+      exact: closedAt !== null || l.status !== 'closed',
+      responseMs: created !== null && firstTouch !== null ? Math.max(0, firstTouch - created) : null,
+      cycleMs: created !== null && closedOn !== null ? Math.max(0, closedOn - created) : null,
+      budget: Number(l.budget) || 0,
+      open: l.status !== 'closed' && l.status !== 'lost'
+    };
+  }
+
+  function anCompute(){
+    const win = anWindow();
+    const F = new Map(leads.map((l) => [l.id, leadFacts(l)]));
+    const f = (l) => F.get(l.id);
+    const inWin  = (t) => t !== null && t >= win.from && t <= win.to;
+    const inPrev = (t) => win.prevFrom !== null && t !== null && t >= win.prevFrom && t < win.prevTo;
+
+    const arrived     = leads.filter((l) => inWin(f(l).created));
+    const arrivedPrev = leads.filter((l) => inPrev(f(l).created));
+    const won         = leads.filter((l) => inWin(f(l).closedOn));
+    const wonPrev     = leads.filter((l) => inPrev(f(l).closedOn));
+    const lost        = leads.filter((l) => inWin(f(l).lostOn));
+    const open        = leads.filter((l) => f(l).open);
+
+    const responses = arrived.map((l) => f(l).responseMs).filter((v) => v !== null);
+    const cycles    = won.map((l) => f(l).cycleMs).filter((v) => v !== null);
+    const approxWins = won.filter((l) => !f(l).exact).length;
+
+    // How many of the arrivals were ever logged as contacted at all. If this is
+    // low the response figures are measuring record-keeping, not service.
+    const loggedShare = pct(arrived.filter((l) => f(l).responseMs !== null).length, arrived.length);
+
+    const buckets = anBuckets(win).map((b) => ({
+      ...b,
+      arrived: leads.filter((l) => { const t = f(l).created; return t !== null && t >= b.from && t < b.to; }).length,
+      won:     leads.filter((l) => { const t = f(l).closedOn; return t !== null && t >= b.from && t < b.to; }).length
+    }));
+
+    // Funnel over the arrival cohort: of the leads that came in during this
+    // period, how far has each one got.
+    const funnel = STAGE_ORDER.map((id, i) => ({
+      id, label: STAGE_LABEL[id] || id,
+      n: arrived.filter((l) => f(l).reached >= i).length
+    }));
+
+    // Response spread, in the buckets that actually change what you'd do.
+    const bands = [
+      { id:'h1',   label:'Within 1 hr',  test:(v) => v !== null && v <= 3600e3 },
+      { id:'h24',  label:'Same day',     test:(v) => v !== null && v > 3600e3 && v <= DAY },
+      { id:'d3',   label:'1–3 days',     test:(v) => v !== null && v > DAY && v <= 3 * DAY },
+      { id:'late', label:'Longer',       test:(v) => v !== null && v > 3 * DAY },
+      { id:'none', label:'Nothing logged', test:(v) => v === null }
+    ].map((b) => ({ ...b, n: arrived.filter((l) => b.test(f(l).responseMs)).length }));
+
+    const bySource = SOURCES.map((s) => {
+      const mine = arrived.filter((l) => (l.source || 'other') === s.id);
+      const closedOfMine = mine.filter((l) => l.status === 'closed');
+      return {
+        id: s.id, label: s.label, n: mine.length, won: closedOfMine.length,
+        rate: pct(closedOfMine.length, mine.length),
+        value: mine.reduce((a, l) => a + f(l).budget, 0)
+      };
+    }).filter((r) => r.n).sort((a, b) => b.won - a.won || b.n - a.n);
+
+    // Campaigns are deliberately all-time: spend is a running total with no
+    // date on it, so dividing it by a windowed lead count would be nonsense.
+    const byCampaign = campaigns.map((c) => {
+      const mine = leads.filter((l) => l.campaign === c.slug);
+      const closedOfMine = mine.filter((l) => l.status === 'closed');
+      const spend = Number(c.spend) || 0;
+      return {
+        id: c.id, name: c.name, status: c.status, channel: c.channel, spend,
+        n: mine.length, won: closedOfMine.length,
+        cpl: mine.length ? spend / mine.length : null,
+        cpw: closedOfMine.length ? spend / closedOfMine.length : null,
+        started: ts(c.starts_on) ?? ts(c.created_at)
+      };
+    }).sort((a, b) => b.spend - a.spend);
+
+    const totalSpend = byCampaign.reduce((a, c) => a + c.spend, 0);
+    const attributedWins = byCampaign.reduce((a, c) => a + c.won, 0);
+
+    const doneInWin = tasks.filter((t) => inWin(ts(t.completed_at)));
+    const dueDone   = tasks.filter((t) => t.status === 'done' && t.due_on && t.completed_at);
+    const onTime    = dueDone.filter((t) => String(t.completed_at).slice(0, 10) <= t.due_on);
+    const openTasks = tasks.filter((t) => t.status !== 'done');
+    const lateTasks = openTasks.filter((t) => { const d = daysUntil(t.due_on); return d !== null && d < 0; });
+    const waiting   = tasks.filter((t) => t.status === 'waiting');
+    const stuck     = waiting.filter((t) => { const u = ts(t.updated_at); return u !== null && Date.now() - u > 10 * DAY; });
+    const taskBuckets = buckets.map((b) => ({
+      ...b,
+      done: tasks.filter((t) => { const c = ts(t.completed_at); return c !== null && c >= b.from && c < b.to; }).length
+    }));
+
+    return {
+      win, F, f, arrived, arrivedPrev, won, wonPrev, lost, open,
+      responses, cycles, approxWins, loggedShare, buckets, taskBuckets, funnel, bands,
+      bySource, byCampaign, totalSpend, attributedWins,
+      medianResponse: median(responses),
+      medianCycle: median(cycles),
+      winRate: pct(won.length, won.length + lost.length),
+      pipeline: open.reduce((a, l) => a + f(l).budget, 0),
+      noFollowUp: open.filter((l) => !l.next_follow_up).length,
+      noBudget: open.filter((l) => !f(l).budget).length,
+      untracked: arrived.filter((l) => !l.campaign).length,
+      tasks: {
+        doneInWin: doneInWin.length, open: openTasks.length, late: lateTasks.length,
+        onTimeRate: pct(onTime.length, dueDone.length), rated: dueDone.length,
+        waiting: waiting.length, stuck: stuck.length
+      }
+    };
+  }
+
+  function anBuckets(win){
+    const to = win.to;
+    let from = win.from;
+    if (!Number.isFinite(from)){
+      const times = leads.map((l) => ts(l.created_at)).filter((v) => v !== null);
+      from = times.length ? Math.min(...times) : to - 90 * DAY;
+    }
+    const spanDays = Math.max(7, (to - from) / DAY);
+    const out = [];
+
+    if (spanDays <= 130){
+      const n = Math.max(1, Math.ceil(spanDays / 7));
+      for (let i = n - 1; i >= 0; i--){
+        const end = to - i * 7 * DAY;
+        const start = end - 7 * DAY;
+        out.push({ from:start, to:end,
+          label:new Date(start).toLocaleDateString(undefined, { month:'short', day:'numeric' }) });
+      }
+    } else {
+      const months = Math.min(24, Math.max(2, Math.ceil(spanDays / 30)));
+      const anchor = new Date(to); anchor.setDate(1); anchor.setHours(0, 0, 0, 0);
+      for (let i = months - 1; i >= 0; i--){
+        const a = new Date(anchor); a.setMonth(a.getMonth() - i);
+        const b = new Date(a);      b.setMonth(b.getMonth() + 1);
+        out.push({ from:+a, to:+b,
+          label:a.toLocaleDateString(undefined, { month:'short' }) +
+                (a.getMonth() === 0 ? " '" + String(a.getFullYear()).slice(2) : '') });
+      }
+    }
+    return out;
+  }
+
+  /* ---- drawing ---- */
+
+  const SVGNS = 'http://www.w3.org/2000/svg';
+  function svgEl(name, attrs){
+    const e = document.createElementNS(SVGNS, name);
+    for (const [k, v] of Object.entries(attrs || {})) e.setAttribute(k, v);
+    return e;
+  }
+
+  function anTimeSeries(buckets, keyA, keyB, desc){
+    const W = 700, H = 186, P = { l:30, r:6, t:10, b:24 };
+    const vals = buckets.flatMap((b) => [b[keyA] || 0, keyB ? (b[keyB] || 0) : 0]);
+    const max = Math.max(1, ...vals);
+    const plotW = W - P.l - P.r, plotH = H - P.t - P.b;
+
+    const svg = svgEl('svg', { class:'an-chart', viewBox:`0 0 ${W} ${H}`,
+      preserveAspectRatio:'xMidYMid meet', role:'img' });
+    const title = svgEl('title', {});
+    title.textContent = desc;
+    svg.appendChild(title);
+
+    for (const frac of [0, 0.5, 1]){
+      const y = P.t + plotH * (1 - frac);
+      svg.appendChild(svgEl('line', { class:'grid', x1:P.l, x2:W - P.r, y1:y, y2:y }));
+      const t = svgEl('text', { class:'axis', x:P.l - 6, y:y + 3.5, 'text-anchor':'end' });
+      t.textContent = String(Math.round(max * frac));
+      svg.appendChild(t);
+    }
+
+    const slot = plotW / buckets.length;
+    const bw = Math.max(3, Math.min(16, slot / 2 - 2));
+    const every = Math.ceil(buckets.length / 12);
+    buckets.forEach((b, i) => {
+      const cx = P.l + slot * i + slot / 2;
+      [[b[keyA] || 0, 'b1', -1], [keyB ? (b[keyB] || 0) : 0, 'b2', 1]].forEach(([v, cls, side]) => {
+        if (v <= 0) return;
+        const h = Math.max(1.5, plotH * v / max);
+        svg.appendChild(svgEl('rect', { class:cls, rx:1,
+          x: cx + (side < 0 ? -bw - 1 : 1), y: P.t + plotH - h, width:bw, height:h }));
+      });
+      if (i % every === 0){
+        const t = svgEl('text', { class:'axis', x:cx, y:H - 7, 'text-anchor':'middle' });
+        t.textContent = b.label;
+        svg.appendChild(t);
+      }
+    });
+    return svg;
+  }
+
+  function legend(items){
+    const box = document.createElement('div');
+    box.className = 'an-legend';
+    items.forEach(([colour, label]) => {
+      const s = document.createElement('span');
+      const i = document.createElement('i');
+      i.style.background = colour;
+      const t = document.createElement('span');
+      t.textContent = label;
+      s.append(i, t);
+      box.appendChild(s);
+    });
+    return box;
+  }
+
+  function hbList(parent){
+    const list = document.createElement('div');
+    list.className = 'hb-list';
+    parent.appendChild(list);
+    return list;
+  }
+
+  function hbRow(parent, key, value, max, opts = {}){
+    const row = document.createElement('div');
+    row.className = 'hb';
+    const k = document.createElement('div');
+    k.className = 'k';
+    k.textContent = key;
+    const track = document.createElement('div');
+    track.className = 'track';
+    const fill = document.createElement('div');
+    fill.className = 'fill' + (opts.cls ? ' ' + opts.cls : '');
+    fill.style.width = (max > 0 && value > 0 ? Math.max(1.5, value / max * 100) : 0) + '%';
+    track.appendChild(fill);
+    const v = document.createElement('div');
+    v.className = 'v';
+    v.textContent = opts.text ?? String(value);
+    if (opts.note){
+      const s = document.createElement('small');
+      s.textContent = ' ' + opts.note;
+      v.appendChild(s);
+    }
+    row.append(k, track, v);
+    parent.appendChild(row);
+  }
+
+  function anCard(title, sub){
+    const card = document.createElement('section');
+    card.className = 'an-card';
+    const h = document.createElement('h3');
+    h.textContent = title;
+    card.appendChild(h);
+    if (sub){
+      const s = document.createElement('p');
+      s.className = 'sub';
+      s.textContent = sub;
+      card.appendChild(s);
+    }
+    const body = document.createElement('div');
+    body.className = 'body';
+    card.appendChild(body);
+    card.body = body;
+    return card;
+  }
+
+  function kpi(value, label, opts = {}){
+    const box = document.createElement('div');
+    box.className = 'kpi';
+    const v = document.createElement('div');
+    v.className = 'v';
+    v.textContent = value;
+    const l = document.createElement('div');
+    l.className = 'l';
+    l.textContent = label;
+    box.append(v, l);
+    if (opts.delta !== undefined && opts.delta !== null){
+      const d = document.createElement('div');
+      d.className = 'd ' + (opts.delta > 0 ? 'up' : opts.delta < 0 ? 'down' : '');
+      d.textContent = (opts.delta > 0 ? '▲ ' : opts.delta < 0 ? '▼ ' : '') +
+        (opts.delta === 0 ? 'level on the period before' :
+          Math.abs(opts.delta) + '% on the period before');
+      box.appendChild(d);
+    } else if (opts.sub){
+      const s = document.createElement('div');
+      s.className = 'sub';
+      s.textContent = opts.sub;
+      box.appendChild(s);
+    }
+    return box;
+  }
+
+  const deltaPct = (now, before) => {
+    if (before === 0) return now === 0 ? 0 : null;
+    return Math.round(((now - before) / before) * 100);
+  };
+
+  /* ---- insights ----
+     Each rule fires only when the data actually supports it, and every one
+     ends with something to do. A dashboard that only describes is a dashboard
+     nobody opens twice.                                                     */
+
+  function anInsights(m){
+    const out = [];
+    const add = (tone, title, body, todo, jump) => out.push({ tone, title, body, todo, jump });
+    const goTo = (mod, setup) => () => { if (setup) setup(); setModule(mod); };
+
+    if (leads.length < 8){
+      add('', 'There is not much here yet',
+        'With ' + leads.length + ' lead' + (leads.length === 1 ? '' : 's') + ' on the board, every ' +
+        'percentage below moves several points when one thing changes. Treat these as a direction, not a measurement.',
+        'Keep logging everything — this page gets useful somewhere around thirty leads.');
+    }
+
+    if (m.loggedShare < 50 && m.arrived.length >= 5){
+      add('warn', 'Most contact is not being logged',
+        'Only ' + m.loggedShare + '% of the leads that arrived in this period have a call, text or email ' +
+        'recorded against them. Response time below is measuring your record-keeping, not your service.',
+        'Log the first call as you finish it — it is the one entry everything else on this page is built on.');
+    } else if (m.medianResponse !== null && m.medianResponse > 3600e3){
+      add('warn', 'First contact takes ' + humanDur(m.medianResponse),
+        'Half the leads with anything logged against them waited longer than that for a first call, text ' +
+        'or email' +
+        (m.loggedShare < 80 ? ', and ' + (100 - m.loggedShare) + '% have nothing logged at all' : '') +
+        '. A web enquiry is someone sitting at a screen with other tabs open, and whoever calls first ' +
+        'usually gets the appointment.',
+        'Aim to make the first attempt inside the hour. The New lead follow-up workflow puts that step first.',
+        { label: 'Open Tasks', run: goTo('tasks') });
+    } else if (m.medianResponse !== null && m.arrived.length >= 5){
+      add('win', 'First contact in ' + humanDur(m.medianResponse),
+        'That is fast, and it is the single habit that most separates agents who convert web leads from ' +
+        'those who do not. Keep it.', 'Nothing to fix here.');
+    }
+
+    if (m.noFollowUp > 0){
+      const allUndated = leads.filter((l) => !l.next_follow_up).length;
+      add('act', m.noFollowUp + ' live lead' + (m.noFollowUp === 1 ? ' has' : 's have') + ' no follow-up date',
+        'These are the ones that quietly disappear. Nothing on the board will ever remind you about them, ' +
+        'because you never told it when to.' +
+        (allUndated > m.noFollowUp
+          ? ' Show me lists all ' + allUndated + ' leads without a date — the ' + m.noFollowUp +
+            ' that matter are the ones outside Closed and Lost / Cold.'
+          : ''),
+        'Give every one a date, even if the date is three months out.',
+        { label: 'Show me', run: goTo('leads', () => { el('fDue').value = 'none'; el('q').value = ''; }) });
+    }
+
+    const stale = m.open.filter((l) => l.status === 'new' &&
+      m.f(l).created !== null && Date.now() - m.f(l).created > 2 * DAY);
+    if (stale.length){
+      add('warn', stale.length + ' lead' + (stale.length === 1 ? '' : 's') + ' still sitting in New',
+        'They have been there more than two days. A lead in New is one nobody has spoken to yet.',
+        'Work them today, or move the ones you have genuinely given up on to Lost / Cold so the number means something.',
+        { label: 'Show me', run: goTo('leads', () => { el('q').value = ''; el('fDue').value = ''; }) });
+    }
+
+    if (m.win.days && m.arrived.length === 0){
+      add('warn', 'No new leads in this period',
+        'Nothing arrived in the last ' + m.win.days + ' days. Everything downstream — pipeline, closings, ' +
+        'commission — is fed by this one number.',
+        'This is a marketing problem, not a follow-up problem. Look at what was running last time leads were coming in.',
+        { label: 'Open Campaigns', run: goTo('campaigns') });
+    }
+
+    const best = m.bySource.filter((s) => s.won >= 2)[0];
+    if (best && m.bySource.length > 1){
+      add('win', best.label + ' is where your closings come from',
+        best.won + ' of the leads that arrived in this period from ' + best.label.toLowerCase() +
+        ' have closed — a ' + best.rate + '% rate against ' +
+        pct(m.arrived.filter((l) => l.status === 'closed').length, m.arrived.length) + '% across everything.',
+        'Put more hours into what feeds that source before spending money anywhere else.');
+    }
+    const dud = m.bySource.find((s) => s.n >= 8 && s.won === 0);
+    if (dud){
+      add('act', dud.label + ' produces volume but no closings',
+        dud.n + ' leads and nothing closed yet. That is either a bad-fit source or one that needs a different ' +
+        'first conversation — both are worth knowing before you buy more of it.',
+        'Before writing it off, check whether those leads are being worked as hard as the rest.');
+    }
+
+    const spending = m.byCampaign.filter((c) => c.spend > 0);
+    const dead = spending.find((c) => c.n === 0 && c.started !== null && Date.now() - c.started > 14 * DAY);
+    if (dead){
+      add('warn', money0(dead.spend) + ' spent on "' + dead.name + '" with nothing attributed',
+        'It has been running more than a fortnight and no lead has come in through its tracking link. ' +
+        'Usually that means the ad is pointing at the plain website address rather than the campaign link.',
+        'Check the ad destination first — a broken link looks exactly like a failed campaign.',
+        { label: 'Open Campaigns', run: goTo('campaigns') });
+    }
+    const withCpl = spending.filter((c) => c.n >= 3 && c.cpl !== null);
+    if (withCpl.length >= 2){
+      const mid = median(withCpl.map((c) => c.cpl));
+      const worst = withCpl.slice().sort((a, b) => b.cpl - a.cpl)[0];
+      if (mid && worst.cpl > mid * 2){
+        add('act', '"' + worst.name + '" costs ' + money0(worst.cpl) + ' a lead',
+          'Your middle campaign runs at ' + money0(mid) + '. This one is more than twice that.',
+          'Move that budget to whichever campaign is producing at the lower figure, and see whether the leads follow.');
+      }
+    }
+    if (m.totalSpend > 0 && m.untracked > 0 && m.arrived.length){
+      const share = pct(m.untracked, m.arrived.length);
+      if (share >= 40){
+        add('act', share + '% of new leads have no campaign attached',
+          'You are spending ' + money0(m.totalSpend) + ' and most enquiries cannot be traced to any of it. ' +
+          'Cost per lead is guesswork until that changes.',
+          'Use each campaign\'s tracking link as the ad destination — that is the only thing that ties a lead back to the spend.',
+          { label: 'Open Campaigns', run: goTo('campaigns') });
+      }
+    }
+
+    if (m.tasks.late >= 5){
+      add('warn', m.tasks.late + ' tasks are overdue',
+        'Once the overdue count gets big enough to feel hopeless it stops being read at all, and the board ' +
+        'quietly becomes decoration.',
+        'Clear or re-date them in one sitting. A task you are never going to do should be deleted, not carried.',
+        { label: 'Open Tasks', run: goTo('tasks', () => { el('fTaskDue').value = 'overdue'; el('tq').value = ''; }) });
+    }
+    if (m.tasks.stuck >= 1){
+      add('act', m.tasks.stuck + ' thing' + (m.tasks.stuck === 1 ? ' has' : 's have') + ' been in Waiting on for over ten days',
+        'Waiting on somebody else is the most expensive place in a transaction for something to sit, because ' +
+        'nothing about it moves until you push.',
+        'Chase each one today, or move it back to To do and own it.',
+        { label: 'Open Tasks', run: goTo('tasks', () => { el('fTaskDue').value = ''; el('tq').value = ''; }) });
+    }
+    if (m.tasks.rated >= 6 && m.tasks.onTimeRate >= 85){
+      add('win', m.tasks.onTimeRate + '% of dated tasks finish on time',
+        'Across ' + m.tasks.rated + ' tasks with a due date. That is the number that keeps contracts from ' +
+        'falling over on a deadline.', 'Nothing to fix here.');
+    }
+
+    if (m.pipeline > 0 && m.open.length > 1){
+      const biggest = m.open.slice().sort((a, b) => m.f(b).budget - m.f(a).budget)[0];
+      const share = pct(m.f(biggest).budget, m.pipeline);
+      if (share >= 40){
+        const card = { label: 'Open the lead', run: () => { setModule('leads'); openDrawer(biggest.id); } };
+        add('act', 'One deal is ' + share + '% of your pipeline',
+          biggest.name + ' accounts for ' + money0(m.f(biggest).budget) + ' of a ' + money0(m.pipeline) +
+          ' pipeline. If that one falls through, the quarter goes with it.',
+          'Worth deliberately adding volume at the other end rather than relying on it landing.', card);
+      }
+    }
+    if (m.noBudget >= 3){
+      add('', m.noBudget + ' open leads have no budget set',
+        'The pipeline figure above only counts leads with a number on them, so it is understated by however ' +
+        'much these are worth.',
+        'Add a rough price point as soon as you know one — it does not have to be right to be useful.');
+    }
+
+    if (!out.length){
+      add('win', 'Nothing needs your attention',
+        'No overdue work, no unattended leads, and nothing odd in the campaign numbers for this period.',
+        'Come back after the next batch of leads lands.');
+    }
+    return out;
+  }
+
+  /* ---- render ---- */
+
+  async function loadAnalytics(force){
+    const jobs = [];
+    if (force || !campaignsLoaded){
+      jobs.push(api('/api/campaigns')
+        .then((d) => { campaigns = d.campaigns || []; campaignsLoaded = true; }));
+    }
+    if (force || !tasksLoaded){
+      jobs.push(api('/api/tasks').then((d) => { tasks = d.tasks || []; tasksLoaded = true; }));
+    }
+    if (force) jobs.push(api('/api/leads').then((d) => { leads = d.leads || []; }));
+
+    if (jobs.length){
+      try { await Promise.all(jobs); hideBanner(); }
+      catch (err){ if (err.message !== 'unauthorized') showBanner(err.message); }
+    }
+    renderAnalytics();
+  }
+
+  function renderAnalytics(){
+    const wrap = el('anInner');
+    wrap.textContent = '';
+
+    if (!leads.length && !tasks.length && !campaigns.length){
+      const empty = document.createElement('div');
+      empty.className = 'an-empty';
+      empty.textContent = 'Nothing to measure yet. This fills in as leads, tasks and campaigns build up.';
+      wrap.appendChild(empty);
+      return;
+    }
+
+    const m = anCompute();
+
+    /* headline numbers */
+    const kpis = document.createElement('div');
+    kpis.className = 'an-kpis';
+    kpis.append(
+      kpi(String(m.arrived.length), 'New leads',
+        { delta: m.win.days ? deltaPct(m.arrived.length, m.arrivedPrev.length) : null,
+          sub: m.win.days ? null : 'across everything on the board' }),
+      kpi(String(m.won.length), 'Closed',
+        { delta: m.win.days ? deltaPct(m.won.length, m.wonPrev.length) : null,
+          sub: m.win.days ? null : 'across everything on the board' }),
+      kpi(m.won.length + m.lost.length ? m.winRate + '%' : '—', 'Win rate',
+        { sub: m.won.length + m.lost.length
+            ? m.won.length + ' won, ' + m.lost.length + ' lost'
+            : 'nothing resolved in this period' }),
+      kpi(humanDur(m.medianResponse), 'Median first contact',
+        { sub: m.responses.length ? 'from ' + m.responses.length + ' logged' : 'nothing logged yet' }),
+      kpi(money0(m.pipeline), 'Open pipeline',
+        { sub: m.open.length + ' live lead' + (m.open.length === 1 ? '' : 's') }),
+      kpi(m.medianCycle !== null ? humanDur(m.medianCycle) : '—', 'Enquiry to closing',
+        { sub: m.cycles.length ? 'median of ' + m.cycles.length : 'no closings dated yet' })
+    );
+    wrap.appendChild(kpis);
+
+    if (m.approxWins){
+      const c = document.createElement('p');
+      c.className = 'an-caveat';
+      c.append(document.createTextNode(''));
+      const b = document.createElement('b');
+      b.textContent = 'Dating is approximate for older deals. ';
+      c.append(b, document.createTextNode(
+        m.approxWins + ' of the closings in this period happened before the board started recording stage ' +
+        'moves, so they are dated by when the record was last touched. Anything you move from here on is dated exactly.'));
+      wrap.appendChild(c);
+    }
+
+    /* over time */
+    const flow = anCard('Leads and closings over time',
+      m.buckets.length > 20 ? 'By month.' : 'By week, ending today.');
+    flow.body.appendChild(anTimeSeries(m.buckets, 'arrived', 'won', 'New leads and closings per period'));
+    flow.body.appendChild(legend([['var(--brass)', 'New leads'], ['var(--ok)', 'Closed']]));
+    wrap.appendChild(flow);
+
+    const two = document.createElement('div');
+    two.className = 'an-2';
+
+    /* funnel */
+    const fun = anCard('Where leads stop',
+      'Of the ' + m.arrived.length + ' leads that arrived in this period, how far each has got. ' +
+      'The gap between two rows is where you are losing people.');
+    if (!m.arrived.length){
+      const e = document.createElement('div'); e.className = 'an-empty';
+      e.textContent = 'No leads arrived in this period.';
+      fun.body.appendChild(e);
+    } else {
+      const list = hbList(fun.body);
+      const top = m.funnel[0].n || 1;
+      m.funnel.forEach((s, i) => {
+        hbRow(list, s.label, s.n, top,
+          { cls: s.id === 'closed' ? 'won' : '', text: String(s.n),
+            note: i ? pct(s.n, top) + '%' : '' });
+        const next = m.funnel[i + 1];
+        if (next && s.n > 0 && next.n < s.n){
+          const d = document.createElement('div');
+          d.className = 'hb-drop';
+          const b = document.createElement('b');
+          b.textContent = (s.n - next.n) + ' lost here';
+          d.append(document.createTextNode('↳ '), b,
+            document.createTextNode(' (' + (100 - pct(next.n, s.n)) + '% drop-off)'));
+          list.appendChild(d);
+        }
+      });
+    }
+    two.appendChild(fun);
+
+    /* response spread */
+    const resp = anCard('How fast you answer',
+      'Time from a lead arriving to the first call, text or email logged against it.' +
+      (m.loggedShare < 70 && m.arrived.length ? ' Only ' + m.loggedShare + '% have anything logged, so read this as a record-keeping figure too.' : ''));
+    if (!m.arrived.length){
+      const e = document.createElement('div'); e.className = 'an-empty';
+      e.textContent = 'No leads arrived in this period.';
+      resp.body.appendChild(e);
+    } else {
+      const list = hbList(resp.body);
+      const top = Math.max(...m.bands.map((b) => b.n), 1);
+      m.bands.forEach((b) => hbRow(list, b.label, b.n, top, {
+        cls: b.id === 'h1' ? 'won' : b.id === 'late' || b.id === 'none' ? 'late' : '',
+        text: String(b.n), note: pct(b.n, m.arrived.length) + '%'
+      }));
+    }
+    two.appendChild(resp);
+    wrap.appendChild(two);
+
+    /* sources */
+    const src = anCard('Where business comes from',
+      'Leads that arrived in this period, and how many of those have closed so far. Recent periods will ' +
+      'always look thin on closings — a deal takes weeks.');
+    if (!m.bySource.length){
+      const e = document.createElement('div'); e.className = 'an-empty';
+      e.textContent = 'No leads arrived in this period.';
+      src.body.appendChild(e);
+    } else {
+      const list = hbList(src.body);
+      const top = Math.max(...m.bySource.map((s) => s.n));
+      m.bySource.forEach((s) => hbRow(list, s.label, s.n, top, {
+        cls: s.won ? 'won' : 'dim',
+        text: s.n + ' lead' + (s.n === 1 ? '' : 's'),
+        note: s.won ? '· ' + s.won + ' closed (' + s.rate + '%)' : ''
+      }));
+    }
+    wrap.appendChild(src);
+
+    /* campaigns */
+    const camp = anCard('What the advertising produced',
+      'All time, not the period above — spend is a running total with no date on it, so windowing it would ' +
+      'give you a number that looks precise and is not.');
+    if (!m.byCampaign.length){
+      const e = document.createElement('div'); e.className = 'an-empty';
+      e.textContent = 'No campaigns yet.';
+      camp.body.appendChild(e);
+    } else {
+      const scroll = document.createElement('div');
+      scroll.className = 'scroll';
+      scroll.style.overflowX = 'auto';
+      const t = document.createElement('table');
+      t.className = 'an';
+      const thead = document.createElement('thead');
+      const hr = document.createElement('tr');
+      ['Campaign', 'Spend', 'Leads', 'Closed', 'Per lead', 'Per closing'].forEach((h, i) => {
+        const th = document.createElement('th');
+        th.textContent = h;
+        if (i) th.style.textAlign = 'right';
+        hr.appendChild(th);
+      });
+      thead.appendChild(hr);
+      const tb = document.createElement('tbody');
+      m.byCampaign.forEach((c) => {
+        const tr = document.createElement('tr');
+        const nm = document.createElement('td');
+        nm.className = 'nm';
+        nm.textContent = c.name;
+        tr.appendChild(nm);
+        [[money0(c.spend), ''], [String(c.n), ''], [String(c.won), c.won ? 'good' : ''],
+         [c.cpl === null ? '—' : money0(c.cpl), ''],
+         [c.cpw === null ? '—' : money0(c.cpw), c.cpw === null && c.spend > 0 ? 'bad' : '']]
+          .forEach(([text, cls]) => {
+            const td = document.createElement('td');
+            td.className = 'num ' + cls;
+            td.textContent = text;
+            tr.appendChild(td);
+          });
+        tb.appendChild(tr);
+      });
+      t.append(thead, tb);
+      scroll.appendChild(t);
+      camp.body.appendChild(scroll);
+
+      const foot = document.createElement('p');
+      foot.className = 'an-caveat';
+      foot.style.marginTop = '12px';
+      foot.textContent = m.totalSpend > 0
+        ? money0(m.totalSpend) + ' spent in total, ' + m.attributedWins + ' closing' +
+          (m.attributedWins === 1 ? '' : 's') + ' attributed' +
+          (m.attributedWins ? ' — ' + money0(m.totalSpend / m.attributedWins) + ' each.' : '.')
+        : 'No spend recorded yet. Enter what you actually paid on each campaign and these columns fill in.';
+      camp.body.appendChild(foot);
+    }
+    wrap.appendChild(camp);
+
+    /* tasks */
+    const tk = anCard('Getting things done',
+      'Tasks finished per period, and whether the dated ones land on time.');
+    tk.body.appendChild(anTimeSeries(m.taskBuckets, 'done', null, 'Tasks completed per period'));
+    const tkKpis = document.createElement('div');
+    tkKpis.className = 'an-kpis';
+    tkKpis.style.marginTop = '14px';
+    tkKpis.append(
+      kpi(String(m.tasks.doneInWin), 'Finished', { sub: 'in this period' }),
+      kpi(String(m.tasks.open), 'Still open', { sub: m.tasks.late + ' overdue' }),
+      kpi(m.tasks.rated ? m.tasks.onTimeRate + '%' : '—', 'On time',
+        { sub: m.tasks.rated ? 'of ' + m.tasks.rated + ' dated tasks' : 'no dated tasks finished yet' }),
+      kpi(String(m.tasks.waiting), 'Waiting on others', { sub: m.tasks.stuck + ' over ten days' })
+    );
+    tk.body.appendChild(tkKpis);
+    wrap.appendChild(tk);
+
+    /* insights */
+    const ins = anCard('What to do about it',
+      'Generated from the numbers above. Each one only appears when your data actually shows it.');
+    const list = document.createElement('div');
+    list.className = 'ins-list';
+    anInsights(m).forEach((i) => {
+      const box = document.createElement('div');
+      box.className = 'ins ' + (i.tone || '');
+      const h = document.createElement('h4');
+      h.textContent = i.title;
+      const p = document.createElement('p');
+      p.textContent = i.body;
+      box.append(h, p);
+      if (i.todo){
+        const d = document.createElement('p');
+        d.className = 'do';
+        const b = document.createElement('b');
+        b.textContent = 'Do this: ';
+        d.append(b, document.createTextNode(i.todo));
+        box.appendChild(d);
+      }
+      if (i.jump){
+        const wrapBtn = document.createElement('div');
+        wrapBtn.className = 'jump';
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'btn ghost';
+        btn.textContent = i.jump.label;
+        btn.addEventListener('click', i.jump.run);
+        wrapBtn.appendChild(btn);
+        box.appendChild(wrapBtn);
+      }
+      list.appendChild(box);
+    });
+    ins.body.appendChild(list);
+    wrap.appendChild(ins);
+  }
+
+  function anSummaryText(){
+    const m = anCompute();
+    const L = [];
+    L.push('Jessica Kortum — ' + m.win.label.toLowerCase());
+    L.push(new Date().toLocaleDateString(undefined, { dateStyle:'long' }));
+    L.push('');
+    L.push('New leads: ' + m.arrived.length);
+    L.push('Closed: ' + m.won.length + (m.won.length + m.lost.length ? '  (win rate ' + m.winRate + '%)' : ''));
+    L.push('Median first contact: ' + humanDur(m.medianResponse));
+    L.push('Open pipeline: ' + money0(m.pipeline) + ' across ' + m.open.length + ' leads');
+    if (m.medianCycle !== null) L.push('Enquiry to closing: ' + humanDur(m.medianCycle));
+    L.push('Tasks: ' + m.tasks.doneInWin + ' finished, ' + m.tasks.open + ' open, ' + m.tasks.late + ' overdue');
+    if (m.bySource.length){
+      L.push('');
+      L.push('Sources:');
+      m.bySource.forEach((s) => L.push('  ' + s.label + ': ' + s.n + ' leads, ' + s.won + ' closed'));
+    }
+    L.push('');
+    L.push('What to do:');
+    anInsights(m).forEach((i) => { L.push('  - ' + i.title); if (i.todo) L.push('    ' + i.todo); });
+    return L.join('\n');
+  }
+
+  fillSelect(el('anRange'), AN_RANGES, 'id', 'label');
+  el('anRange').value = AN_RANGES.some((r) => r.id === anRange) ? anRange : '90';
+  el('anRange').addEventListener('change', () => {
+    anRange = el('anRange').value;
+    store.set('anRange', anRange);
+    renderAnalytics();
+  });
+  el('anCopy').addEventListener('click', () => {
+    const btn = el('anCopy');
+    navigator.clipboard?.writeText(anSummaryText()).then(
+      () => { btn.textContent = 'Copied'; setTimeout(() => { btn.textContent = 'Copy summary'; }, 1600); },
+      () => showBanner('Could not reach the clipboard.')
+    );
+  });
+
+  el('modAnalytics').addEventListener('click', () => setModule('analytics'));
+
   fillSelect(el('tStatus'), TASK_COLS, 'id', 'label');
   fillSelect(el('tPriority'), TASK_PRIOS, 'id', 'label');
 
@@ -2971,6 +3897,7 @@
   el('refresh').addEventListener('click', () => {
     if (module === 'campaigns') loadCampaigns();
     else if (module === 'tasks') loadTasks();
+    else if (module === 'analytics') loadAnalytics(true);
     else load();
   });
   el('viewBoard').addEventListener('click', () => setView('board'));

@@ -277,9 +277,16 @@ const LEAD_SOURCES = new Set([
 
 const LEAD_PRIORITIES = new Set(['hot', 'warm', 'cold']);
 
-// Activity kinds for the contact log.
-const ACTIVITY_TYPES = new Set(['call', 'text', 'email', 'showing', 'offer', 'note']);
+// Activity kinds for the contact log. 'stage' is written by the server on a
+// stage move, never chosen by hand, so it is not in CLIENT_ACTIVITY_TYPES.
+const ACTIVITY_TYPES = new Set(['call', 'text', 'email', 'showing', 'offer', 'note', 'stage']);
+const CLIENT_ACTIVITY_TYPES = new Set(['call', 'text', 'email', 'showing', 'offer', 'note']);
 const MAX_ACTIVITY_ENTRIES = 200;
+
+const LEAD_STAGE_LABEL = {
+  new: 'New', contacted: 'Contacted', active: 'Touring',
+  under_contract: 'Under Contract', closed: 'Closed', lost: 'Lost / Cold'
+};
 
 const FIELD_LIMITS = {
   name: 120, email: 200, phone: 40, intent: 80,
@@ -1296,26 +1303,51 @@ async function handleLeadUpdate(request, env, id) {
 
   // Appending is server-side so the timestamp is trustworthy and the client
   // cannot rewrite history by posting a whole replacement array.
+  const appends = [];
+
   if (body.activityAppend !== undefined) {
     const entry = body.activityAppend || {};
     const type = String(entry.type || 'note');
     const text = String(entry.text || '').trim().slice(0, 1000);
-    if (!ACTIVITY_TYPES.has(type)) return json({ error: 'Unknown activity type.' }, 400);
+    if (!CLIENT_ACTIVITY_TYPES.has(type)) return json({ error: 'Unknown activity type.' }, 400);
     if (!text) return json({ error: 'Activity needs some text.' }, 400);
+    appends.push({ type, text });
+  }
 
-    let current = [];
+  // A stage move needs reading first either way, so this is also where we find
+  // out whether the stage actually changed.
+  let row = null;
+  if (appends.length || body.status !== undefined) {
     try {
-      const row = await withSchema(env, () =>
-        env.DB.prepare('SELECT activity FROM leads WHERE id = ?').bind(id).first()
+      row = await withSchema(env, () =>
+        env.DB.prepare('SELECT status, activity FROM leads WHERE id = ?').bind(id).first()
       );
-      if (!row) return json({ error: 'Lead not found.' }, 404);
-      current = readActivity(row.activity);
     } catch (err) {
       console.error('Activity read failed:', err);
       return json({ error: dbErrorMessage(err) }, 500);
     }
+    if (!row) return json({ error: 'Lead not found.' }, 404);
+  }
 
-    current.unshift({ at: new Date().toISOString(), type, text });
+  // Log the move automatically. Without this there is no record of *when* a
+  // lead progressed, and every time-in-stage figure in Analytics would be a
+  // guess dressed up as a measurement.
+  if (row && body.status !== undefined && row.status !== body.status) {
+    appends.push({
+      type: 'stage',
+      // `to` is what Analytics reads. The text is for a human, and parsing it
+      // back would break the moment a stage gets renamed.
+      to: body.status,
+      from: row.status,
+      text: 'Moved to ' + (LEAD_STAGE_LABEL[body.status] || body.status)
+    });
+  }
+
+  if (appends.length) {
+    const current = readActivity(row.activity);
+    const at = new Date().toISOString();
+    // Reversed so the caller's own entry still ends up on top.
+    for (let i = appends.length - 1; i >= 0; i--) current.unshift({ at, ...appends[i] });
     sets.push('activity = ?');
     binds.push(JSON.stringify(current.slice(0, MAX_ACTIVITY_ENTRIES)));
   }

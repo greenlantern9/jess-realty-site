@@ -118,7 +118,7 @@
 <div class="page">
 
 <div class="doc-head">
-  <div class="kicker">Leads · Tasks · Campaigns · Calculators</div>
+  <div class="kicker">Leads · Tasks · Campaigns · Analytics · Calculators</div>
   <p class="lede">
     Everything on the admin side, in the order you'd actually use it. Signing in emails
     you a code each time, so there's no password to remember or lose.
@@ -140,6 +140,7 @@
     <li><a href="#tracking">The tracking link</a></li>
     <li><a href="#fairhousing">Fair housing rules</a></li>
     <li><a href="#mailer">Mailer &amp; exports</a></li>
+    <li><a href="#analytics">Analytics &amp; insights</a></li>
     <li><a href="#calculators">Calculators</a></li>
     <li><a href="#routine">A working routine</a></li>
   </ol>
@@ -448,8 +449,69 @@
   </div>
 </section>
 
+<section id="analytics">
+  <div class="sec-head"><span class="n">13</span><h2>Analytics</h2></div>
+  <div class="body">
+    <p>Switch to <span class="ui">Analytics</span> at the top. It reads your leads, tasks and
+      campaigns together and tells you what they add up to. Pick a period in the top left —
+      30 days, 90 days, 12 months or everything.</p>
+
+    <h3>The six numbers at the top</h3>
+    <dl class="fields">
+      <div><dt>New leads</dt><dd>How many arrived, and whether that is up or down on the period before. Everything else is downstream of this one.</dd></div>
+      <div><dt>Closed</dt><dd>Deals that reached Closed during the period.</dd></div>
+      <div><dt>Win rate</dt><dd>Closed against closed-plus-lost. Only counts leads that actually resolved, so leads still in play do not drag it down.</dd></div>
+      <div><dt>Median first contact</dt><dd>How long a lead waits for your first call, text or email. The most actionable number on the page.</dd></div>
+      <div><dt>Open pipeline</dt><dd>The budgets on every live lead added up. Leads with no budget set are not counted, so it is a floor rather than a forecast.</dd></div>
+      <div><dt>Enquiry to closing</dt><dd>How long a deal takes end to end, from the enquiry landing to the keys.</dd></div>
+    </dl>
+
+    <h3>Where leads stop</h3>
+    <p>A funnel of the leads that arrived in the period, showing how far each has got. The
+      line under each row says how many were lost at that step. One big drop-off tells you
+      more about what to fix than any other chart here — a wall between Contacted and
+      Touring is a different problem from one between Under Contract and Closed.</p>
+
+    <h3>How fast you answer</h3>
+    <p>Your leads sorted into <em>within an hour</em>, <em>same day</em>, <em>1–3 days</em> and
+      <em>longer</em>. There is a fifth bar, <strong>Nothing logged</strong>, and it is the
+      honest one: this whole card is built from your contact log, so a call you made but
+      never logged shows up here as a lead you ignored.</p>
+    <div class="note">
+      <h3>The page tells you when it is guessing</h3>
+      <p>If most leads have nothing logged, the card says so rather than quietly reporting a
+        median from a third of your data. Same with older closings — the board only started
+        recording stage moves partway through its life, so deals that closed before that are
+        dated by when the record was last touched, and the page flags it.</p>
+    </div>
+
+    <h3>Where business comes from, and what advertising produced</h3>
+    <p>Sources are ranked by closings, not by volume — the point is to show where your time
+      actually pays, which is rarely where the most leads are.</p>
+    <p>The campaign table is deliberately <strong>all time</strong>, even when the period
+      selector says 30 days. Spend is a running total with no date attached to it, so
+      dividing it by a month of leads would produce a cost-per-lead that looks precise and
+      is wrong.</p>
+
+    <h3>What to do about it</h3>
+    <p>The last card turns the numbers into a short list of things to actually do, and each
+      one only appears when your data shows it — overdue tasks, leads with no follow-up date,
+      a campaign spending money with nothing attributed, a source producing volume but no
+      closings. Several have a button that takes you straight to the leads or tasks in
+      question with the right filter already applied.</p>
+    <p><strong>Copy summary</strong> puts the whole thing on the clipboard as plain text,
+      which is handy for a monthly note to yourself or your broker.</p>
+    <div class="note stop">
+      <h3>Nothing here segments people</h3>
+      <p>This page measures where leads came from and what happened next. It does not, and
+        must not, break your leads down by anything describing the people themselves. Section
+        11 explains why that line matters.</p>
+    </div>
+  </div>
+</section>
+
 <section id="calculators">
-  <div class="sec-head"><span class="n">13</span><h2>Calculators</h2></div>
+  <div class="sec-head"><span class="n">14</span><h2>Calculators</h2></div>
   <div class="body">
     <p>Switch to <span class="ui">Calculators</span> at the top. Five of them, all running in
       the browser — nothing is sent anywhere, so you can open one on a client's kitchen table
@@ -474,7 +536,7 @@
 </section>
 
 <section id="routine">
-  <div class="sec-head"><span class="n">14</span><h2>A working routine</h2></div>
+  <div class="sec-head"><span class="n">15</span><h2>A working routine</h2></div>
   <div class="body">
     <h3>Every morning — five minutes</h3>
     <ul class="plain">
@@ -494,6 +556,8 @@
     </ul>
     <h3>Every month</h3>
     <ul class="plain">
+      <li>Open <span class="ui">Analytics</span>, set the period to 90 days, and read the
+        <strong>What to do about it</strong> card top to bottom. That is the whole review.</li>
       <li>Export CSV and keep the file somewhere safe.</li>
       <li>Look through <strong>Closed</strong> — those are your referral sources, and the
         cheapest business you'll ever get.</li>
