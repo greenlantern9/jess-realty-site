@@ -35,8 +35,11 @@
   /* ---------------- left sidebar ---------------- */
   .side{width:214px;flex-shrink:0;background:var(--ink-3);
     border-right:1px solid var(--line-soft);display:flex;flex-direction:column;
-    position:sticky;top:0;height:100vh;z-index:46}
+    position:sticky;top:0;height:100vh;z-index:46;transition:width .18s ease}
   .side-head{padding:17px 16px 14px;border-bottom:1px solid var(--line-soft)}
+  .monogram{display:none;font-family:var(--serif);font-size:1.1rem;color:var(--brass-bright);
+    text-align:center;letter-spacing:.02em}
+  .collapser svg{transition:transform .18s ease}
   .side-foot{margin-top:auto;padding:10px 10px 14px;border-top:1px solid var(--line-soft);
     display:flex;flex-direction:column;gap:2px}
   /* Only ever shown in overlay mode - scoped in the media query below so a
@@ -67,6 +70,25 @@
   /* A long address would otherwise break mid-word down a 214px column. */
   .who b{display:block;color:var(--cream-soft);font-weight:600;
     overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+  /* Collapsed rail. Scoped above the overlay breakpoint on purpose: on a phone
+     the sidebar is already hidden, and a 58px rail sliding over the content
+     would be worse than the full menu. */
+  @media(min-width:901px){
+    .side.collapsed{width:58px}
+    .side.collapsed .brand{display:none}
+    .side.collapsed .monogram{display:block}
+    .side.collapsed .side-head{padding:17px 8px 14px}
+    .side.collapsed .modules,.side.collapsed .side-foot{padding-left:7px;padding-right:7px}
+    .side.collapsed .modules button,.side.collapsed .side-link{
+      justify-content:center;padding-left:0;padding-right:0;position:relative}
+    .side.collapsed .modules button > span,.side.collapsed .side-link > span{display:none}
+    .side.collapsed .who{display:none}
+    /* The count has nowhere to sit, so it becomes a dot on the icon. */
+    .side.collapsed .pip{position:absolute;top:4px;right:8px;min-width:0;width:7px;height:7px;
+      padding:0;font-size:0;line-height:0;border-radius:50%;overflow:hidden}
+    .side.collapsed .collapser svg{transform:rotate(180deg)}
+  }
 
   .hamburger{display:none;padding:7px;border-radius:4px;color:var(--cream-soft)}
   .hamburger svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;
@@ -615,6 +637,9 @@
     .side-bg.open{display:block}
     .hamburger{display:inline-flex}
     .main{min-height:100dvh}
+    /* The rail only exists above this breakpoint, so the toggle would be a
+       control that visibly does nothing. */
+    .collapser{display:none}
   }
 
   @media(max-width:700px){
@@ -638,6 +663,7 @@
 <aside class="side" id="side">
   <div class="side-head">
     <h1 class="brand"><span class="mark">JKortumRealty</span> CRM <span class="ver">v1</span></h1>
+    <span class="monogram" aria-hidden="true">JK</span>
   </div>
 
   <nav class="modules" id="modules" aria-label="Sections">
@@ -684,8 +710,22 @@
     <a class="side-link" href="/cdn-cgi/access/logout" title="End this session on this device">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4h4a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1h-4"/><path d="M9 8 5 12l4 4M5 12h9"/></svg>
       <span>Sign out</span></a>
+    <button class="side-link collapser" id="sideCollapse" type="button"
+            title="Narrow the sidebar to icons" aria-expanded="true">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14 7-5 5 5 5"/><path d="M19 4v16"/></svg>
+      <span>Collapse</span></button>
   </div>
 </aside>
+
+<script>
+  // Applied before first paint so a sidebar you left collapsed does not flash
+  // open on every load. Mirrors the store.set() key format below.
+  try {
+    if (JSON.parse(localStorage.getItem('leadboard.sideCollapsed'))) {
+      document.getElementById('side').classList.add('collapsed');
+    }
+  } catch {}
+</script>
 
 <div class="main">
 
@@ -4621,6 +4661,21 @@
     if (el('side').classList.contains('open')) closeSidebar(); else openSidebar();
   });
   el('sideBg').addEventListener('click', closeSidebar);
+
+  // Collapse to an icon rail. The class is applied by a tiny inline script up
+  // in the markup too, so a collapsed sidebar does not flash open on load.
+  function setCollapsed(on){
+    el('side').classList.toggle('collapsed', on);
+    const btn = el('sideCollapse');
+    btn.setAttribute('aria-expanded', String(!on));
+    btn.title = on ? 'Show the full sidebar' : 'Narrow the sidebar to icons';
+    btn.querySelector('span').textContent = on ? 'Expand' : 'Collapse';
+    store.set('sideCollapsed', on);
+  }
+  setCollapsed(store.get('sideCollapsed', false));
+  el('sideCollapse').addEventListener('click', () => {
+    setCollapsed(!el('side').classList.contains('collapsed'));
+  });
 
   // Counts of work that is actually late, so the nav says where to look.
   function renderPips(){
