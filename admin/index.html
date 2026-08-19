@@ -23,22 +23,101 @@
     --sans:"Hanken Grotesk",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
   }
   *{box-sizing:border-box;margin:0;padding:0}
+  /* Sidebar beside a main column; the main column keeps the old vertical
+     stack, so every panel below still behaves exactly as it did. */
   body{background:var(--ink);color:var(--cream);font-family:var(--sans);font-size:15px;
-    line-height:1.5;-webkit-font-smoothing:antialiased;min-height:100vh;display:flex;flex-direction:column}
+    line-height:1.5;-webkit-font-smoothing:antialiased;min-height:100vh;display:flex}
+  .main{flex:1;min-width:0;min-height:100vh;display:flex;flex-direction:column}
   button,input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
   button{cursor:pointer;border:0;background:none}
   a{color:var(--brass-bright)}
 
-  /* ---------------- top bar ---------------- */
-  header.bar{display:flex;align-items:center;gap:14px;flex-wrap:wrap;
-    padding:14px 22px;background:var(--ink-3);border-bottom:1px solid var(--line-soft);
-    position:sticky;top:0;z-index:30}
-  .bar h1{font-family:var(--serif);font-size:1.3rem;font-weight:500;letter-spacing:-.01em}
-  .bar-right{margin-left:auto;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
-  .who{display:inline-flex;align-items:center;gap:7px;font-size:.76rem;color:var(--sage)}
+  /* ---------------- left sidebar ---------------- */
+  .side{width:214px;flex-shrink:0;background:var(--ink-3);
+    border-right:1px solid var(--line-soft);display:flex;flex-direction:column;
+    position:sticky;top:0;height:100vh;z-index:46}
+  .side-head{padding:17px 16px 14px;border-bottom:1px solid var(--line-soft)}
+  .side-foot{margin-top:auto;padding:10px 10px 14px;border-top:1px solid var(--line-soft);
+    display:flex;flex-direction:column;gap:2px}
+  /* Only ever shown in overlay mode - scoped in the media query below so a
+     resize with the sidebar open cannot strand a backdrop over the desktop. */
+  .side-bg{position:fixed;inset:0;background:rgba(6,12,20,.6);z-index:44;display:none}
+
+  .modules{display:flex;flex-direction:column;gap:2px;padding:11px 10px;overflow-y:auto;
+    scrollbar-width:thin;scrollbar-color:var(--line) transparent}
+  .modules button,.side-link{display:flex;align-items:center;gap:10px;width:100%;
+    padding:9px 11px;border-radius:4px;font-size:.87rem;font-weight:600;text-align:left;
+    color:var(--sage);text-decoration:none;transition:background .16s,color .16s}
+  .modules button svg,.side-link svg{width:17px;height:17px;flex-shrink:0;fill:none;
+    stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+  .modules button:hover,.side-link:hover{color:var(--cream);background:var(--ink-2)}
+  .modules button[aria-current="page"]{color:var(--ink-3);background:var(--brass)}
+  .modules button[aria-current="page"] svg{stroke-width:2.1}
+  .modules button .pip{margin-left:auto;font-size:.66rem;font-weight:700;padding:1px 6px;
+    border-radius:9px;background:var(--hot);color:var(--ink-3);min-width:19px;text-align:center}
+  .modules button[aria-current="page"] .pip{background:var(--ink-3);color:var(--brass-bright)}
+  .pip[hidden]{display:none}
+  .side-link{font-size:.82rem;font-weight:600}
+
+  .who{display:flex;align-items:flex-start;gap:7px;font-size:.72rem;color:var(--sage);
+    padding:8px 11px;line-height:1.45;min-width:0}
   .who[hidden]{display:none}
-  .who svg{color:var(--ok);flex-shrink:0}
-  .who b{color:var(--cream-soft);font-weight:600}
+  .who svg{color:var(--ok);flex-shrink:0;margin-top:2px}
+  .who > span{min-width:0;flex:1}
+  /* A long address would otherwise break mid-word down a 214px column. */
+  .who b{display:block;color:var(--cream-soft);font-weight:600;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+  .hamburger{display:none;padding:7px;border-radius:4px;color:var(--cream-soft)}
+  .hamburger svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;
+    stroke-linecap:round}
+  .hamburger:hover{background:var(--ink-2);color:var(--cream)}
+
+  /* ---------------- top bar ---------------- */
+  header.bar{display:flex;align-items:center;gap:12px;
+    padding:11px 22px;background:var(--ink-3);border-bottom:1px solid var(--line-soft);
+    position:sticky;top:0;z-index:30}
+
+  /* ---------------- global search ---------------- */
+  .gsearch{position:relative;flex:1 1 auto;max-width:560px}
+  .gsearch .gicon{position:absolute;left:11px;top:50%;transform:translateY(-50%);
+    color:var(--sage);pointer-events:none}
+  .gsearch input{width:100%;padding:9px 62px 9px 34px;border-radius:4px;
+    background:var(--ink-2);border:1px solid var(--line-soft);color:var(--cream)}
+  .gsearch input::placeholder{color:var(--sage)}
+  .gsearch input:focus{outline:none;border-color:var(--brass);background:var(--ink)}
+  .gkbd{position:absolute;right:9px;top:50%;transform:translateY(-50%);pointer-events:none;
+    font-family:var(--sans);font-size:.62rem;font-weight:700;letter-spacing:.06em;
+    color:var(--sage);border:1px solid var(--line-soft);border-radius:3px;padding:2px 5px}
+  .gsearch input:focus ~ .gkbd{opacity:0}
+
+  .gresults{position:absolute;top:calc(100% + 6px);left:0;right:0;z-index:40;
+    background:var(--ink-2);border:1px solid var(--line);border-radius:5px;
+    box-shadow:0 18px 44px rgba(0,0,0,.5);max-height:min(70vh,520px);overflow-y:auto;
+    padding:6px;scrollbar-width:thin;scrollbar-color:var(--line) transparent}
+  .gresults[hidden]{display:none}
+  .ghead{font-size:.62rem;letter-spacing:.13em;text-transform:uppercase;color:var(--sage);
+    padding:9px 10px 5px;font-weight:700}
+  .gitem{display:grid;grid-template-columns:22px 1fr auto;gap:10px;align-items:center;
+    width:100%;padding:8px 10px;border-radius:4px;text-align:left;color:var(--cream-soft)}
+  .gitem:hover,.gitem.on{background:var(--ink-4);color:var(--cream)}
+  .gitem .gi{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;
+    justify-content:center;font-size:.68rem;background:var(--ink-3);
+    border:1px solid var(--line-soft);color:var(--sage)}
+  .gitem.lead .gi{color:var(--brass-bright)}
+  .gitem.task .gi{color:#cbb6e3}
+  .gitem.camp .gi{color:var(--ok)}
+  .gitem .gt{font-size:.87rem;font-weight:600;color:var(--cream);line-height:1.35;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .gitem .gs{display:block;font-size:.73rem;color:var(--sage);font-weight:400;margin-top:1px;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .gitem .gtag{font-size:.63rem;letter-spacing:.08em;text-transform:uppercase;color:var(--sage);
+    white-space:nowrap}
+  .gitem mark{background:rgba(201,162,107,.30);color:var(--cream);border-radius:2px;padding:0 1px}
+  .gempty{padding:20px 12px;text-align:center;color:var(--sage);font-size:.85rem;font-style:italic}
+  .gfoot{border-top:1px solid var(--line-soft);margin-top:6px;padding:8px 10px 4px;
+    font-size:.7rem;color:var(--sage);display:flex;gap:14px;flex-wrap:wrap}
+  .gfoot kbd{font-family:var(--sans);font-weight:700;color:var(--cream-soft)}
 
   .btn{display:inline-flex;align-items:center;gap:7px;padding:9px 15px;border-radius:3px;
     font-size:.82rem;font-weight:600;letter-spacing:.02em;text-decoration:none;
@@ -176,13 +255,6 @@
   .an-wrap[hidden],.home-wrap[hidden],.tools[hidden],
   .stats[hidden],.viewtoggle[hidden],.btn[hidden],.search[hidden]{display:none}
 
-  /* ---------------- module switch (Leads | Campaigns) ---------------- */
-  .modules{display:inline-flex;gap:2px;margin-left:4px}
-  .modules button{padding:8px 14px;border-radius:3px;font-size:.86rem;font-weight:650;
-    color:var(--sage);transition:.2s}
-  .modules button:hover{color:var(--cream)}
-  .modules button[aria-current="page"]{color:var(--cream);background:var(--ink-2)}
-
   /* ---------------- calculators ---------------- */
   .calc-wrap{flex:1;overflow-y:auto;padding:18px 22px 40px}
   .calc-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:18px}
@@ -279,9 +351,8 @@
     display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 
   /* ---------------- brand ---------------- */
-  /* .bar h1 already sets a size, so this needs to match it for specificity. */
-  .bar .brand{display:flex;align-items:baseline;gap:7px;font-family:var(--serif);font-size:1.24rem;
-    font-weight:500;letter-spacing:-.01em;white-space:nowrap}
+  .brand{display:flex;align-items:baseline;gap:7px;font-family:var(--serif);font-size:1.15rem;
+    font-weight:500;letter-spacing:-.01em;line-height:1.25}
   .brand .mark{color:var(--brass-bright)}
   .brand .ver{font-family:var(--sans);font-size:.58rem;font-weight:700;letter-spacing:.12em;
     text-transform:uppercase;color:var(--sage);border:1px solid var(--line-soft);
@@ -536,42 +607,104 @@
   .linkbtn:hover{text-decoration:underline}
   .meta-line{font-size:.73rem;color:var(--sage);display:flex;flex-wrap:wrap;gap:4px 14px}
 
+  /* Below this the sidebar would eat the board, so it slides over instead. */
+  @media(max-width:900px){
+    .side{position:fixed;left:0;top:0;bottom:0;height:100dvh;width:250px;
+      transform:translateX(-100%);transition:transform .24s cubic-bezier(.4,0,.2,1)}
+    .side.open{transform:none}
+    .side-bg.open{display:block}
+    .hamburger{display:inline-flex}
+    .main{min-height:100dvh}
+  }
+
   @media(max-width:700px){
     .board{padding:14px;gap:11px}
     .col{flex:0 0 84vw;max-height:none}
     .stats{margin-left:0;width:100%}
     .grid2{grid-template-columns:1fr}
-    .bar,.tools{padding:12px 15px}
+    .bar,.tools{padding:11px 15px}
+    .gkbd{display:none}
+    .gsearch input{padding-right:12px}
+    /* Anchored to the search box the panel would be as narrow as the box.
+       66px clears the 62px-tall header with a little air. */
+    .gresults{position:fixed;left:10px;right:10px;top:66px}
   }
 </style>
 </head>
 <body>
 
-<header class="bar">
-  <h1 class="brand"><span class="mark">JKortumRealty</span> CRM <span class="ver">v1</span></h1>
-  <nav class="modules" aria-label="Sections">
-    <button id="modHome" type="button" title="What needs you today" aria-current="page">Home</button>
-    <button id="modLeads" type="button" title="Your pipeline">Leads</button>
-    <button id="modTasks" type="button" title="What has to get done, and by when">Tasks</button>
-    <button id="modCampaigns" type="button" title="Advertising, spend and what it actually produced">Campaigns</button>
-    <button id="modAnalytics" type="button" title="What the numbers say, and what to do about it">Analytics</button>
-    <button id="modCalc" type="button" title="Payment, affordability, seller net and investment numbers">Calculators</button>
+<div class="side-bg" id="sideBg"></div>
+
+<aside class="side" id="side">
+  <div class="side-head">
+    <h1 class="brand"><span class="mark">JKortumRealty</span> CRM <span class="ver">v1</span></h1>
+  </div>
+
+  <nav class="modules" id="modules" aria-label="Sections">
+    <button id="modHome" type="button" title="What needs you today" aria-current="page">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11 12 4l8 7"/><path d="M6 10v9h12v-9"/></svg>
+      <span>Home</span><b class="pip" id="pipHome" hidden></b>
+    </button>
+    <button id="modLeads" type="button" title="Your pipeline">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="5" height="16" rx="1"/><rect x="10" y="4" width="5" height="11" rx="1"/><rect x="17" y="4" width="4" height="7" rx="1"/></svg>
+      <span>Leads</span><b class="pip" id="pipLeads" hidden></b>
+    </button>
+    <button id="modTasks" type="button" title="What has to get done, and by when">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h11M4 17h9"/><path d="m15.5 18.5 2.5 2.5 4-5"/></svg>
+      <span>Tasks</span><b class="pip" id="pipTasks" hidden></b>
+    </button>
+    <button id="modCampaigns" type="button" title="Advertising, spend and what it actually produced">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10v4a1 1 0 0 0 1 1h3l6 4V5L8 9H5a1 1 0 0 0-1 1Z"/><path d="M18 9.5a4 4 0 0 1 0 5"/></svg>
+      <span>Campaigns</span>
+    </button>
+    <button id="modAnalytics" type="button" title="What the numbers say, and what to do about it">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19h16"/><path d="m6 15 4-5 3.5 3.5L20 6"/></svg>
+      <span>Analytics</span>
+    </button>
+    <button id="modCalc" type="button" title="Payment, affordability, seller net and investment numbers">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 7h8M8 11.5h2M12 11.5h2M16 11.5h.4M8 16h2M12 16h2M16 16h.4"/></svg>
+      <span>Calculators</span>
+    </button>
   </nav>
-  <div class="bar-right">
+
+  <div class="side-foot">
+    <button class="side-link" id="refresh" type="button" title="Reload from the database">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.6-5.9"/><path d="M20 4v4h-4"/></svg>
+      <span>Refresh</span></button>
+    <a class="side-link" href="/admin/guide.html" title="How leads, tasks, campaigns and the calculators work">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3 2.45V14"/><path d="M12 17.5h.01"/></svg>
+      <span>Guide</span></a>
     <span class="who" id="who" hidden>
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
            stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <rect x="4" y="10.5" width="16" height="10" rx="2"/><path d="M8 10.5V7a4 4 0 0 1 8 0v3.5"/>
       </svg>
-      <span><span class="who-label">Securely signed in as </span><b id="whoEmail"></b></span>
+      <span><span class="who-label">Signed in as </span><b id="whoEmail"></b></span>
     </span>
-    <a class="btn ghost" href="/admin/guide.html" title="How leads, tasks, campaigns and the calculators work">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-           stroke-width="2.2" stroke-linecap="round" aria-hidden="true">
-        <circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3 2.45V14"/><path d="M12 17.5h.01"/>
-      </svg>Guide</a>
-    <button class="btn ghost" id="refresh" type="button" title="Reload from the database">Refresh</button>
-    <a class="btn ghost" href="/cdn-cgi/access/logout" title="End this session on this device">Sign out</a>
+    <a class="side-link" href="/cdn-cgi/access/logout" title="End this session on this device">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4h4a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1h-4"/><path d="M9 8 5 12l4 4M5 12h9"/></svg>
+      <span>Sign out</span></a>
+  </div>
+</aside>
+
+<div class="main">
+
+<header class="bar">
+  <button class="hamburger" id="sideToggle" type="button" aria-label="Menu" aria-expanded="false">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+  </button>
+
+  <div class="gsearch" role="search">
+    <svg class="gicon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         stroke-width="2" stroke-linecap="round" aria-hidden="true">
+      <circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>
+    </svg>
+    <input id="gq" type="text" autocomplete="off" spellcheck="false"
+           placeholder="Search everything — leads, tasks, campaigns…"
+           aria-label="Search everything" aria-expanded="false" aria-controls="gResults"
+           role="combobox" aria-autocomplete="list">
+    <kbd class="gkbd" id="gKbd">Ctrl K</kbd>
+    <div class="gresults" id="gResults" role="listbox" aria-label="Search results" hidden></div>
   </div>
 </header>
 
@@ -698,6 +831,8 @@
   </div>
   <div class="camp-grid" id="campGrid"></div>
 </div>
+
+</div><!-- /.main -->
 
 <aside class="drawer" id="campDrawer" aria-hidden="true" aria-label="Campaign detail">
   <div class="drawer-head">
@@ -2245,6 +2380,8 @@
     // The masthead is the product name now, so the module goes in the tab title.
     document.title = (MODULE_TITLES[next] || 'Home') + ' · JKortumRealty CRM';
     store.set('module', next);
+    closeSidebar();   // no-op on desktop; on a phone the nav gets out of the way
+    renderPips();
 
     // Every one of these sets an explicit display, so the [hidden] guard rule
     // in the stylesheet is what actually makes hiding work.
@@ -4244,6 +4381,263 @@
 
   el('modHome').addEventListener('click', () => setModule('home'));
 
+  /* ================= global search =================
+     One box over everything already in memory - leads, tasks, campaigns, plus
+     the modules themselves. No new endpoint: boot loads all three, so this is
+     a filter over arrays rather than a round trip, which is what makes it fast
+     enough to run on every keystroke.                                       */
+
+  const G_LIMIT_PER_GROUP = 5;
+  let gItems = [];        // flat, in render order, for arrow-key navigation
+  let gCursor = -1;
+
+  const gNorm = (v) => String(v ?? '').toLowerCase();
+
+  // Every term must appear somewhere in the record, so "dana bayshore" works.
+  function gMatches(terms, haystack){
+    return terms.every((t) => haystack.includes(t));
+  }
+
+  function gSearch(raw){
+    const q = raw.trim().toLowerCase();
+    if (!q) return [];
+    const terms = q.split(/\s+/).filter(Boolean);
+    const groups = [];
+
+    const leadHits = leads.filter((l) => gMatches(terms, gNorm([
+      l.name, l.email, l.phone, l.intent, l.tags, l.notes, l.message,
+      SOURCE_LABEL[l.source], STAGE_LABEL[l.status], l.campaign
+    ].join(' '))));
+    if (leadHits.length) groups.push({
+      label:'Leads', total:leadHits.length,
+      items: leadHits.slice(0, G_LIMIT_PER_GROUP).map((l) => ({
+        kind:'lead', id:l.id, glyph:'◆', title:l.name,
+        sub:[STAGE_LABEL[l.status] || l.status, l.intent, l.phone || l.email]
+          .filter(Boolean).join(' · '),
+        tag: Number(l.budget) ? money(l.budget) : '',
+        open(){ setModule('leads'); openDrawer(l.id); }
+      }))
+    });
+
+    const taskHits = tasks.filter((t) => gMatches(terms, gNorm([
+      t.title, t.notes, t.assignee, t.lead_name, t.campaign_name
+    ].join(' '))));
+    if (taskHits.length) groups.push({
+      label:'Tasks', total:taskHits.length,
+      items: taskHits.slice(0, G_LIMIT_PER_GROUP).map((t) => {
+        const d = daysUntil(t.due_on);
+        return {
+          kind:'task', id:t.id, glyph:'✓', title:t.title,
+          sub:[TASK_COLS.find((c) => c.id === t.status)?.label,
+               t.lead_name, t.campaign_name, t.assignee].filter(Boolean).join(' · '),
+          tag: t.status !== 'done' && d !== null && d < 0 ? Math.abs(d) + 'd late' : '',
+          open(){ setModule('tasks'); openTask(t.id); }
+        };
+      })
+    });
+
+    const campHits = campaigns.filter((c) => gMatches(terms, gNorm([
+      c.name, c.slug, c.channel, c.geo, c.audience, c.creative, c.notes
+    ].join(' '))));
+    if (campHits.length) groups.push({
+      label:'Campaigns', total:campHits.length,
+      items: campHits.slice(0, G_LIMIT_PER_GROUP).map((c) => ({
+        kind:'camp', id:c.id, glyph:'▲', title:c.name,
+        sub:[CHANNEL_LABEL[c.channel] || c.channel, c.status, c.geo].filter(Boolean).join(' · '),
+        tag: Number(c.spend) ? money0(c.spend) : '',
+        open(){ setModule('campaigns'); openCampaign(c.id); }
+      }))
+    });
+
+    const modHits = Object.entries(MODULE_TITLES)
+      .filter(([, label]) => gMatches(terms, gNorm(label)));
+    if (modHits.length) groups.push({
+      label:'Go to', total:modHits.length,
+      items: modHits.map(([id, label]) => ({
+        kind:'mod', id, glyph:'→', title:label, sub:'Open the ' + label.toLowerCase() + ' screen',
+        tag:'', open(){ setModule(id); }
+      }))
+    });
+
+    return groups;
+  }
+
+  // Highlights the matched runs without ever putting the record's own text
+  // through innerHTML - lead names come from an anonymous public form.
+  function gMark(text, terms){
+    const frag = document.createDocumentFragment();
+    const src = String(text ?? '');
+    const low = src.toLowerCase();
+    const spans = [];
+    terms.forEach((t) => {
+      let from = 0, at;
+      while (t && (at = low.indexOf(t, from)) !== -1){ spans.push([at, at + t.length]); from = at + t.length; }
+    });
+    if (!spans.length){ frag.appendChild(document.createTextNode(src)); return frag; }
+    spans.sort((a, b) => a[0] - b[0]);
+    const merged = [spans[0]];
+    for (const s of spans.slice(1)){
+      const last = merged[merged.length - 1];
+      if (s[0] <= last[1]) last[1] = Math.max(last[1], s[1]); else merged.push(s);
+    }
+    let pos = 0;
+    for (const [a, b] of merged){
+      if (a > pos) frag.appendChild(document.createTextNode(src.slice(pos, a)));
+      const m = document.createElement('mark');
+      m.textContent = src.slice(a, b);
+      frag.appendChild(m);
+      pos = b;
+    }
+    if (pos < src.length) frag.appendChild(document.createTextNode(src.slice(pos)));
+    return frag;
+  }
+
+  function gClose(){
+    el('gResults').hidden = true;
+    el('gq').setAttribute('aria-expanded', 'false');
+    gItems = [];
+    gCursor = -1;
+  }
+
+  function gRender(){
+    const raw = el('gq').value;
+    const box = el('gResults');
+    box.textContent = '';
+    gItems = [];
+    gCursor = -1;
+
+    if (!raw.trim()){ gClose(); return; }
+    const terms = raw.trim().toLowerCase().split(/\s+/).filter(Boolean);
+    const groups = gSearch(raw);
+
+    if (!groups.length){
+      const e = document.createElement('div');
+      e.className = 'gempty';
+      e.textContent = 'Nothing matches “' + raw.trim() + '”.';
+      box.appendChild(e);
+    } else {
+      groups.forEach((g) => {
+        const h = document.createElement('div');
+        h.className = 'ghead';
+        h.textContent = g.label + (g.total > g.items.length
+          ? '  ·  showing ' + g.items.length + ' of ' + g.total : '');
+        box.appendChild(h);
+
+        g.items.forEach((it) => {
+          const b = document.createElement('button');
+          b.type = 'button';
+          b.className = 'gitem ' + it.kind;
+          b.setAttribute('role', 'option');
+
+          const ic = document.createElement('span');
+          ic.className = 'gi';
+          ic.textContent = it.glyph;
+
+          const mid = document.createElement('span');
+          const t = document.createElement('span');
+          t.className = 'gt';
+          t.appendChild(gMark(it.title, terms));
+          const s = document.createElement('span');
+          s.className = 'gs';
+          s.appendChild(gMark(it.sub, terms));
+          mid.append(t, s);
+
+          const tag = document.createElement('span');
+          tag.className = 'gtag';
+          tag.textContent = it.tag || '';
+
+          b.append(ic, mid, tag);
+          b.addEventListener('click', () => { gPick(it); });
+          b.addEventListener('mousemove', () => {
+            const i = gItems.indexOf(it);
+            if (i !== gCursor){ gCursor = i; gPaint(); }
+          });
+          box.appendChild(b);
+          gItems.push(it);
+        });
+      });
+
+      const foot = document.createElement('div');
+      foot.className = 'gfoot';
+      [['↑ ↓', 'move'], ['Enter', 'open'], ['Esc', 'close']].forEach(([k, what]) => {
+        const s = document.createElement('span');
+        const kb = document.createElement('kbd');
+        kb.textContent = k;
+        s.append(kb, document.createTextNode(' ' + what));
+        foot.appendChild(s);
+      });
+      box.appendChild(foot);
+    }
+
+    box.hidden = false;
+    el('gq').setAttribute('aria-expanded', 'true');
+    if (gItems.length){ gCursor = 0; gPaint(); }
+  }
+
+  function gPaint(){
+    const nodes = [...el('gResults').querySelectorAll('.gitem')];
+    nodes.forEach((n, i) => n.classList.toggle('on', i === gCursor));
+    if (nodes[gCursor]) nodes[gCursor].scrollIntoView({ block:'nearest' });
+  }
+
+  function gPick(item){
+    if (!item) return;
+    el('gq').value = '';
+    gClose();
+    closeSidebar();
+    item.open();
+  }
+
+  let gTimer = null;
+  el('gq').addEventListener('input', () => {
+    clearTimeout(gTimer);
+    gTimer = setTimeout(gRender, 90);
+  });
+  el('gq').addEventListener('focus', () => { if (el('gq').value.trim()) gRender(); });
+  el('gq').addEventListener('keydown', (e) => {
+    if (e.key === 'Escape'){ el('gq').value = ''; gClose(); el('gq').blur(); return; }
+    if (!gItems.length) return;
+    if (e.key === 'ArrowDown'){ e.preventDefault(); gCursor = (gCursor + 1) % gItems.length; gPaint(); }
+    else if (e.key === 'ArrowUp'){ e.preventDefault(); gCursor = (gCursor - 1 + gItems.length) % gItems.length; gPaint(); }
+    else if (e.key === 'Enter'){ e.preventDefault(); gPick(gItems[gCursor]); }
+  });
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.gsearch')) gClose();
+  });
+
+  /* ---- sidebar ---- */
+
+  function openSidebar(){
+    el('side').classList.add('open');
+    el('sideBg').classList.add('open');
+    el('sideToggle').setAttribute('aria-expanded', 'true');
+  }
+  function closeSidebar(){
+    el('side').classList.remove('open');
+    el('sideBg').classList.remove('open');
+    el('sideToggle').setAttribute('aria-expanded', 'false');
+  }
+  el('sideToggle').addEventListener('click', () => {
+    if (el('side').classList.contains('open')) closeSidebar(); else openSidebar();
+  });
+  el('sideBg').addEventListener('click', closeSidebar);
+
+  // Counts of work that is actually late, so the nav says where to look.
+  function renderPips(){
+    const late = (n, id) => {
+      const pip = el(id);
+      pip.textContent = n > 99 ? '99+' : String(n);
+      pip.hidden = !n;
+    };
+    const lateLeads = leads.filter((l) => l.status !== 'closed' && l.status !== 'lost' &&
+      (() => { const d = daysUntil(l.next_follow_up); return d !== null && d < 0; })()).length;
+    const lateTasks = tasks.filter((t) => t.status !== 'done' &&
+      (() => { const d = daysUntil(t.due_on); return d !== null && d < 0; })()).length;
+    late(lateLeads + lateTasks, 'pipHome');
+    late(lateLeads, 'pipLeads');
+    late(lateTasks, 'pipTasks');
+  }
+
   fillSelect(el('tStatus'), TASK_COLS, 'id', 'label');
   fillSelect(el('tPriority'), TASK_PRIOS, 'id', 'label');
 
@@ -4357,6 +4751,21 @@
   });
 
   document.addEventListener('keydown', (e) => {
+    // Ctrl/Cmd+K focuses global search from anywhere.
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k'){
+      e.preventDefault();
+      closeAllDrawers();
+      el('gq').focus();
+      el('gq').select();
+      return;
+    }
+    // "/" too, as long as you are not already typing into something.
+    if (e.key === '/' && !e.metaKey && !e.ctrlKey && !e.altKey){
+      const t = e.target;
+      const typing = t && (t.isContentEditable ||
+        ['INPUT', 'TEXTAREA', 'SELECT'].includes(t.tagName));
+      if (!typing){ e.preventDefault(); el('gq').focus(); return; }
+    }
     if (e.key === 'Escape' && drawerOpen) closeAllDrawers();
     // Ctrl/Cmd+S saves whichever drawer is open.
     if (drawerOpen && (e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 's'){
@@ -4381,7 +4790,11 @@
           .catch((e) => { if (e.message === 'unauthorized') throw e; })
       ]);
       leads = leadData.leads || [];
-      if (leadData.user){ el('whoEmail').textContent = leadData.user; el('who').hidden = false; }
+      if (leadData.user){
+        el('whoEmail').textContent = leadData.user;
+        el('who').title = 'Signed in as ' + leadData.user;   // the column truncates it
+        el('who').hidden = false;
+      }
       hideBanner();
     } catch (err) {
       if (err.message !== 'unauthorized') showBanner(err.message);
