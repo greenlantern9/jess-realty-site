@@ -5245,6 +5245,31 @@
     }
     wrap.appendChild(bar);
 
+    /* address lookup */
+    const lu = anCard('Start from the address',
+      'Confirms the property against county records and pulls nearby recent sales as ' +
+      'candidate comps. Hillsborough County today; other counties still need typing in.');
+    const lb = document.createElement('div');
+    lb.className = 'cma-bar';
+    const addrIn = document.createElement('input');
+    addrIn.type = 'text';
+    addrIn.placeholder = '3801 W Bay to Bay Blvd, Tampa FL';
+    addrIn.value = d.subject.address || '';
+    addrIn.style.cssText = 'flex:1 1 320px;padding:10px 12px;border-radius:3px;background:var(--ink);' +
+      'border:1px solid var(--line-soft);color:var(--cream);font:inherit';
+    addrIn.addEventListener('keydown', (e) => { if (e.key === 'Enter') go.click(); });
+    const go = document.createElement('button');
+    go.type = 'button'; go.className = 'btn'; go.textContent = 'Look up';
+    go.addEventListener('click', () => lookupAddress(addrIn.value, go, lu.body));
+    lb.append(addrIn, go);
+    lu.body.appendChild(lb);
+    const lr = document.createElement('div');
+    lr.id = 'cmaLookup';
+    lr.style.marginTop = '14px';
+    lu.body.appendChild(lr);
+    renderLookup(lr);
+    wrap.appendChild(lu);
+
     /* subject */
     const sub = anCard('Subject property', 'The home you are pricing.');
     const sf = document.createElement('div');
@@ -5495,6 +5520,103 @@
     t.append(thead, tb);
     sc.appendChild(t);
     return sc;
+  }
+
+  /* ---- address lookup ----
+     Fills what county records actually publish and says plainly what they do
+     not. Never guess a bed count to make the form look complete. */
+
+  async function lookupAddress(address, btn, box){
+    if (!address.trim()){ showBanner('Type an address first.'); return; }
+    btn.disabled = true; btn.textContent = 'Looking…';
+    try {
+      const r = await api('/api/property?address=' + encodeURIComponent(address.trim()));
+      cmaDoc.subject.address = (r.subject && r.subject.address) || r.matched || address.trim();
+      cmaDoc.lookup = r;
+      renderCma();
+      hideBanner();
+    } catch (err) {
+      if (err.message !== 'unauthorized') showBanner(err.message);
+    } finally {
+      btn.disabled = false; btn.textContent = 'Look up';
+    }
+  }
+
+  function renderLookup(box){
+    const r = cmaDoc.lookup;
+    box.textContent = '';
+    if (!r) return;
+
+    const head = document.createElement('p');
+    head.className = 'an-caveat';
+    const hb = document.createElement('b');
+    hb.textContent = (r.subject ? 'Matched: ' : 'Address confirmed: ') +
+      ((r.subject && r.subject.address) || r.matched) + '. ';
+    head.append(hb, document.createTextNode(
+      r.subject
+        ? 'Folio ' + r.subject.folio +
+          (r.subject.lastSalePrice
+            ? ' · last sold ' + money0(r.subject.lastSalePrice) + ' on ' + r.subject.lastSaleDate
+            : ' · no recorded sale') +
+          '. Source: ' + r.source + '.'
+        : (r.note || 'No parcel record found at that point.')));
+    box.appendChild(head);
+
+    const gap = document.createElement('p');
+    gap.className = 'an-caveat';
+    gap.style.borderLeftColor = 'var(--hot)';
+    const gb = document.createElement('b');
+    gb.textContent = 'Beds, baths, living area, lot, year and condition are not in county records. ';
+    gap.append(gb, document.createTextNode(
+      'They come from your MLS, and they are what the adjustments run on — so fill them in ' +
+      'below for the subject and for any comp you accept. Nothing here will guess them.'));
+    box.appendChild(gap);
+
+    if (!r.comps || !r.comps.length){
+      const e = document.createElement('div');
+      e.className = 'an-empty';
+      e.textContent = 'No qualifying sales found nearby in the last year.';
+      box.appendChild(e);
+      return;
+    }
+
+    const lab = document.createElement('div');
+    lab.className = 'ghead';
+    lab.style.padding = '10px 0 4px';
+    lab.textContent = r.comps.length + ' recent sales within half a mile — add the ones that fit';
+    box.appendChild(lab);
+
+    const list = document.createElement('div');
+    list.className = 'cma-list';
+    r.comps.forEach((c) => {
+      const already = (cmaDoc.comps || []).some((x) => x.address === c.address);
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'cma-item';
+      const left = document.createElement('span');
+      const ad = document.createElement('span');
+      ad.className = 'ad';
+      ad.textContent = c.address;
+      const mt = document.createElement('span');
+      mt.className = 'mt';
+      mt.textContent = [money0(c.price), c.date, c.miles !== null ? c.miles + ' mi away' : '']
+        .filter(Boolean).join(' · ');
+      left.append(ad, mt);
+      const act = document.createElement('span');
+      act.className = 'sig-act';
+      act.textContent = already ? 'Added' : '+ Add as comp';
+      if (already) act.style.color = 'var(--sage)';
+      b.append(left, act);
+      b.disabled = already;
+      b.addEventListener('click', () => {
+        cmaDoc.comps.push(Object.assign(blankComp(), {
+          address: c.address, price: c.price, date: c.date, status: 'sold'
+        }));
+        renderCma();
+      });
+      list.appendChild(b);
+    });
+    box.appendChild(list);
   }
 
   /* ---- the report ---- */

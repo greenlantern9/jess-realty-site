@@ -647,6 +647,99 @@ check('over-long fields are capped, not refused',
   [longIns.args[1].length, longIns.args[2].length, longIns.args[5].length].join('/'));
 
 /* ------------------------------------------------------------------ */
+console.log('\n6d1. CMA address lookup');
+
+// Shapes copied from the live responses so a change upstream shows up here.
+const CENSUS = { result: { addressMatches: [{
+  matchedAddress: '3801 W BAY TO BAY BLVD, TAMPA, FL, 33629',
+  coordinates: { x: -82.5065, y: 27.9200 } }] } };
+const PARCEL = { features: [{ attributes: {
+  folio:'1234260000', FullAddress:'3801 W BAY TO BAY BLVD, TAMPA', SiteCity:'TAMPA',
+  SiteZip:'33629', TopSaleDate:'2013-07-30', TopSalePrice:900000 } }] };
+const ring = (lon, lat) => ({ rings: [[[lon, lat], [lon + 1e-4, lat], [lon, lat + 1e-4]]] });
+const SALES = { features: [
+  { attributes:{ folio:'A', FullAddress:'3709 W SANTIAGO ST, TAMPA', SiteZip:'33629',
+      TopSaleDate:'2026-07-15', TopSalePrice:575000 }, geometry: ring(-82.5060, 27.9212) },
+  { attributes:{ folio:'B', FullAddress:'3808 W BARCELONA ST, TAMPA', SiteZip:'33629',
+      TopSaleDate:'2026-05-21', TopSalePrice:2000000 }, geometry: ring(-82.5090, 27.9180) },
+  // the subject itself comes back in the envelope and must be dropped
+  { attributes:{ folio:'1234260000', FullAddress:'3801 W BAY TO BAY BLVD, TAMPA', SiteZip:'33629',
+      TopSaleDate:'2013-07-30', TopSalePrice:900000 }, geometry: ring(-82.5065, 27.9200) }
+] };
+
+let lookupCalls = [];
+const stubLookup = (opts = {}) => {
+  lookupCalls = [];
+  globalThis.fetch = async (input) => {
+    const u = typeof input === 'string' ? input : input.url;
+    lookupCalls.push(u);
+    if (opts.fail) throw new Error('network down');
+    if (u.includes('geocoding.geo.census.gov')) return new Response(JSON.stringify(
+      opts.noMatch ? { result: { addressMatches: [] } } : CENSUS), { status: 200 });
+    if (u.includes('hcpafl.org') && u.includes('esriGeometryEnvelope')) {
+      return new Response(JSON.stringify(SALES), { status: 200 });
+    }
+    if (u.includes('hcpafl.org')) return new Response(JSON.stringify(PARCEL), { status: 200 });
+    return new Response('{}', { status: 200 });
+  };
+};
+const savedLookupFetch = globalThis.fetch;
+
+let lk = await worker.fetch(req('/api/property?address=x'), authEnv(okDb));
+check('GET /api/property -> 401 without a token', lk.status === 401, 'got ' + lk.status);
+lk = await worker.fetch(authReq('/api/property'), authEnv(okDb));
+check('an empty address -> 400', lk.status === 400, 'got ' + lk.status);
+lk = await worker.fetch(authReq('/api/property?address=x', 'POST'), authEnv(okDb));
+check('POST /api/property -> 405', lk.status === 405, 'got ' + lk.status);
+
+stubLookup();
+lk = await worker.fetch(authReq('/api/property?address=3801+W+Bay+to+Bay+Blvd+Tampa'), authEnv(okDb));
+let lb = await lk.json();
+check('lookup -> 200', lk.status === 200, 'got ' + lk.status);
+check('the address is confirmed against county records',
+  lb.subject?.folio === '1234260000' && lb.subject.zip === '33629', JSON.stringify(lb.subject));
+check('the last recorded sale comes back',
+  lb.subject?.lastSalePrice === 900000 && lb.subject.lastSaleDate === '2013-07-30');
+// The centreline point sits in the road, so a point-intersect would miss.
+check('the parcel is found by street match, not a point hit',
+  lookupCalls.some((u) => /FullAddress\+?LIKE/i.test(decodeURIComponent(u))),
+  lookupCalls.join('\n'));
+check('nearby sales come back as comp candidates', lb.comps.length === 2, JSON.stringify(lb.comps));
+check('the subject is not offered as its own comp',
+  !lb.comps.some((c) => c.address.includes('BAY TO BAY')), JSON.stringify(lb.comps.map((c) => c.address)));
+check('comps carry price, date and distance',
+  lb.comps[0].price === 575000 && lb.comps[0].date === '2026-07-15' && lb.comps[0].miles >= 0,
+  JSON.stringify(lb.comps[0]));
+check('and are sorted nearest first', lb.comps[0].miles <= lb.comps[1].miles,
+  lb.comps.map((c) => c.miles).join(' '));
+// Non-arm's-length transfers are not evidence of market value.
+// URLSearchParams encodes spaces as '+', which decodeURIComponent leaves alone.
+const asText = (u) => decodeURIComponent(u).replace(/\+/g, ' ');
+check('$100 deed shuffles are filtered out upstream',
+  lookupCalls.some((u) => asText(u).includes('TopSalePrice > 50000')),
+  lookupCalls.map(asText).join('\n'));
+check('the response names what it could not fill in',
+  Array.isArray(lb.missing) && lb.missing.includes('sqft') && lb.missing.includes('beds'),
+  JSON.stringify(lb.missing));
+check('and cites where the data came from', /Property Appraiser/.test(lb.source || ''), lb.source);
+
+stubLookup({ noMatch: true });
+lk = await worker.fetch(authReq('/api/property?address=nowhere'), authEnv(okDb));
+check('an unrecognised address -> 404', lk.status === 404, 'got ' + lk.status);
+
+stubLookup({ fail: true });
+lk = await worker.fetch(authReq('/api/property?address=x'), authEnv(okDb));
+check('an upstream outage -> 502, not a crash', lk.status === 502, 'got ' + lk.status);
+check('and says to type it in instead', /type the details in/i.test((await lk.json()).error));
+
+stubLookup();
+lk = await worker.fetch(authReq('/api/property?address=x&county=orange'), authEnv(okDb));
+lb = await lk.json();
+check('an uncovered county still confirms the address',
+  lk.status === 200 && lb.subject === null && lb.comps.length === 0 && !!lb.note, JSON.stringify(lb));
+globalThis.fetch = savedLookupFetch;
+
+/* ------------------------------------------------------------------ */
 console.log('\n6d2. CMA storage');
 
 let cmaRow = { id:'c1', address:'4412 Bayshore', client:'Dana', lead_id:'L1',

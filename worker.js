@@ -201,6 +201,11 @@ async function handleApi(request, env, url, ctx) {
     return methodNotAllowed('GET, POST');
   }
 
+  if (path === '/api/property') {
+    if (request.method !== 'GET') return methodNotAllowed('GET');
+    return handlePropertyLookup(request, env, url);
+  }
+
   if (path === '/api/cmas') {
     if (request.method === 'GET')  return handleCmaList(request, env);
     if (request.method === 'POST') return handleCmaCreate(request, env);
@@ -969,6 +974,203 @@ async function handleExport(request, env) {
  * ------------------------------------------------------------------ */
 
 const CMA_MAX_PAYLOAD = 60000;   // a CMA with a dozen comps is a few KB
+
+/* ---- address lookup ----
+ * Free public sources, no credentials:
+ *   - the Census geocoder turns an address into a coordinate
+ *   - the county property appraiser's own GIS turns that into a parcel, and
+ *     answers "what else sold near here recently"
+ *
+ * What these DO return: verified address, folio, ZIP, last sale price and
+ * date, and nearby recent sales.
+ * What they do NOT: beds, baths, living area, lot size, year built. The
+ * county does not publish them here, so those stay hand-entered until an MLS
+ * feed is wired in. Do not invent them.
+ *
+ * Counties are a registry because each appraiser hosts its own service. Only
+ * the ones listed are covered; everywhere else falls back to geocode-only.
+ */
+const COUNTY_GIS = {
+  hillsborough: {
+    name: 'Hillsborough',
+    url: 'https://gis.hcpafl.org/arcgis/rest/services/Webmaps/HillsboroughFL_WebParcels/MapServer/0/query',
+    f: { id:'folio', address:'FullAddress', city:'SiteCity', zip:'SiteZip',
+         saleDate:'TopSaleDate', salePrice:'TopSalePrice' }
+  }
+};
+
+const LOOKUP_TIMEOUT = 8000;
+
+async function getJson(url, ms = LOOKUP_TIMEOUT) {
+  const res = await fetch(url, {
+    signal: AbortSignal.timeout(ms),
+    headers: { 'Accept': 'application/json' }
+  });
+  if (!res.ok) throw new Error('Upstream returned ' + res.status);
+  return res.json();
+}
+
+async function geocode(address) {
+  const u = new URL('https://geocoding.geo.census.gov/geocoder/locations/onelineaddress');
+  u.searchParams.set('address', address);
+  u.searchParams.set('benchmark', 'Public_AR_Current');
+  u.searchParams.set('format', 'json');
+  const j = await getJson(u.toString());
+  const m = j?.result?.addressMatches?.[0];
+  if (!m) return null;
+  return { matched: m.matchedAddress, lat: m.coordinates.y, lon: m.coordinates.x };
+}
+
+// Rough centroid of the first ring - good enough to sort comps by distance.
+function ringCentre(geom) {
+  const ring = geom?.rings?.[0];
+  if (!ring || !ring.length) return null;
+  let x = 0, y = 0;
+  for (const p of ring) { x += p[0]; y += p[1]; }
+  return { lon: x / ring.length, lat: y / ring.length };
+}
+
+function milesBetween(a, b) {
+  const dLat = (b.lat - a.lat) * 69.0;
+  const dLon = (b.lon - a.lon) * 69.0 * Math.cos(a.lat * Math.PI / 180);
+  return Math.sqrt(dLat * dLat + dLon * dLon);
+}
+
+function countyFor(name) {
+  const key = String(name || '').toLowerCase().replace(/\s+county$/, '').trim();
+  return COUNTY_GIS[key] ? { key, ...COUNTY_GIS[key] } : null;
+}
+
+// The geocoder returns a point interpolated onto the street centreline, which
+// usually falls in the road rather than inside the parcel polygon - so a plain
+// point-intersect misses. Match the normalised street line instead, and fall
+// back to a small envelope when the address string does not line up.
+async function parcelAt(county, geo) {
+  const street = String(geo.matched).split(',')[0].trim().toUpperCase();
+  if (street){
+    const u = new URL(county.url);
+    const p = u.searchParams;
+    p.set('where', `${county.f.address} LIKE '${street.replace(/'/g, "''")}%'`);
+    p.set('outFields', Object.values(county.f).join(','));
+    p.set('returnGeometry', 'false');
+    p.set('resultRecordCount', '1');
+    p.set('f', 'json');
+    try {
+      const j = await getJson(u.toString());
+      if (j?.features?.[0]) return j.features[0].attributes;
+    } catch (err) { console.error('Parcel street match failed:', err); }
+  }
+
+  const d = 0.0004;   // roughly 45 yards
+  const u = new URL(county.url);
+  const p = u.searchParams;
+  p.set('geometry', [geo.lon - d, geo.lat - d, geo.lon + d, geo.lat + d].join(','));
+  p.set('geometryType', 'esriGeometryEnvelope');
+  p.set('inSR', '4326');
+  p.set('spatialRel', 'esriSpatialRelIntersects');
+  p.set('outFields', Object.values(county.f).join(','));
+  p.set('returnGeometry', 'false');
+  p.set('resultRecordCount', '1');
+  p.set('f', 'json');
+  const j = await getJson(u.toString());
+  return j?.features?.[0]?.attributes || null;
+}
+
+async function salesNear(county, lat, lon, miles, sinceISO, limit) {
+  // Degrees per mile: latitude is constant, longitude shrinks with latitude.
+  const dLat = miles / 69.0;
+  const dLon = miles / (69.0 * Math.cos(lat * Math.PI / 180));
+  const u = new URL(county.url);
+  const p = u.searchParams;
+  p.set('geometry', [lon - dLon, lat - dLat, lon + dLon, lat + dLat].join(','));
+  p.set('geometryType', 'esriGeometryEnvelope');
+  p.set('inSR', '4326');
+  p.set('spatialRel', 'esriSpatialRelIntersects');
+  // The floor drops out quit-claims, family transfers and $100 deed shuffles,
+  // which are not evidence of market value.
+  p.set('where', `${county.f.salePrice} > 50000 AND ${county.f.saleDate} >= '${sinceISO}'`);
+  p.set('outFields', Object.values(county.f).join(','));
+  p.set('orderByFields', county.f.saleDate + ' DESC');
+  p.set('resultRecordCount', String(limit));
+  p.set('returnGeometry', 'true');
+  p.set('outSR', '4326');
+  p.set('f', 'json');
+  const j = await getJson(u.toString(), 12000);
+  return j?.features || [];
+}
+
+async function handlePropertyLookup(request, env, url) {
+  const auth = await requireAccess(env, request);
+  if (!auth.ok) return json({ error: auth.message }, auth.status);
+
+  const address = String(url.searchParams.get('address') || '').trim().slice(0, 200);
+  if (!address) return json({ error: 'Enter an address.' }, 400);
+  const county = countyFor(url.searchParams.get('county') || 'hillsborough');
+  const miles = Math.min(3, Math.max(0.1, parseFloat(url.searchParams.get('miles')) || 0.5));
+  const months = Math.min(36, Math.max(1, parseInt(url.searchParams.get('months'), 10) || 12));
+  const since = new Date(Date.now() - months * 30.44 * 86400000).toISOString().slice(0, 10);
+
+  let geo;
+  try {
+    geo = await geocode(address);
+  } catch (err) {
+    console.error('Geocode failed:', err);
+    return json({ error: 'The address lookup service did not respond. Try again, or type the details in.' }, 502);
+  }
+  if (!geo) {
+    return json({ error: 'No match for that address. Check the spelling, or add the city and ZIP.' }, 404);
+  }
+  if (!county) {
+    return json({ matched: geo.matched, lat: geo.lat, lon: geo.lon, county: null,
+                  subject: null, comps: [],
+                  note: 'Address confirmed, but no parcel service is wired up for that county yet.' });
+  }
+
+  let subject = null, comps = [];
+  try {
+    subject = await parcelAt(county, geo);
+  } catch (err) {
+    console.error('Parcel lookup failed:', err);
+  }
+  try {
+    const feats = await salesNear(county, geo.lat, geo.lon, miles, since, 40);
+    const here = { lat: geo.lat, lon: geo.lon };
+    comps = feats.map((ft) => {
+      const c = ringCentre(ft.geometry);
+      return {
+        id: ft.attributes[county.f.id],
+        address: ft.attributes[county.f.address] || '',
+        zip: ft.attributes[county.f.zip] || '',
+        price: Number(ft.attributes[county.f.salePrice]) || 0,
+        date: ft.attributes[county.f.saleDate] || '',
+        miles: c ? Math.round(milesBetween(here, c) * 100) / 100 : null
+      };
+    })
+      // Drop the subject itself, then nearest first.
+      .filter((c) => String(c.id) !== String(subject?.[county.f.id]))
+      .sort((a, b) => (a.miles ?? 99) - (b.miles ?? 99))
+      .slice(0, 12);
+  } catch (err) {
+    console.error('Nearby sales failed:', err);
+  }
+
+  return json({
+    matched: geo.matched, lat: geo.lat, lon: geo.lon,
+    county: county.name,
+    subject: subject ? {
+      folio: subject[county.f.id],
+      address: subject[county.f.address] || geo.matched,
+      city: subject[county.f.city] || '',
+      zip: subject[county.f.zip] || '',
+      lastSalePrice: Number(subject[county.f.salePrice]) || 0,
+      lastSaleDate: subject[county.f.saleDate] || ''
+    } : null,
+    comps,
+    // Said out loud so the UI never implies these arrived from somewhere.
+    missing: ['beds', 'baths', 'sqft', 'lot', 'year', 'condition'],
+    source: county.name + ' County Property Appraiser · US Census geocoder'
+  });
+}
 
 async function handleCmaList(request, env) {
   const auth = await requireAccess(env, request);
