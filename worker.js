@@ -97,6 +97,21 @@ export default {
       return Response.redirect(new URL(section, url.origin).toString(), 302);
     }
 
+    // Public landing pages. Ahead of the asset fetch so /l/ never collides
+    // with a file, and outside the /api/ try block because a failure here
+    // should show a page, not JSON.
+    const lp = url.pathname.match(/^\/l\/([a-z0-9-]{1,60})\/?$/);
+    if (lp) {
+      try {
+        return secured(await handleLandingPage(request, env, ctx, lp[1]));
+      } catch (err) {
+        console.error('Landing page error:', err);
+        return secured(new Response('This page is unavailable.', {
+          status: 500, headers: { 'Content-Type': 'text/plain; charset=utf-8' }
+        }));
+      }
+    }
+
     if (url.pathname.startsWith('/api/')) {
       // Contained on purpose: an API bug returns JSON 500 and never reaches
       // (or breaks) static asset serving for the rest of the site.
@@ -184,6 +199,48 @@ async function handleApi(request, env, url, ctx) {
     if (request.method === 'GET')  return handleTaskList(request, env);
     if (request.method === 'POST') return handleTaskCreate(request, env);
     return methodNotAllowed('GET, POST');
+  }
+
+  if (path === '/api/pages') {
+    if (request.method === 'GET')  return handlePageList(request, env);
+    if (request.method === 'POST') return handlePageCreate(request, env);
+    return methodNotAllowed('GET, POST');
+  }
+
+  const page = path.match(/^\/api\/pages\/([^/]+)$/);
+  if (page) {
+    const id = decodeURIComponent(page[1]);
+    if (request.method === 'PATCH')  return handlePageUpdate(request, env, id);
+    if (request.method === 'DELETE') return handlePageDelete(request, env, id);
+    return methodNotAllowed('PATCH, DELETE');
+  }
+
+  if (path === '/api/sources') {
+    if (request.method === 'GET')  return handleSourceList(request, env);
+    if (request.method === 'POST') return handleSourceCreate(request, env);
+    return methodNotAllowed('GET, POST');
+  }
+
+  const src = path.match(/^\/api\/sources\/([^/]+)$/);
+  if (src) {
+    const id = decodeURIComponent(src[1]);
+    if (request.method === 'PATCH')  return handleSourceUpdate(request, env, id);
+    if (request.method === 'DELETE') return handleSourceDelete(request, env, id);
+    return methodNotAllowed('PATCH, DELETE');
+  }
+
+  // Public: the landing page form posts here.
+  const lpPost = path.match(/^\/api\/l\/([a-z0-9-]{1,60})$/);
+  if (lpPost) {
+    if (request.method !== 'POST') return methodNotAllowed('POST');
+    return handleLandingSubmit(request, env, ctx, lpPost[1]);
+  }
+
+  // Public but token-gated: Zapier, Make, or anything that can POST JSON.
+  const inbound = path.match(/^\/api\/inbound\/([A-Za-z0-9_-]{10,80})$/);
+  if (inbound) {
+    if (request.method !== 'POST') return methodNotAllowed('POST');
+    return handleInbound(request, env, ctx, inbound[1]);
   }
 
   const task = path.match(/^\/api\/tasks\/([^/]+)$/);
@@ -387,7 +444,40 @@ const SCHEMA_SQL = [
    )`,
   `CREATE INDEX IF NOT EXISTS idx_tasks_status ON tasks(status)`,
   `CREATE INDEX IF NOT EXISTS idx_tasks_due    ON tasks(due_on)`,
-  `CREATE INDEX IF NOT EXISTS idx_tasks_lead   ON tasks(lead_id)`
+  `CREATE INDEX IF NOT EXISTS idx_tasks_lead   ON tasks(lead_id)`,
+  `CREATE TABLE IF NOT EXISTS landing_pages (
+     id          TEXT PRIMARY KEY,
+     slug        TEXT NOT NULL,
+     name        TEXT NOT NULL,
+     offer       TEXT NOT NULL DEFAULT 'valuation',
+     headline    TEXT NOT NULL DEFAULT '',
+     subhead     TEXT NOT NULL DEFAULT '',
+     benefits    TEXT NOT NULL DEFAULT '',
+     cta         TEXT NOT NULL DEFAULT '',
+     area        TEXT NOT NULL DEFAULT '',
+     ask_phone   INTEGER NOT NULL DEFAULT 1,
+     ask_address INTEGER NOT NULL DEFAULT 0,
+     ask_timeline INTEGER NOT NULL DEFAULT 1,
+     campaign    TEXT NOT NULL DEFAULT '',
+     status      TEXT NOT NULL DEFAULT 'draft',
+     views       INTEGER NOT NULL DEFAULT 0,
+     created_at  TEXT NOT NULL,
+     updated_at  TEXT NOT NULL
+   )`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS idx_pages_slug ON landing_pages(slug)`,
+  `CREATE TABLE IF NOT EXISTS lead_sources (
+     id          TEXT PRIMARY KEY,
+     name        TEXT NOT NULL,
+     token       TEXT NOT NULL,
+     map_source  TEXT NOT NULL DEFAULT 'other',
+     campaign    TEXT NOT NULL DEFAULT '',
+     active      INTEGER NOT NULL DEFAULT 1,
+     received    INTEGER NOT NULL DEFAULT 0,
+     last_at     TEXT NOT NULL DEFAULT '',
+     created_at  TEXT NOT NULL,
+     updated_at  TEXT NOT NULL
+   )`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS idx_sources_token ON lead_sources(token)`
 ];
 
 // Columns added after the table already existed in production. Applied lazily
@@ -414,6 +504,39 @@ const SCHEMA_SQL = [
 /* ------------------------------------------------------------------ *
  * Tasks - a work queue for Jessica or whoever helps her
  * ------------------------------------------------------------------ */
+
+/* ------------------------------------------------------------------ *
+ * Lead generation
+ *
+ * Two public surfaces live here, so read before extending:
+ *
+ *  /l/<slug>            a landing page whose copy Jessica authors. It is
+ *                       rendered server side and every value goes through
+ *                       esc() - she is trusted, but the page is public and one
+ *                       unescaped field is a stored XSS on her own domain.
+ *  /api/inbound/<token> accepts leads from Zapier, Make, or anything that can
+ *                       POST. The token is the only credential, so it is long,
+ *                       revocable, rate limited and never logged.
+ * ------------------------------------------------------------------ */
+
+const LP_OFFERS = {
+  valuation:      'What is my home worth?',
+  buyer_guide:    'Buyer guide',
+  neighborhood:   'Neighbourhood report',
+  listing_alerts: 'New listing alerts',
+  consult:        'Book a consultation'
+};
+const LP_STATUSES = new Set(['draft', 'live']);
+const LP_LIMITS = {
+  name: 120, slug: 60, headline: 160, subhead: 400,
+  benefits: 900, cta: 60, area: 120
+};
+// Reserved so a landing page can never shadow a real route or an asset dir.
+const LP_RESERVED = new Set([
+  'admin', 'api', 'l', 'assets', 'images', 'img', 'css', 'js', 'fonts',
+  'contact', 'about', 'area', 'families', 'schools', 'neighborhoods', 'process',
+  'index', 'robots', 'sitemap', 'favicon'
+]);
 
 const TASK_STATUSES   = new Set(['todo', 'doing', 'waiting', 'done']);
 const TASK_PRIORITIES = new Set(['high', 'normal', 'low']);
@@ -807,6 +930,670 @@ async function handleExport(request, env) {
     console.error('Export failed:', err);
     return json({ error: dbErrorMessage(err) }, 500);
   }
+}
+
+/* ------------------------------------------------------------------ *
+ * lead generation: landing pages + inbound sources
+ * ------------------------------------------------------------------ */
+
+// Every interpolation into the public landing page goes through this.
+function esc(v) {
+  return String(v ?? '')
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+function newToken() {
+  const b = new Uint8Array(24);
+  crypto.getRandomValues(b);
+  return [...b].map((n) => n.toString(36).padStart(2, '0')).join('').slice(0, 40);
+}
+
+async function insertLeadRow(env, o) {
+  await withSchema(env, () =>
+    env.DB.prepare(
+      `INSERT INTO leads
+         (id, name, email, phone, intent, message, status, notes, source, campaign,
+          created_at, updated_at)
+       VALUES (?,?,?,?,?,?,'new','',?,?,?,?)`
+    ).bind(
+      crypto.randomUUID(), o.name, o.email, o.phone, o.intent, o.message,
+      o.source, o.campaign, o.now, o.now
+    ).run()
+  );
+}
+
+/* ---- landing pages ---- */
+
+function readPageBody(body) {
+  const str = (k, max) => String(body[k] ?? '').trim().slice(0, max);
+  const out = {
+    name:     str('name', LP_LIMITS.name),
+    headline: str('headline', LP_LIMITS.headline),
+    subhead:  str('subhead', LP_LIMITS.subhead),
+    benefits: str('benefits', LP_LIMITS.benefits),
+    cta:      str('cta', LP_LIMITS.cta),
+    area:     str('area', LP_LIMITS.area),
+    campaign: str('campaign', 80),
+    offer:    body.offer  ?? 'valuation',
+    status:   body.status ?? 'draft',
+    ask_phone:    body.ask_phone    ? 1 : 0,
+    ask_address:  body.ask_address  ? 1 : 0,
+    ask_timeline: body.ask_timeline ? 1 : 0
+  };
+  out.slug = slugify(str('slug', LP_LIMITS.slug) || out.name);
+
+  const errors = {};
+  if (!out.name) errors.name = 'Give the page a name.';
+  if (!LP_OFFERS[out.offer]) errors.offer = 'Unknown offer.';
+  if (!LP_STATUSES.has(out.status)) errors.status = 'Unknown status.';
+  if (LP_RESERVED.has(out.slug)) errors.slug = 'That address is used by the site already.';
+  return { out, errors };
+}
+
+async function handlePageList(request, env) {
+  const auth = await requireAccess(env, request);
+  if (!auth.ok) return json({ error: auth.message }, auth.status);
+  if (!env.DB) return json({ error: 'Lead database is not bound.' }, 503);
+  try {
+    const { results } = await withSchema(env, () =>
+      env.DB.prepare(
+        `SELECT p.*,
+                (SELECT COUNT(*) FROM leads l WHERE l.campaign = p.campaign AND p.campaign <> '') AS leads
+           FROM landing_pages p ORDER BY p.created_at DESC`
+      ).all()
+    );
+    return json({ pages: results ?? [], user: auth.email });
+  } catch (err) {
+    console.error('Page query failed:', err);
+    return json({ error: dbErrorMessage(err) }, 500);
+  }
+}
+
+async function handlePageCreate(request, env) {
+  const auth = await requireAccess(env, request);
+  if (!auth.ok) return json({ error: auth.message }, auth.status);
+  if (!env.DB) return json({ error: 'Lead database is not bound.' }, 503);
+
+  let body;
+  try { body = await request.json(); } catch { return json({ error: 'Invalid JSON.' }, 400); }
+  const { out, errors } = readPageBody(body);
+  if (Object.keys(errors).length) {
+    return json({ error: 'Please check the highlighted fields.', errors }, 400);
+  }
+
+  const now = new Date().toISOString();
+  try {
+    // A slug is a public URL, so collisions have to be a hard error rather
+    // than a silent overwrite of a page that is already being advertised.
+    const clash = await withSchema(env, () =>
+      env.DB.prepare('SELECT id FROM landing_pages WHERE slug = ?').bind(out.slug).first()
+    );
+    if (clash) {
+      return json({ error: 'That web address is taken.', errors: { slug: 'Already in use.' } }, 400);
+    }
+    await withSchema(env, () =>
+      env.DB.prepare(
+        `INSERT INTO landing_pages
+           (id, slug, name, offer, headline, subhead, benefits, cta, area,
+            ask_phone, ask_address, ask_timeline, campaign, status, views,
+            created_at, updated_at)
+         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,0,?,?)`
+      ).bind(
+        crypto.randomUUID(), out.slug, out.name, out.offer, out.headline, out.subhead,
+        out.benefits, out.cta, out.area, out.ask_phone, out.ask_address, out.ask_timeline,
+        out.campaign, out.status, now, now
+      ).run()
+    );
+    return json({ success: true, slug: out.slug });
+  } catch (err) {
+    console.error('Page insert failed:', err);
+    return json({ error: dbErrorMessage(err) }, 500);
+  }
+}
+
+async function handlePageUpdate(request, env, id) {
+  const auth = await requireAccess(env, request);
+  if (!auth.ok) return json({ error: auth.message }, auth.status);
+  if (!env.DB) return json({ error: 'Lead database is not bound.' }, 503);
+
+  let body;
+  try { body = await request.json(); } catch { return json({ error: 'Invalid JSON.' }, 400); }
+  const { out, errors } = readPageBody({ name: 'placeholder', ...body });
+  if (body.name !== undefined && !String(body.name).trim()) {
+    return json({ error: 'Give the page a name.', errors: { name: 'Required.' } }, 400);
+  }
+  delete errors.name;
+  if (Object.keys(errors).length) {
+    return json({ error: 'Please check the highlighted fields.', errors }, 400);
+  }
+
+  if (body.slug !== undefined) {
+    const clash = await withSchema(env, () =>
+      env.DB.prepare('SELECT id FROM landing_pages WHERE slug = ? AND id <> ?')
+        .bind(out.slug, id).first()
+    );
+    if (clash) {
+      return json({ error: 'That web address is taken.', errors: { slug: 'Already in use.' } }, 400);
+    }
+  }
+
+  const sets = [], binds = [];
+  for (const f of ['slug','name','offer','headline','subhead','benefits','cta','area',
+                   'campaign','status','ask_phone','ask_address','ask_timeline']) {
+    if (body[f] === undefined) continue;
+    sets.push(`${f} = ?`); binds.push(out[f]);
+  }
+  if (!sets.length) return json({ error: 'Nothing to update.' }, 400);
+  sets.push('updated_at = ?'); binds.push(new Date().toISOString());
+  binds.push(id);
+
+  try {
+    const res = await withSchema(env, () =>
+      env.DB.prepare(`UPDATE landing_pages SET ${sets.join(', ')} WHERE id = ?`).bind(...binds).run()
+    );
+    if (!res.meta?.changes) return json({ error: 'Page not found.' }, 404);
+    return json({ success: true, slug: out.slug });
+  } catch (err) {
+    console.error('Page update failed:', err);
+    return json({ error: dbErrorMessage(err) }, 500);
+  }
+}
+
+async function handlePageDelete(request, env, id) {
+  const auth = await requireAccess(env, request);
+  if (!auth.ok) return json({ error: auth.message }, auth.status);
+  if (!env.DB) return json({ error: 'Lead database is not bound.' }, 503);
+  try {
+    const res = await withSchema(env, () =>
+      env.DB.prepare('DELETE FROM landing_pages WHERE id = ?').bind(id).run()
+    );
+    if (!res.meta?.changes) return json({ error: 'Page not found.' }, 404);
+    return json({ success: true });
+  } catch (err) {
+    console.error('Page delete failed:', err);
+    return json({ error: dbErrorMessage(err) }, 500);
+  }
+}
+
+/* ---- the public page ---- */
+
+const LP_INTENT = {
+  valuation:      'Sell a home',
+  buyer_guide:    'Buy a home',
+  neighborhood:   'Just exploring / get a home value',
+  listing_alerts: 'Buy a home',
+  consult:        'Both — buy and sell'
+};
+
+function landingHtml(p, origin) {
+  const bullets = String(p.benefits || '').split('\n')
+    .map((s) => s.trim()).filter(Boolean).slice(0, 8);
+  const cta = p.cta || 'Send it over';
+  const headline = p.headline || LP_OFFERS[p.offer] || 'Get in touch';
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>${esc(headline)} · Jessica Kortum</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{--ink:#232019;--ink-2:#2e2a22;--ink-3:#18150f;--cream:#f4f0e6;--cream-soft:#d0c8b8;
+    --sage:#9a9081;--brass:#c9a26b;--brass-bright:#e3c08c;--ok:#8fbf9a;--danger:#d97d72;
+    --line:rgba(244,240,230,.14);
+    --serif:"Fraunces",Georgia,serif;--sans:"Hanken Grotesk",-apple-system,"Segoe UI",sans-serif}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--ink);color:var(--cream);font-family:var(--sans);font-size:16px;
+    line-height:1.6;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1000px;margin:0 auto;padding:38px 22px 70px;
+    display:grid;grid-template-columns:1fr 400px;gap:44px;align-items:start}
+  .eyebrow{font-size:.7rem;font-weight:700;letter-spacing:.2em;text-transform:uppercase;
+    color:var(--brass);margin-bottom:14px}
+  h1{font-family:var(--serif);font-size:clamp(2rem,4.4vw,2.9rem);font-weight:500;
+    line-height:1.14;letter-spacing:-.015em}
+  .sub{color:var(--cream-soft);font-size:1.06rem;margin-top:16px;max-width:52ch}
+  ul{list-style:none;margin-top:26px;display:grid;gap:12px}
+  li{display:grid;grid-template-columns:20px 1fr;gap:12px;color:var(--cream-soft);font-size:.97rem}
+  li svg{width:18px;height:18px;margin-top:4px;color:var(--brass);flex-shrink:0}
+  .agent{margin-top:34px;padding-top:22px;border-top:1px solid var(--line);
+    font-size:.87rem;color:var(--sage);line-height:1.65}
+  .agent b{color:var(--cream-soft);font-weight:600}
+  form{background:var(--ink-2);border:1px solid var(--line);border-radius:6px;padding:24px 24px 26px;
+    position:sticky;top:26px;display:grid;gap:13px}
+  form h2{font-family:var(--serif);font-size:1.24rem;font-weight:500}
+  form p.note{font-size:.8rem;color:var(--sage);line-height:1.5}
+  label{font-size:.67rem;letter-spacing:.14em;text-transform:uppercase;color:var(--sage);
+    display:block;margin-bottom:6px}
+  input,select,textarea{width:100%;padding:11px 13px;border-radius:4px;background:var(--ink);
+    border:1px solid var(--line);color:var(--cream);font:inherit;font-size:.95rem}
+  input:focus,select:focus,textarea:focus{outline:none;border-color:var(--brass)}
+  textarea{resize:vertical;min-height:80px}
+  .err{font-size:.76rem;color:var(--danger);margin-top:5px;display:none}
+  .bad input,.bad select{border-color:var(--danger)}
+  .bad .err{display:block}
+  button{width:100%;padding:13px;border:0;border-radius:4px;background:var(--brass);
+    color:var(--ink-3);font:inherit;font-size:.95rem;font-weight:700;cursor:pointer;
+    letter-spacing:.02em;margin-top:4px}
+  button:hover{background:var(--brass-bright)}
+  button:disabled{opacity:.6;cursor:default}
+  .hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
+  .done{background:rgba(143,191,154,.12);border:1px solid rgba(143,191,154,.4);
+    border-radius:5px;padding:20px;color:var(--cream);font-size:.95rem;line-height:1.6}
+  .done b{display:block;font-family:var(--serif);font-size:1.2rem;font-weight:500;margin-bottom:7px}
+  .fail{background:rgba(217,125,114,.12);border:1px solid rgba(217,125,114,.45);
+    border-radius:4px;padding:11px 13px;font-size:.86rem;color:#f2b9b4;display:none}
+  footer{border-top:1px solid var(--line);padding:22px;text-align:center;
+    font-size:.76rem;color:var(--sage);line-height:1.7}
+  footer a{color:var(--sage)}
+  @media(max-width:860px){
+    .wrap{grid-template-columns:1fr;gap:30px;padding-top:28px}
+    form{position:static}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div>
+    <div class="eyebrow">${esc(p.area || 'Tampa Bay')}</div>
+    <h1>${esc(headline)}</h1>
+    ${p.subhead ? `<p class="sub">${esc(p.subhead)}</p>` : ''}
+    ${bullets.length ? `<ul>${bullets.map((b) => `<li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m5 13 4 4L19 7"/></svg><span>${esc(b)}</span></li>`).join('')}</ul>` : ''}
+    <div class="agent">
+      <b>Jessica Kortum</b> · REALTOR® · Agile Group Realty · License SL3634399<br>
+      Serving Tampa, Sarasota and the surrounding Gulf Coast.
+    </div>
+  </div>
+
+  <form id="f" novalidate>
+    <h2>${esc(cta)}</h2>
+    <div class="fail" id="fail"></div>
+    <div class="fset" id="w-name">
+      <label for="name">Your name</label>
+      <input id="name" name="name" type="text" autocomplete="name" required>
+      <div class="err" id="e-name">Please tell me your name.</div>
+    </div>
+    <div class="fset" id="w-email">
+      <label for="email">Email</label>
+      <input id="email" name="email" type="email" autocomplete="email" required>
+      <div class="err" id="e-email">That email does not look right.</div>
+    </div>
+    ${Number(p.ask_phone) ? `<div class="fset" id="w-phone">
+      <label for="phone">Phone</label>
+      <input id="phone" name="phone" type="tel" autocomplete="tel" inputmode="tel" placeholder="(813) 555-0142">
+      <div class="err" id="e-phone">Please use a 10-digit US number.</div>
+    </div>` : ''}
+    ${Number(p.ask_address) ? `<div class="fset" id="w-address">
+      <label for="address">Property address</label>
+      <input id="address" name="address" type="text" autocomplete="street-address">
+      <div class="err" id="e-address"></div>
+    </div>` : ''}
+    ${Number(p.ask_timeline) ? `<div class="fset" id="w-timeline">
+      <label for="timeline">Timeframe</label>
+      <select id="timeline" name="timeline">
+        <option value="">Not sure yet</option>
+        <option>Within 30 days</option>
+        <option>1–3 months</option>
+        <option>3–6 months</option>
+        <option>6–12 months</option>
+        <option>Just researching</option>
+      </select>
+    </div>` : ''}
+    <div class="fset">
+      <label for="message">Anything else?</label>
+      <textarea id="message" name="message" rows="3"></textarea>
+    </div>
+    <div class="hp" aria-hidden="true">
+      <label for="company">Company</label>
+      <input id="company" name="company" type="text" tabindex="-1" autocomplete="off">
+    </div>
+    <button type="submit" id="go">${esc(cta)}</button>
+    <p class="note">No spam, and your details are never sold or shared.</p>
+  </form>
+</div>
+
+<footer>
+  © ${new Date().getFullYear()} Jessica Kortum · Agile Group Realty · License SL3634399<br>
+  Equal Housing Opportunity · <a href="${esc(origin)}/">jessicakortum.com</a>
+</footer>
+
+<script>
+  var f = document.getElementById('f');
+  var slug = ${JSON.stringify(p.slug)};
+  function bad(id, on){ var w = document.getElementById('w-' + id); if (w) w.classList.toggle('bad', on); }
+  function digits(v){ return v.replace(/\\D/g, ''); }
+  var phone = document.getElementById('phone');
+  if (phone) phone.addEventListener('input', function(){
+    var d = digits(phone.value).slice(0, 10);
+    phone.value = d.length > 6 ? '(' + d.slice(0,3) + ') ' + d.slice(3,6) + '-' + d.slice(6)
+                : d.length > 3 ? '(' + d.slice(0,3) + ') ' + d.slice(3)
+                : d.length ? '(' + d : '';
+  });
+  f.addEventListener('submit', function(e){
+    e.preventDefault();
+    var name = document.getElementById('name').value.trim();
+    var email = document.getElementById('email').value.trim();
+    var ok = true;
+    bad('name', false); bad('email', false); bad('phone', false);
+    if (!name){ bad('name', true); ok = false; }
+    if (!/^[^\\s@]+@[^\\s@]+\\.[a-zA-Z]{2,}$/.test(email)){ bad('email', true); ok = false; }
+    if (phone && phone.value.trim() && digits(phone.value).length !== 10){ bad('phone', true); ok = false; }
+    if (!ok) return;
+
+    var body = { name:name, email:email, slug:slug,
+      phone: phone ? phone.value.trim() : '',
+      address: (document.getElementById('address')||{}).value || '',
+      timeline: (document.getElementById('timeline')||{}).value || '',
+      message: document.getElementById('message').value.trim(),
+      company: document.getElementById('company').value };
+
+    var go = document.getElementById('go');
+    go.disabled = true; go.textContent = 'Sending…';
+    fetch('/api/l/' + slug, { method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(body) })
+      .then(function(r){ return r.json().then(function(j){ return { ok:r.ok, j:j }; }); })
+      .then(function(res){
+        if (!res.ok) throw new Error((res.j && res.j.error) || 'Something went wrong.');
+        var d = document.createElement('div');
+        d.className = 'done';
+        var b = document.createElement('b'); b.textContent = 'Thank you, ' + name.split(' ')[0] + '.';
+        d.appendChild(b);
+        d.appendChild(document.createTextNode(
+          'I have got your details and will be in touch personally, usually the same day.'));
+        f.replaceWith(d);
+      })
+      .catch(function(err){
+        var fl = document.getElementById('fail');
+        fl.textContent = err.message;
+        fl.style.display = 'block';
+        go.disabled = false; go.textContent = ${JSON.stringify(cta)};
+      });
+  });
+</script>
+</body>
+</html>`;
+}
+
+async function handleLandingPage(request, env, ctx, slug) {
+  if (request.method !== 'GET' && request.method !== 'HEAD') {
+    return new Response('Method not allowed', { status: 405, headers: { Allow: 'GET' } });
+  }
+  if (!env.DB) return new Response('Not found', { status: 404 });
+
+  let p = null;
+  try {
+    p = await withSchema(env, () =>
+      env.DB.prepare('SELECT * FROM landing_pages WHERE slug = ?').bind(slug).first()
+    );
+  } catch (err) {
+    console.error('Landing lookup failed:', err);
+  }
+  // A draft is not published yet, so it reads as missing from the outside.
+  if (!p || p.status !== 'live') {
+    return new Response('Not found', {
+      status: 404, headers: { 'Content-Type': 'text/plain; charset=utf-8' }
+    });
+  }
+
+  // Counting a view must never delay or break the page.
+  if (ctx && typeof ctx.waitUntil === 'function') {
+    ctx.waitUntil(
+      env.DB.prepare('UPDATE landing_pages SET views = views + 1 WHERE id = ?')
+        .bind(p.id).run().catch((e) => console.error('View count failed:', e))
+    );
+  }
+
+  return new Response(landingHtml(p, new URL(request.url).origin), {
+    headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' }
+  });
+}
+
+async function handleLandingSubmit(request, env, ctx, slug) {
+  if (!env.DB) return json({ error: 'Not accepting submissions right now.' }, 503);
+
+  let body;
+  try { body = await request.json(); } catch { return json({ error: 'Invalid submission.' }, 400); }
+
+  if (String(body.company || '').trim()) return json({ success: true });   // honeypot
+  if (await isRateLimited(env, request)) {
+    return json({ error: 'Too many submissions. Please try again in a minute.' }, 429);
+  }
+
+  const name  = String(body.name  ?? '').trim().slice(0, FIELD_LIMITS.name);
+  const email = String(body.email ?? '').trim().slice(0, FIELD_LIMITS.email);
+  const phone = String(body.phone ?? '').trim().slice(0, FIELD_LIMITS.phone);
+  if (!name)                return json({ error: 'Please tell me your name.' }, 400);
+  if (!EMAIL_RE.test(email)) return json({ error: 'That email does not look right.' }, 400);
+  if (phone && !validPhone(phone)) return json({ error: 'That phone number does not look right.' }, 400);
+
+  let p;
+  try {
+    p = await withSchema(env, () =>
+      env.DB.prepare('SELECT * FROM landing_pages WHERE slug = ?').bind(slug).first()
+    );
+  } catch (err) {
+    console.error('Landing submit lookup failed:', err);
+    return json({ error: 'Something went wrong. Please try again.' }, 500);
+  }
+  if (!p || p.status !== 'live') return json({ error: 'This form is no longer active.' }, 404);
+
+  const extras = [
+    body.address  ? 'Property: ' + String(body.address).slice(0, 200)  : '',
+    body.timeline ? 'Timeframe: ' + String(body.timeline).slice(0, 60) : '',
+    String(body.message ?? '').trim().slice(0, FIELD_LIMITS.message)
+  ].filter(Boolean).join('\n');
+
+  try {
+    await insertLeadRow(env, {
+      name, email, phone,
+      intent: LP_INTENT[p.offer] || '',
+      message: extras || ('From the "' + p.name + '" page.'),
+      source: 'website',
+      campaign: p.campaign || '',
+      now: new Date().toISOString()
+    });
+  } catch (err) {
+    console.error('Landing lead insert failed:', err);
+    return json({ error: 'Something went wrong. Please try again.' }, 500);
+  }
+
+  if (ctx && typeof ctx.waitUntil === 'function') ctx.waitUntil(notifyNewLead(env));
+  return json({ success: true });
+}
+
+/* ---- inbound sources ---- */
+
+async function handleSourceList(request, env) {
+  const auth = await requireAccess(env, request);
+  if (!auth.ok) return json({ error: auth.message }, auth.status);
+  if (!env.DB) return json({ error: 'Lead database is not bound.' }, 503);
+  try {
+    const { results } = await withSchema(env, () =>
+      env.DB.prepare('SELECT * FROM lead_sources ORDER BY created_at DESC').all()
+    );
+    return json({ sources: results ?? [], user: auth.email });
+  } catch (err) {
+    console.error('Source query failed:', err);
+    return json({ error: dbErrorMessage(err) }, 500);
+  }
+}
+
+async function handleSourceCreate(request, env) {
+  const auth = await requireAccess(env, request);
+  if (!auth.ok) return json({ error: auth.message }, auth.status);
+  if (!env.DB) return json({ error: 'Lead database is not bound.' }, 503);
+
+  let body;
+  try { body = await request.json(); } catch { return json({ error: 'Invalid JSON.' }, 400); }
+  const name = String(body.name ?? '').trim().slice(0, 80);
+  const mapSource = String(body.map_source ?? 'other');
+  if (!name) return json({ error: 'Give the source a name.', errors: { name: 'Required.' } }, 400);
+  if (!LEAD_SOURCES.has(mapSource)) return json({ error: 'Unknown source.' }, 400);
+
+  const now = new Date().toISOString();
+  try {
+    await withSchema(env, () =>
+      env.DB.prepare(
+        `INSERT INTO lead_sources
+           (id, name, token, map_source, campaign, active, received, last_at, created_at, updated_at)
+         VALUES (?,?,?,?,?,1,0,'',?,?)`
+      ).bind(
+        crypto.randomUUID(), name, newToken(), mapSource,
+        String(body.campaign ?? '').trim().slice(0, 80), now, now
+      ).run()
+    );
+    return json({ success: true });
+  } catch (err) {
+    console.error('Source insert failed:', err);
+    return json({ error: dbErrorMessage(err) }, 500);
+  }
+}
+
+async function handleSourceUpdate(request, env, id) {
+  const auth = await requireAccess(env, request);
+  if (!auth.ok) return json({ error: auth.message }, auth.status);
+  if (!env.DB) return json({ error: 'Lead database is not bound.' }, 503);
+
+  let body;
+  try { body = await request.json(); } catch { return json({ error: 'Invalid JSON.' }, 400); }
+
+  const sets = [], binds = [];
+  if (body.name !== undefined) {
+    const v = String(body.name).trim().slice(0, 80);
+    if (!v) return json({ error: 'Give the source a name.', errors: { name: 'Required.' } }, 400);
+    sets.push('name = ?'); binds.push(v);
+  }
+  if (body.map_source !== undefined) {
+    if (!LEAD_SOURCES.has(body.map_source)) return json({ error: 'Unknown source.' }, 400);
+    sets.push('map_source = ?'); binds.push(body.map_source);
+  }
+  if (body.campaign !== undefined) {
+    sets.push('campaign = ?'); binds.push(String(body.campaign).trim().slice(0, 80));
+  }
+  if (body.active !== undefined) { sets.push('active = ?'); binds.push(body.active ? 1 : 0); }
+  // Rotating is the only way to revoke a token that has leaked.
+  if (body.rotate) { sets.push('token = ?'); binds.push(newToken()); }
+  if (!sets.length) return json({ error: 'Nothing to update.' }, 400);
+
+  sets.push('updated_at = ?'); binds.push(new Date().toISOString());
+  binds.push(id);
+  try {
+    const res = await withSchema(env, () =>
+      env.DB.prepare(`UPDATE lead_sources SET ${sets.join(', ')} WHERE id = ?`).bind(...binds).run()
+    );
+    if (!res.meta?.changes) return json({ error: 'Source not found.' }, 404);
+    return json({ success: true });
+  } catch (err) {
+    console.error('Source update failed:', err);
+    return json({ error: dbErrorMessage(err) }, 500);
+  }
+}
+
+async function handleSourceDelete(request, env, id) {
+  const auth = await requireAccess(env, request);
+  if (!auth.ok) return json({ error: auth.message }, auth.status);
+  if (!env.DB) return json({ error: 'Lead database is not bound.' }, 503);
+  try {
+    const res = await withSchema(env, () =>
+      env.DB.prepare('DELETE FROM lead_sources WHERE id = ?').bind(id).run()
+    );
+    if (!res.meta?.changes) return json({ error: 'Source not found.' }, 404);
+    return json({ success: true });
+  } catch (err) {
+    console.error('Source delete failed:', err);
+    return json({ error: dbErrorMessage(err) }, 500);
+  }
+}
+
+// Field names differ per provider, so accept the common spellings rather than
+// making every integration need a custom mapping step.
+function pickField(obj, names) {
+  for (const n of names) {
+    for (const k of Object.keys(obj)) {
+      if (k.toLowerCase().replace(/[^a-z]/g, '') === n) {
+        const v = obj[k];
+        if (v !== null && v !== undefined && String(v).trim()) return String(v).trim();
+      }
+    }
+  }
+  return '';
+}
+
+async function handleInbound(request, env, ctx, token) {
+  if (!env.DB) return json({ error: 'Not accepting leads right now.' }, 503);
+  if (await isRateLimited(env, request)) return json({ error: 'Too many requests.' }, 429);
+
+  let body;
+  const type = request.headers.get('Content-Type') || '';
+  try {
+    if (type.includes('application/json')) {
+      body = await request.json();
+    } else {
+      body = Object.fromEntries(await request.formData());
+    }
+  } catch {
+    return json({ error: 'Send JSON or a form post.' }, 400);
+  }
+  if (!body || typeof body !== 'object') return json({ error: 'Send JSON or a form post.' }, 400);
+
+  let src;
+  try {
+    src = await withSchema(env, () =>
+      env.DB.prepare('SELECT * FROM lead_sources WHERE token = ?').bind(token).first()
+    );
+  } catch (err) {
+    console.error('Inbound lookup failed:', err);
+    return json({ error: 'Server error.' }, 500);
+  }
+  // Same answer for a wrong token and a switched-off one, so probing tells
+  // an attacker nothing about which tokens exist.
+  if (!src || !Number(src.active)) return json({ error: 'Unknown or inactive endpoint.' }, 404);
+
+  const name = pickField(body, ['name', 'fullname', 'contactname', 'leadname', 'firstname'])
+    || [pickField(body, ['firstname']), pickField(body, ['lastname'])].filter(Boolean).join(' ');
+  const email = pickField(body, ['email', 'emailaddress', 'contactemail']);
+  const phone = pickField(body, ['phone', 'phonenumber', 'mobile', 'cell', 'contactphone']);
+  if (!name && !email && !phone) {
+    return json({ error: 'Need at least a name, an email or a phone number.' }, 400);
+  }
+
+  const intent  = pickField(body, ['intent', 'interest', 'lookingto', 'type', 'inquirytype']);
+  const message = pickField(body, ['message', 'comments', 'notes', 'question', 'details']);
+  const extra = [
+    pickField(body, ['address', 'propertyaddress', 'listingaddress']),
+    pickField(body, ['timeline', 'timeframe', 'when']),
+    pickField(body, ['budget', 'pricerange', 'price'])
+  ].filter(Boolean).join(' · ');
+
+  const now = new Date().toISOString();
+  try {
+    await insertLeadRow(env, {
+      name: (name || email || phone).slice(0, FIELD_LIMITS.name),
+      email: EMAIL_RE.test(email) ? email.slice(0, FIELD_LIMITS.email) : '',
+      phone: phone.slice(0, FIELD_LIMITS.phone),
+      intent: intent.slice(0, FIELD_LIMITS.intent),
+      message: [message, extra, 'Via ' + src.name].filter(Boolean).join('\n')
+        .slice(0, FIELD_LIMITS.message),
+      source: src.map_source,
+      campaign: src.campaign || '',
+      now
+    });
+    await withSchema(env, () =>
+      env.DB.prepare('UPDATE lead_sources SET received = received + 1, last_at = ? WHERE id = ?')
+        .bind(now, src.id).run()
+    );
+  } catch (err) {
+    console.error('Inbound insert failed:', err);
+    return json({ error: 'Could not save that lead.' }, 500);
+  }
+
+  if (ctx && typeof ctx.waitUntil === 'function') ctx.waitUntil(notifyNewLead(env));
+  return json({ success: true });
 }
 
 /* ------------------------------------------------------------------ *

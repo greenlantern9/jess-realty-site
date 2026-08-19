@@ -274,7 +274,7 @@
      toggled by the attribute needs this or it stays on screen. Bitten by this
      twice already - .board, then the whole leads toolbar. */
   .board[hidden],.tablewrap[hidden],.tbl-foot[hidden],.camp-wrap[hidden],.calc-wrap[hidden],
-  .an-wrap[hidden],.home-wrap[hidden],.tools[hidden],
+  .an-wrap[hidden],.home-wrap[hidden],.tools[hidden],.gen-wrap[hidden],
   .stats[hidden],.viewtoggle[hidden],.btn[hidden],.search[hidden]{display:none}
 
   /* ---------------- calculators ---------------- */
@@ -448,6 +448,61 @@
     .hero h2{font-size:1.34rem}
     .brand{font-size:1.05rem}
   }
+
+  /* ---------------- lead generation ---------------- */
+  .gen-wrap{flex:1;overflow-y:auto;padding:18px 22px 44px}
+  .gen-inner{max-width:1180px;display:flex;flex-direction:column;gap:18px}
+  .gen-tabs{display:flex;gap:6px;flex-wrap:wrap}
+  .gen-tab{padding:9px 15px;border-radius:3px;font-size:.85rem;font-weight:600;
+    color:var(--cream-soft);background:var(--ink-2);border:1px solid var(--line-soft);transition:.2s}
+  .gen-tab:hover{border-color:var(--line);color:var(--cream)}
+  .gen-tab[aria-selected="true"]{background:var(--brass);color:var(--ink-3);border-color:var(--brass)}
+
+  .lp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px}
+  .lp{background:var(--ink-2);border:1px solid var(--line-soft);border-radius:4px;
+    padding:16px 17px;cursor:pointer;transition:border-color .2s,transform .15s;
+    display:flex;flex-direction:column;gap:10px}
+  .lp:hover{border-color:var(--line);transform:translateY(-1px)}
+  .lp-head{display:flex;align-items:baseline;gap:9px}
+  .lp-head .nm{font-weight:650;font-size:.98rem;flex:1;color:var(--cream)}
+  .lp .url{font-family:var(--mono,ui-monospace,monospace);font-size:.72rem;color:var(--brass-bright);
+    word-break:break-all;line-height:1.5}
+  .lp .off{font-size:.68rem;letter-spacing:.09em;text-transform:uppercase;color:var(--sage)}
+  .lp-metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;
+    padding-top:11px;border-top:1px solid var(--line-soft)}
+  .status-pill.live{background:rgba(143,191,154,.18);color:var(--ok)}
+
+  .sig-row{display:grid;grid-template-columns:38px 1fr auto;gap:12px;align-items:center;
+    padding:11px 4px;border-bottom:1px solid var(--line-soft);cursor:pointer;width:100%;
+    text-align:left;transition:background .15s}
+  .sig-row:last-of-type{border-bottom:0}
+  .sig-row:hover{background:var(--ink-3)}
+  .sig-score{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;
+    justify-content:center;font-family:var(--serif);font-size:.95rem;color:var(--ink-3);
+    background:var(--brass);font-variant-numeric:tabular-nums}
+  .sig-score.warm{background:var(--brass-bright)}
+  .sig-score.cool{background:var(--ink-4);color:var(--cream-soft)}
+  .sig-row .nm{display:block;font-size:.9rem;font-weight:650;color:var(--cream)}
+  .sig-why{display:flex;flex-wrap:wrap;gap:4px 6px;margin-top:5px}
+  .sig-why .chip{background:transparent;border:1px solid var(--line-soft);color:var(--sage);
+    text-transform:none;letter-spacing:.02em;font-size:.68rem}
+  .sig-act{font-size:.72rem;color:var(--brass-bright);white-space:nowrap;font-weight:600}
+
+  .src-row{display:grid;grid-template-columns:1fr auto;gap:14px;align-items:start;
+    padding:14px 0;border-bottom:1px solid var(--line-soft)}
+  .src-row:last-child{border-bottom:0}
+  .src-row .nm{font-weight:650;font-size:.95rem;color:var(--cream)}
+  .src-row .meta{font-size:.75rem;color:var(--sage);margin-top:3px}
+  .hook{display:flex;gap:8px;align-items:center;margin-top:9px}
+  .hook code{flex:1;font-family:var(--mono,ui-monospace,monospace);font-size:.7rem;
+    color:var(--cream-soft);background:var(--ink-3);border:1px solid var(--line-soft);
+    padding:7px 9px;border-radius:3px;word-break:break-all;line-height:1.5}
+  .recipe{display:grid;gap:5px;padding:12px 0;border-bottom:1px solid var(--line-soft)}
+  .recipe:last-child{border-bottom:0}
+  .recipe b{font-size:.87rem;color:var(--cream)}
+  .recipe span{font-size:.81rem;color:var(--sage);line-height:1.55}
+
+  @media(max-width:700px){ .gen-wrap{padding:14px 15px 34px} }
 
   /* ---------------- analytics ---------------- */
   .an-wrap{flex:1;overflow-y:auto;padding:18px 22px 44px}
@@ -679,6 +734,10 @@
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h11M4 17h9"/><path d="m15.5 18.5 2.5 2.5 4-5"/></svg>
       <span>Tasks</span><b class="pip" id="pipTasks" hidden></b>
     </button>
+    <button id="modGen" type="button" title="Landing pages, who to call next, and where leads come in from">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v4M4.9 6.3l2.6 2.6M19.1 6.3l-2.6 2.6"/><path d="M8 13a4 4 0 1 1 8 0c0 1.6-1 2.4-1.4 3.2-.3.5-.4 1-.4 1.8h-4.4c0-.8-.1-1.3-.4-1.8C9 15.4 8 14.6 8 13Z"/><path d="M10 21h4"/></svg>
+      <span>Generate</span>
+    </button>
     <button id="modCampaigns" type="button" title="Advertising, spend and what it actually produced">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10v4a1 1 0 0 0 1 1h3l6 4V5L8 9H5a1 1 0 0 0-1 1Z"/><path d="M18 9.5a4 4 0 0 1 0 5"/></svg>
       <span>Campaigns</span>
@@ -842,6 +901,13 @@
 
 <div class="home-wrap" id="homeWrap" hidden>
   <div class="home-inner" id="homeInner"></div>
+</div>
+
+<div class="gen-wrap" id="genWrap" hidden>
+  <div class="gen-inner">
+    <div class="gen-tabs" id="genTabs" role="tablist"></div>
+    <div id="genPanel"></div>
+  </div>
 </div>
 
 <div class="calc-wrap" id="calcWrap" hidden>
@@ -1024,6 +1090,134 @@
     <span class="saved" id="tSaved" hidden>Saved</span>
     <span class="spacer"></span>
     <button class="btn danger" id="tDelete" type="button">Delete</button>
+  </div>
+</aside>
+
+<aside class="drawer" id="pageDrawer" aria-hidden="true" aria-label="Landing page">
+  <div class="drawer-head">
+    <h2 id="pTitleHead">Landing page</h2>
+    <button class="x" id="pClose" type="button" aria-label="Close">×</button>
+  </div>
+  <div class="drawer-body">
+    <div class="grid2">
+      <div class="fset" id="pfs-name">
+        <label for="pName">Page name</label>
+        <input id="pName" type="text" placeholder="South Tampa home values">
+        <span class="err" id="perr-name"></span>
+      </div>
+      <div class="fset">
+        <label for="pStatus">Status</label>
+        <select id="pStatus" title="A draft is invisible to the public — the address returns a 404 until you set it live">
+          <option value="draft">Draft</option>
+          <option value="live">Live</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="fset" id="pfs-slug">
+      <label for="pSlug">Web address</label>
+      <input id="pSlug" type="text" placeholder="south-tampa-home-values" title="Letters, numbers and dashes. This is the part after /l/">
+      <div class="track-url" id="pUrl">Save to generate the link.</div>
+      <button class="linkbtn" id="pCopy" type="button" style="text-align:left">Copy link</button>
+      <span class="err" id="perr-slug"></span>
+    </div>
+
+    <div class="fset">
+      <label for="pOffer">What you're offering</label>
+      <select id="pOffer" title="Sets the headline default and how the lead is tagged when it arrives"></select>
+    </div>
+
+    <div class="fset">
+      <label for="pHeadline">Headline</label>
+      <input id="pHeadline" type="text" placeholder="What is your South Tampa home worth today?">
+    </div>
+
+    <div class="fset">
+      <label for="pSubhead">Sub-heading</label>
+      <textarea id="pSubhead" placeholder="A real number from someone who sells here every week — not an automated guess."></textarea>
+    </div>
+
+    <div class="fset">
+      <label for="pBenefits">Bullet points <span style="text-transform:none;letter-spacing:0">(one per line)</span></label>
+      <textarea id="pBenefits" placeholder="Priced from actual recent sales on your street&#10;No obligation and no sales pitch&#10;Usually back to you the same day"></textarea>
+    </div>
+
+    <div class="grid2">
+      <div class="fset">
+        <label for="pCta">Button text</label>
+        <input id="pCta" type="text" placeholder="Send me my number">
+      </div>
+      <div class="fset">
+        <label for="pArea">Area label</label>
+        <input id="pArea" type="text" placeholder="South Tampa">
+      </div>
+    </div>
+
+    <div class="fset">
+      <label>Ask for</label>
+      <div class="quick" style="gap:14px">
+        <label style="text-transform:none;letter-spacing:0;font-size:.85rem;color:var(--cream-soft);display:flex;gap:7px;align-items:center">
+          <input id="pAskPhone" type="checkbox" style="width:auto"> Phone</label>
+        <label style="text-transform:none;letter-spacing:0;font-size:.85rem;color:var(--cream-soft);display:flex;gap:7px;align-items:center">
+          <input id="pAskAddress" type="checkbox" style="width:auto"> Property address</label>
+        <label style="text-transform:none;letter-spacing:0;font-size:.85rem;color:var(--cream-soft);display:flex;gap:7px;align-items:center">
+          <input id="pAskTimeline" type="checkbox" style="width:auto"> Timeframe</label>
+      </div>
+    </div>
+
+    <div class="fset">
+      <label for="pCampaign">Attribute to a campaign</label>
+      <select id="pCampaign" title="Leads from this page get tagged with the campaign, so spend and results line up in Analytics"></select>
+    </div>
+
+    <div class="meta-line" id="pMeta"></div>
+  </div>
+  <div class="drawer-foot">
+    <button class="btn" id="pSave" type="button">Save</button>
+    <button class="btn ghost" id="pPreview" type="button" title="Opens the live page in a new tab">Preview</button>
+    <button class="btn ghost" id="pCancel" type="button">Cancel</button>
+    <span class="spacer"></span>
+    <button class="btn danger" id="pDelete" type="button">Delete</button>
+  </div>
+</aside>
+
+<aside class="drawer" id="srcDrawer" aria-hidden="true" aria-label="Lead source">
+  <div class="drawer-head">
+    <h2 id="sTitleHead">Lead source</h2>
+    <button class="x" id="sClose" type="button" aria-label="Close">×</button>
+  </div>
+  <div class="drawer-body">
+    <div class="fset" id="sfs-name">
+      <label for="sName">Name it</label>
+      <input id="sName" type="text" placeholder="Zillow · Premier Agent">
+      <span class="err" id="serr-name"></span>
+    </div>
+    <div class="fset">
+      <label for="sMap">Tag arriving leads as</label>
+      <select id="sMap" title="Sets the Source field on every lead that comes through, so Analytics can tell you what each channel produced"></select>
+    </div>
+    <div class="fset">
+      <label for="sCampaign">Attribute to a campaign</label>
+      <select id="sCampaign"></select>
+    </div>
+    <div class="fset">
+      <label>Post leads to this address</label>
+      <div class="track-url" id="sUrl">Save to generate the endpoint.</div>
+      <button class="linkbtn" id="sCopy" type="button" style="text-align:left">Copy endpoint</button>
+    </div>
+    <div class="note-box" id="sHelp"></div>
+    <div class="fset">
+      <label style="text-transform:none;letter-spacing:0;font-size:.85rem;color:var(--cream-soft);display:flex;gap:8px;align-items:center">
+        <input id="sActive" type="checkbox" style="width:auto"> Accepting leads</label>
+    </div>
+    <div class="meta-line" id="sMeta"></div>
+  </div>
+  <div class="drawer-foot">
+    <button class="btn" id="sSave" type="button">Save</button>
+    <button class="btn ghost" id="sRotate" type="button" title="Invalidates the old address immediately">New address</button>
+    <button class="btn ghost" id="sCancel" type="button">Cancel</button>
+    <span class="spacer"></span>
+    <button class="btn danger" id="sDelete" type="button">Delete</button>
   </div>
 </aside>
 
@@ -2403,8 +2597,8 @@
   let module = 'home';
 
   const MODULE_TITLES = {
-    home:'Home', leads:'Lead Board', tasks:'Tasks', campaigns:'Campaigns',
-    analytics:'Analytics', calc:'Calculators'
+    home:'Home', leads:'Lead Board', tasks:'Tasks', gen:'Generate',
+    campaigns:'Campaigns', analytics:'Analytics', calc:'Calculators'
   };
 
   function setModule(next){
@@ -2412,9 +2606,9 @@
     const isHome  = next === 'home',
           isLeads = next === 'leads', isCamp = next === 'campaigns',
           isCalc  = next === 'calc',  isTask = next === 'tasks',
-          isAn    = next === 'analytics';
+          isAn    = next === 'analytics', isGen = next === 'gen';
 
-    [['modHome', isHome], ['modLeads', isLeads], ['modTasks', isTask],
+    [['modHome', isHome], ['modLeads', isLeads], ['modTasks', isTask], ['modGen', isGen],
      ['modCampaigns', isCamp], ['modAnalytics', isAn], ['modCalc', isCalc]]
       .forEach(([id, on]) => el(id).setAttribute('aria-current', on ? 'page' : 'false'));
     // The masthead is the product name now, so the module goes in the tab title.
@@ -2451,12 +2645,14 @@
     el('taskBoard').hidden = !isTask;
     el('anWrap').hidden = !isAn;
     el('homeWrap').hidden = !isHome;
+    el('genWrap').hidden = !isGen;
     if (!isLeads){ board.hidden = true; el('tablewrap').hidden = true; el('tblFoot').hidden = true; }
 
     if (isCamp) loadCampaigns();
     else if (isCalc) renderCalc();
     else if (isTask) loadTasks();
     else if (isAn) loadAnalytics();
+    else if (isGen) loadGen();
     else if (isHome) renderHome();
     else render();
   }
@@ -4120,6 +4316,660 @@
 
   el('modAnalytics').addEventListener('click', () => setModule('analytics'));
 
+  /* ================= lead generation =================
+     Three jobs behind one tab strip: pages that capture, a ranking of who to
+     call next, and the places leads arrive from.
+
+     SCOPE, read before extending "Signals": it ranks people already in this
+     database using facts this system recorded - when she closed them, what
+     they said, when she last spoke to them. It is not market data and it does
+     not guess at strangers. Doing the latter needs a property-record or MLS
+     feed that does not exist here, and the moment scoring reaches for life
+     events or demographics to predict a move it is a fair-housing problem as
+     well as a data one. Keep the inputs to her own contact history.        */
+
+  const GEN_TABS = [
+    { id:'pages',   label:'Landing pages' },
+    { id:'signals', label:'Who to call next' },
+    { id:'sources', label:'Lead sources' }
+  ];
+  const LP_OFFER_LIST = [
+    { id:'valuation',      label:'What is my home worth?' },
+    { id:'buyer_guide',    label:'Buyer guide' },
+    { id:'neighborhood',   label:'Neighbourhood report' },
+    { id:'listing_alerts', label:'New listing alerts' },
+    { id:'consult',        label:'Book a consultation' }
+  ];
+  const LP_OFFER_LABEL = Object.fromEntries(LP_OFFER_LIST.map((o) => [o.id, o.label]));
+
+  let pages = [], sources = [], pagesLoaded = false, sourcesLoaded = false;
+  let activePage = null, activeSource = null;
+  let genTab = store.get('genTab', 'pages');
+
+  const siteOrigin = () => 'https://jessicakortum.com';
+
+  async function loadGen(force){
+    const jobs = [];
+    if (force || !pagesLoaded){
+      jobs.push(api('/api/pages').then((d) => { pages = d.pages || []; pagesLoaded = true; }));
+    }
+    if (force || !sourcesLoaded){
+      jobs.push(api('/api/sources').then((d) => { sources = d.sources || []; sourcesLoaded = true; }));
+    }
+    if (force || !campaignsLoaded){
+      jobs.push(api('/api/campaigns').then((d) => { campaigns = d.campaigns || []; campaignsLoaded = true; }));
+    }
+    if (jobs.length){
+      try { await Promise.all(jobs); hideBanner(); }
+      catch (err){ if (err.message !== 'unauthorized') showBanner(err.message); }
+    }
+    renderGen();
+  }
+
+  function renderGen(){
+    const tabs = el('genTabs');
+    tabs.textContent = '';
+    GEN_TABS.forEach((t) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'gen-tab';
+      b.setAttribute('role', 'tab');
+      b.setAttribute('aria-selected', String(t.id === genTab));
+      b.textContent = t.label;
+      b.addEventListener('click', () => { genTab = t.id; store.set('genTab', t.id); renderGen(); });
+      tabs.appendChild(b);
+    });
+
+    const panel = el('genPanel');
+    panel.textContent = '';
+    if (genTab === 'pages') renderPages(panel);
+    else if (genTab === 'signals') renderSignals(panel);
+    else renderSources(panel);
+  }
+
+  /* ---- landing pages ---- */
+
+  const pageUrl = (slug) => siteOrigin() + '/l/' + slug;
+
+  function renderPages(panel){
+    const card = anCard('Landing pages',
+      'A one-page site built around a single ask. Point an ad, a postcard QR code or a social ' +
+      'post at it and every enquiry lands on your board already tagged.');
+    const bar = document.createElement('div');
+    bar.style.marginBottom = '14px';
+    const add = document.createElement('button');
+    add.type = 'button';
+    add.className = 'btn';
+    add.textContent = '+ New page';
+    add.addEventListener('click', () => openPage(null));
+    bar.appendChild(add);
+    card.body.appendChild(bar);
+
+    if (!pages.length){
+      const e = document.createElement('div');
+      e.className = 'an-empty';
+      e.textContent = 'No pages yet. The first one takes about two minutes.';
+      card.body.appendChild(e);
+    } else {
+      const grid = document.createElement('div');
+      grid.className = 'lp-grid';
+      pages.forEach((p) => {
+        const c = document.createElement('article');
+        c.className = 'lp';
+        c.addEventListener('click', () => openPage(p.id));
+
+        const head = document.createElement('div');
+        head.className = 'lp-head';
+        const nm = document.createElement('span');
+        nm.className = 'nm';
+        nm.textContent = p.name;
+        const pill = document.createElement('span');
+        pill.className = 'status-pill ' + (p.status === 'live' ? 'live' : 'draft');
+        pill.textContent = p.status === 'live' ? 'Live' : 'Draft';
+        head.append(nm, pill);
+
+        const off = document.createElement('div');
+        off.className = 'off';
+        off.textContent = LP_OFFER_LABEL[p.offer] || p.offer;
+
+        const url = document.createElement('div');
+        url.className = 'url';
+        url.textContent = '/l/' + p.slug;
+
+        const met = document.createElement('div');
+        met.className = 'lp-metrics';
+        const views = Number(p.views) || 0;
+        const got = Number(p.leads) || 0;
+        [['Views', String(views)], ['Leads', String(got)],
+         ['Convert', views ? Math.round(got / views * 100) + '%' : '—']]
+          .forEach(([l, v]) => {
+            const m = document.createElement('div');
+            m.className = 'metric';
+            const vv = document.createElement('div'); vv.className = 'v'; vv.textContent = v;
+            const ll = document.createElement('div'); ll.className = 'l'; ll.textContent = l;
+            m.append(vv, ll);
+            met.appendChild(m);
+          });
+
+        c.append(head, off, url, met);
+        grid.appendChild(c);
+      });
+      card.body.appendChild(grid);
+    }
+    panel.appendChild(card);
+  }
+
+  function setPageError(name, msg){
+    const fs = el('pfs-' + name);
+    if (fs) fs.classList.toggle('invalid', !!msg);
+    const e = el('perr-' + name);
+    if (e) e.textContent = msg || '';
+  }
+
+  function fillCampaignSelect(sel, value){
+    sel.textContent = '';
+    const none = document.createElement('option');
+    none.value = ''; none.textContent = '— none —';
+    sel.appendChild(none);
+    campaigns.forEach((c) => {
+      const o = document.createElement('option');
+      o.value = c.slug; o.textContent = c.name;
+      sel.appendChild(o);
+    });
+    sel.value = value || '';
+  }
+
+  function openPage(id){
+    ['name','slug'].forEach((n) => setPageError(n, ''));
+    activePage = id;
+    const p = id ? pages.find((x) => x.id === id) : null;
+    if (id && !p) return;
+
+    el('pTitleHead').textContent = p ? 'Landing page' : 'New landing page';
+    openTaskDrawer('pageDrawer');
+
+    el('pName').value     = p ? p.name : '';
+    el('pSlug').value     = p ? p.slug : '';
+    el('pStatus').value   = p ? p.status : 'draft';
+    el('pOffer').value    = p ? p.offer : 'valuation';
+    el('pHeadline').value = p ? (p.headline || '') : '';
+    el('pSubhead').value  = p ? (p.subhead || '') : '';
+    el('pBenefits').value = p ? (p.benefits || '') : '';
+    el('pCta').value      = p ? (p.cta || '') : '';
+    el('pArea').value     = p ? (p.area || '') : '';
+    el('pAskPhone').checked    = p ? !!Number(p.ask_phone) : true;
+    el('pAskAddress').checked  = p ? !!Number(p.ask_address) : false;
+    el('pAskTimeline').checked = p ? !!Number(p.ask_timeline) : true;
+    fillCampaignSelect(el('pCampaign'), p ? p.campaign : '');
+
+    el('pUrl').textContent = p ? pageUrl(p.slug) : 'Save to generate the link.';
+    el('pDelete').style.display = p ? '' : 'none';
+    el('pPreview').style.display = p && p.status === 'live' ? '' : 'none';
+    el('pMeta').textContent = p
+      ? (Number(p.views) || 0) + ' views · ' + (Number(p.leads) || 0) + ' leads · added ' + fullDate(p.created_at)
+      : 'A draft is invisible until you set it live.';
+
+    setTimeout(() => el('pName').focus(), 120);
+  }
+
+  function closePage(){
+    activePage = null;
+    drawerOpen = false;
+    el('pageDrawer').classList.remove('open');
+    el('pageDrawer').setAttribute('aria-hidden', 'true');
+    el('drawerBg').classList.remove('open');
+  }
+
+  async function savePage(){
+    ['name','slug'].forEach((n) => setPageError(n, ''));
+    const payload = {
+      name: el('pName').value.trim(),
+      slug: el('pSlug').value.trim(),
+      status: el('pStatus').value,
+      offer: el('pOffer').value,
+      headline: el('pHeadline').value.trim(),
+      subhead: el('pSubhead').value.trim(),
+      benefits: el('pBenefits').value,
+      cta: el('pCta').value.trim(),
+      area: el('pArea').value.trim(),
+      campaign: el('pCampaign').value,
+      ask_phone: el('pAskPhone').checked,
+      ask_address: el('pAskAddress').checked,
+      ask_timeline: el('pAskTimeline').checked
+    };
+    if (!payload.name){ setPageError('name', 'Give the page a name.'); el('pName').focus(); return; }
+
+    const btn = el('pSave');
+    btn.disabled = true; btn.textContent = 'Saving…';
+    try {
+      if (activePage){
+        await api('/api/pages/' + encodeURIComponent(activePage), {
+          method:'PATCH', body: JSON.stringify(payload) });
+      } else {
+        await api('/api/pages', { method:'POST', body: JSON.stringify(payload) });
+      }
+      await loadGen(true);
+      closePage();
+      hideBanner();
+    } catch (err) {
+      if (err.fieldErrors) Object.entries(err.fieldErrors).forEach(([f, m]) => setPageError(f, m));
+      if (err.message !== 'unauthorized') showBanner(err.message);
+    } finally {
+      btn.disabled = false; btn.textContent = 'Save';
+    }
+  }
+
+  async function deletePage(){
+    if (!activePage) return;
+    const p = pages.find((x) => x.id === activePage);
+    if (!p) return;
+    if (!confirm('Delete "' + p.name + '"? The address stops working immediately. ' +
+                 'Leads it already brought in are kept.')) return;
+    try {
+      await api('/api/pages/' + encodeURIComponent(activePage), { method:'DELETE' });
+      closePage();
+      await loadGen(true);
+    } catch (err) {
+      if (err.message !== 'unauthorized') showBanner('Could not delete: ' + err.message);
+    }
+  }
+
+  /* ---- who to call next ----
+     Ranks the database she already has. Every factor below is something this
+     system recorded about a person she has actually dealt with. */
+
+  const YEAR = 365.25 * DAY;
+
+  function moveScore(l){
+    const f = leadFacts(l);
+    const why = [];
+    let score = 0;
+
+    if (l.status === 'closed' && f.closedOn){
+      const yrs = (Date.now() - f.closedOn) / YEAR;
+      // Typical owner tenure runs to roughly a decade, so the window opens
+      // around year five and is widest either side of year ten.
+      const band = yrs < 3 ? 0 : yrs < 5 ? 10 : yrs < 7 ? 22 : yrs < 13 ? 34 : 24;
+      if (band){
+        score += band;
+        why.push('Closed with you ' + (yrs < 10 ? yrs.toFixed(1) : Math.round(yrs)) + ' years ago');
+      }
+    }
+    const tags = splitTags(l.tags).map((t) => t.toLowerCase());
+    if (l.status === 'closed' || tags.includes('past-client') || l.source === 'past_client'){
+      score += 10; why.push('Past client');
+    }
+    if (/sell|both/i.test(l.intent || '')){ score += 16; why.push('Told you they were thinking of selling'); }
+    if (l.source === 'referral'){ score += 6; why.push('Came by referral'); }
+
+    const log = readActivity(l.activity);
+    const lastTouch = log.map((e) => ts(e.at)).filter((v) => v !== null).sort((a, b) => b - a)[0] ?? null;
+    if (lastTouch !== null){
+      const days = (Date.now() - lastTouch) / DAY;
+      if (days <= 120){ score += 10; why.push('Spoke ' + Math.round(days) + ' days ago'); }
+      else if (days > 400){ score -= 6; why.push('Not spoken to in over a year'); }
+    } else {
+      score -= 4; why.push('Nothing ever logged');
+    }
+    if (Number(l.budget)){ score += 4; why.push('Price point on file'); }
+    if (!l.email && !l.phone){ score -= 25; why.push('No way to reach them'); }
+
+    return { lead:l, score: Math.max(0, Math.min(100, score)), why: why.slice(0, 4) };
+  }
+
+  function buyerScore(l){
+    const f = leadFacts(l);
+    const why = [];
+    let score = 0;
+    const log = readActivity(l.activity);
+    const touches = log.filter((e) => TOUCH_TYPES.has(e.type)).length;
+    const showings = log.filter((e) => e.type === 'showing').length;
+
+    if (l.status === 'active'){ score += 26; why.push('Already out touring'); }
+    else if (l.status === 'contacted'){ score += 16; why.push('Contacted, not yet touring'); }
+    else if (l.status === 'new'){ score += 12; why.push('Brand new, nobody has called'); }
+
+    if (showings){ score += Math.min(18, showings * 9); why.push(showings + ' showing' + (showings === 1 ? '' : 's') + ' logged'); }
+    if (touches >= 3){ score += 10; why.push(touches + ' conversations so far'); }
+    if (Number(l.budget)){ score += 10; why.push('Budget ' + money(l.budget)); }
+    if (l.priority === 'hot'){ score += 12; why.push('You marked them hot'); }
+    const tags = splitTags(l.tags).map((t) => t.toLowerCase());
+    if (tags.some((t) => /pre.?approv|cash/.test(t))){ score += 14; why.push('Pre-approved or cash'); }
+
+    const d = daysUntil(l.next_follow_up);
+    if (d !== null && d < 0){ score += 12; why.push(Math.abs(d) + ' days past their follow-up'); }
+    if (f.responseMs !== null && f.responseMs > 3 * DAY){ score -= 6; why.push('Slow first response'); }
+    if (!l.email && !l.phone){ score -= 25; why.push('No way to reach them'); }
+
+    return { lead:l, score: Math.max(0, Math.min(100, score)), why: why.slice(0, 4) };
+  }
+
+  function sigList(parent, rows, emptyText, action){
+    if (!rows.length){
+      const e = document.createElement('div');
+      e.className = 'an-empty';
+      e.textContent = emptyText;
+      parent.appendChild(e);
+      return;
+    }
+    rows.forEach((r) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'sig-row';
+
+      const s = document.createElement('span');
+      s.className = 'sig-score ' + (r.score >= 55 ? '' : r.score >= 30 ? 'warm' : 'cool');
+      s.textContent = String(r.score);
+
+      const mid = document.createElement('span');
+      const nm = document.createElement('span');
+      nm.className = 'nm';
+      nm.textContent = r.lead.name;
+      const why = document.createElement('span');
+      why.className = 'sig-why';
+      r.why.forEach((w) => {
+        const c = document.createElement('span');
+        c.className = 'chip';
+        c.textContent = w;
+        why.appendChild(c);
+      });
+      mid.append(nm, why);
+
+      const act = document.createElement('span');
+      act.className = 'sig-act';
+      act.textContent = action;
+
+      b.append(s, mid, act);
+      b.addEventListener('click', () => { setModule('leads'); openDrawer(r.lead.id); });
+      parent.appendChild(b);
+    });
+  }
+
+  function renderSignals(panel){
+    const note = document.createElement('p');
+    note.className = 'an-caveat';
+    const nb = document.createElement('b');
+    nb.textContent = 'This reads your database, not the market. ';
+    note.append(nb, document.createTextNode(
+      'Every score below is built from things this system recorded about people you have ' +
+      'actually dealt with — when you closed them, what they told you, when you last spoke. ' +
+      'It does not look at strangers, property records or anything describing who someone is. ' +
+      'Scoring the wider market needs an MLS or property-data feed this site does not have.'));
+    panel.appendChild(note);
+
+    const sellers = leads.map(moveScore)
+      .filter((r) => r.score >= 20 && r.lead.status !== 'active' && r.lead.status !== 'under_contract')
+      .sort((a, b) => b.score - a.score).slice(0, 25);
+    const sc = anCard('Most likely to move',
+      'Owners in your database whose circumstances suggest a move is nearer than it was. ' +
+      'Tenure does most of the work: the window opens around year five and is widest either ' +
+      'side of year ten.');
+    sigList(sc.body, sellers, 'No past clients far enough along yet. This fills in as you close deals.',
+      'Open →');
+    panel.appendChild(sc);
+
+    const buyers = leads.filter((l) => l.status !== 'closed' && l.status !== 'lost')
+      .map(buyerScore).filter((r) => r.score >= 20)
+      .sort((a, b) => b.score - a.score).slice(0, 25);
+    const bc = anCard('Buyers worth a call today',
+      'Live leads ranked by how far along and how engaged they are — showings logged, budget ' +
+      'known, how hot you marked them, and whether their follow-up has slipped.');
+    sigList(bc.body, buyers, 'No live leads to rank yet.', 'Open →');
+    panel.appendChild(bc);
+
+    const gap = anCard('What would make this predict the market',
+      'Being straight about the ceiling here, because the difference matters.');
+    const ul = document.createElement('div');
+    ul.className = 'ins-list';
+    [
+      ['A property-data or MLS feed',
+       'Public records give ownership length, last sale price and mortgage age for every home in a ' +
+       'farm area, not just the ones you have met. That is the input that turns this from ranking ' +
+       'your contacts into scoring a neighbourhood.',
+       'Most agents get this through their MLS or a paid product rather than building it.'],
+      ['Listing and sale history in your area',
+       'Days on market, price cuts and absorption rate by neighbourhood tell you where sellers are ' +
+       'motivated right now. None of that exists in this database.',
+       'Your MLS already publishes it — the work is pulling it in on a schedule.'],
+      ['A line nobody should cross',
+       'Predicting moves from life events or anything that stands in for a protected class — age, ' +
+       'family status, divorce, financial distress — is a fair-housing problem, not just a data ' +
+       'one, and it is where this kind of tool most often goes wrong.',
+       'Tenure, stated intent and your own contact history stay on the right side of it.']
+    ].forEach(([t, b, d]) => {
+      const box = document.createElement('div');
+      box.className = 'ins act';
+      const h = document.createElement('h4'); h.textContent = t;
+      const p = document.createElement('p'); p.textContent = b;
+      const dd = document.createElement('p'); dd.className = 'do'; dd.textContent = d;
+      box.append(h, p, dd);
+      ul.appendChild(box);
+    });
+    gap.body.appendChild(ul);
+    panel.appendChild(gap);
+  }
+
+  /* ---- lead sources ---- */
+
+  const hookUrl = (token) => siteOrigin() + '/api/inbound/' + token;
+
+  function renderSources(panel){
+    const card = anCard('Where leads arrive from',
+      'Each source gets its own web address. Anything that can send a web request — Zapier, ' +
+      'Make, a Facebook lead form, your website host — can post a lead to it and it lands on ' +
+      'the board tagged and attributed.');
+    const bar = document.createElement('div');
+    bar.style.marginBottom = '14px';
+    const add = document.createElement('button');
+    add.type = 'button';
+    add.className = 'btn';
+    add.textContent = '+ New source';
+    add.addEventListener('click', () => openSource(null));
+    bar.appendChild(add);
+    card.body.appendChild(bar);
+
+    if (!sources.length){
+      const e = document.createElement('div');
+      e.className = 'an-empty';
+      e.textContent = 'No sources yet.';
+      card.body.appendChild(e);
+    } else {
+      sources.forEach((s) => {
+        const row = document.createElement('div');
+        row.className = 'src-row';
+        const left = document.createElement('div');
+        const nm = document.createElement('div');
+        nm.className = 'nm';
+        nm.textContent = s.name;
+        const meta = document.createElement('div');
+        meta.className = 'meta';
+        meta.textContent = [
+          (SOURCE_LABEL[s.map_source] || s.map_source),
+          Number(s.active) ? 'accepting' : 'paused',
+          (Number(s.received) || 0) + ' received',
+          s.last_at ? 'last ' + ago(s.last_at) + ' ago' : 'nothing yet'
+        ].join(' · ');
+        const hook = document.createElement('div');
+        hook.className = 'hook';
+        const code = document.createElement('code');
+        code.textContent = hookUrl(s.token);
+        const copy = document.createElement('button');
+        copy.type = 'button';
+        copy.className = 'linkbtn';
+        copy.textContent = 'Copy';
+        copy.addEventListener('click', () => navigator.clipboard?.writeText(hookUrl(s.token)).then(
+          () => { copy.textContent = 'Copied'; setTimeout(() => { copy.textContent = 'Copy'; }, 1500); }));
+        hook.append(code, copy);
+        left.append(nm, meta, hook);
+
+        const edit = document.createElement('button');
+        edit.type = 'button';
+        edit.className = 'btn ghost';
+        edit.textContent = 'Edit';
+        edit.addEventListener('click', () => openSource(s.id));
+
+        row.append(left, edit);
+        card.body.appendChild(row);
+      });
+    }
+    panel.appendChild(card);
+
+    const how = anCard('Connecting the big ones',
+      'Zillow, Realtor.com and Facebook do not hand out inbound API keys to individual agents, ' +
+      'so the practical route for all three is the same: a connector watches for the lead and ' +
+      'posts it here.');
+    [
+      ['Facebook / Instagram lead forms',
+       'Zapier or Make: trigger “New Lead” on your Page, action “Webhooks → POST” to the address ' +
+       'above, JSON body. This is the cleanest of the three because Meta genuinely pushes the lead.'],
+      ['Zillow Premier Agent',
+       'Zillow emails or texts you each lead. Point a Zapier “Email Parser” mailbox at that ' +
+       'notification and have it POST the parsed fields here. Zillow only offers a direct feed to ' +
+       'CRMs it has partnered with.'],
+      ['Realtor.com / other portals',
+       'Same email-parser route. Forward the lead notification to a parser mailbox, map name, ' +
+       'email and phone, POST it here.'],
+      ['Your own forms elsewhere',
+       'Anything that can POST — a Squarespace form, an open-house iPad, a Google Form via ' +
+       'Apps Script. Send name, email and phone as JSON or a normal form post.']
+    ].forEach(([t, d]) => {
+      const r = document.createElement('div');
+      r.className = 'recipe';
+      const b = document.createElement('b'); b.textContent = t;
+      const s = document.createElement('span'); s.textContent = d;
+      r.append(b, s);
+      how.body.appendChild(r);
+    });
+    const fields = document.createElement('p');
+    fields.className = 'an-caveat';
+    fields.style.marginTop = '14px';
+    fields.textContent = 'Field names are matched loosely, so name / full_name / firstName, ' +
+      'email / emailAddress and phone / mobile / cell all work without mapping. Anything it ' +
+      'does not recognise is kept in the lead notes.';
+    how.body.appendChild(fields);
+    panel.appendChild(how);
+  }
+
+  function openSource(id){
+    activeSource = id;
+    const s = id ? sources.find((x) => x.id === id) : null;
+    if (id && !s) return;
+
+    el('sTitleHead').textContent = s ? 'Lead source' : 'New lead source';
+    openTaskDrawer('srcDrawer');
+
+    fillSelect(el('sMap'), SOURCES, 'id', 'label');
+    el('sName').value = s ? s.name : '';
+    el('sMap').value = s ? s.map_source : 'other';
+    fillCampaignSelect(el('sCampaign'), s ? s.campaign : '');
+    el('sActive').checked = s ? !!Number(s.active) : true;
+    el('sUrl').textContent = s ? hookUrl(s.token) : 'Save to generate the endpoint.';
+    el('sDelete').style.display = s ? '' : 'none';
+    el('sRotate').style.display = s ? '' : 'none';
+    el('sMeta').textContent = s
+      ? (Number(s.received) || 0) + ' received' + (s.last_at ? ' · last ' + fullDate(s.last_at) : '')
+      : '';
+
+    const help = el('sHelp');
+    help.className = 'an-caveat';
+    help.textContent = s
+      ? 'Treat this address like a password: anyone who has it can add leads to your board. ' +
+        'If it ends up somewhere public, use New address to invalidate it.'
+      : 'Saving generates a private address for this source.';
+
+    setTimeout(() => el('sName').focus(), 120);
+  }
+
+  function closeSource(){
+    activeSource = null;
+    drawerOpen = false;
+    el('srcDrawer').classList.remove('open');
+    el('srcDrawer').setAttribute('aria-hidden', 'true');
+    el('drawerBg').classList.remove('open');
+  }
+
+  async function saveSource(extra){
+    const payload = Object.assign({
+      name: el('sName').value.trim(),
+      map_source: el('sMap').value,
+      campaign: el('sCampaign').value,
+      active: el('sActive').checked
+    }, extra || {});
+    if (!payload.name){ el('sName').focus(); showBanner('Give the source a name.'); return; }
+
+    const btn = el('sSave');
+    btn.disabled = true; btn.textContent = 'Saving…';
+    try {
+      if (activeSource){
+        await api('/api/sources/' + encodeURIComponent(activeSource), {
+          method:'PATCH', body: JSON.stringify(payload) });
+      } else {
+        await api('/api/sources', { method:'POST', body: JSON.stringify(payload) });
+      }
+      await loadGen(true);
+      closeSource();
+      hideBanner();
+    } catch (err) {
+      if (err.message !== 'unauthorized') showBanner(err.message);
+    } finally {
+      btn.disabled = false; btn.textContent = 'Save';
+    }
+  }
+
+  async function deleteSource(){
+    if (!activeSource) return;
+    const s = sources.find((x) => x.id === activeSource);
+    if (!s) return;
+    if (!confirm('Delete "' + s.name + '"? Anything still posting to that address will start ' +
+                 'failing. Leads already received are kept.')) return;
+    try {
+      await api('/api/sources/' + encodeURIComponent(activeSource), { method:'DELETE' });
+      closeSource();
+      await loadGen(true);
+    } catch (err) {
+      if (err.message !== 'unauthorized') showBanner('Could not delete: ' + err.message);
+    }
+  }
+
+  fillSelect(el('pOffer'), LP_OFFER_LIST, 'id', 'label');
+
+  el('modGen').addEventListener('click', () => setModule('gen'));
+  el('pClose').addEventListener('click', closePage);
+  el('pCancel').addEventListener('click', closePage);
+  el('pSave').addEventListener('click', savePage);
+  el('pDelete').addEventListener('click', deletePage);
+  el('pPreview').addEventListener('click', () => {
+    const p = pages.find((x) => x.id === activePage);
+    if (p) window.open(pageUrl(p.slug), '_blank', 'noopener');
+  });
+  el('pCopy').addEventListener('click', () => {
+    const t = el('pUrl').textContent;
+    if (t.startsWith('http')) navigator.clipboard?.writeText(t).then(
+      () => { el('pCopy').textContent = 'Copied'; setTimeout(() => { el('pCopy').textContent = 'Copy link'; }, 1600); });
+  });
+  // Keep the address in step with the name until she edits it herself.
+  el('pName').addEventListener('input', () => {
+    if (activePage || el('pSlug').dataset.touched) return;
+    el('pSlug').value = el('pName').value.toLowerCase().trim()
+      .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 60);
+  });
+  el('pSlug').addEventListener('input', () => { el('pSlug').dataset.touched = '1'; });
+
+  el('sClose').addEventListener('click', closeSource);
+  el('sCancel').addEventListener('click', closeSource);
+  el('sSave').addEventListener('click', () => saveSource());
+  el('sDelete').addEventListener('click', deleteSource);
+  el('sRotate').addEventListener('click', () => {
+    if (confirm('Generate a new address? The current one stops working straight away.')) {
+      saveSource({ rotate: true });
+    }
+  });
+  el('sCopy').addEventListener('click', () => {
+    const t = el('sUrl').textContent;
+    if (t.startsWith('http')) navigator.clipboard?.writeText(t).then(
+      () => { el('sCopy').textContent = 'Copied'; setTimeout(() => { el('sCopy').textContent = 'Copy endpoint'; }, 1600); });
+  });
+
   /* ================= dashboard home =================
      The landing screen. Its job is to answer "what needs me right now" before
      anything else, so the work that is actually late comes first and the
@@ -4136,6 +4986,10 @@
     { id:'tasks', name:'Tasks', d:'What has to get done, and by when.',
       icon:[['path', { d:'M4 7h16M4 12h11M4 17h9' }],
             ['path', { d:'M15.5 18.5 18 21l4-5' }]] },
+    { id:'gen', name:'Generate', d:'Landing pages, who to call next, and where leads come in.',
+      icon:[['path', { d:'M12 3v4M4.9 6.3l2.6 2.6M19.1 6.3l-2.6 2.6' }],
+            ['path', { d:'M8 13a4 4 0 1 1 8 0c0 1.6-1 2.4-1.4 3.2-.3.5-.4 1-.4 1.8h-4.4c0-.8-.1-1.3-.4-1.8C9 15.4 8 14.6 8 13Z' }],
+            ['path', { d:'M10 21h4' }]] },
     { id:'campaigns', name:'Campaigns', d:'Advertising, spend, and what it produced.',
       icon:[['path', { d:'M4 10v4a1 1 0 0 0 1 1h3l6 4V5L8 9H5a1 1 0 0 0-1 1Z' }],
             ['path', { d:'M18 9.5a4 4 0 0 1 0 5' }]] },
@@ -4313,6 +5167,10 @@
     const stats = {
       leads: openLeads.length + ' live · ' + leads.length + ' all time',
       tasks: openTasks.length + ' open · ' + lateTasks.length + ' overdue',
+      gen: pagesLoaded
+        ? pages.filter((p) => p.status === 'live').length + ' pages live · ' +
+          sources.filter((s) => Number(s.active)).length + ' sources on'
+        : 'Pages, signals, sources',
       campaigns: campaigns.length
         ? campaigns.filter((c) => c.status === 'running').length + ' running · ' +
           money0(campaigns.reduce((a, c) => a + (Number(c.spend) || 0), 0)) + ' spent'
@@ -4747,6 +5605,7 @@
     if (module === 'campaigns') loadCampaigns();
     else if (module === 'tasks') loadTasks();
     else if (module === 'analytics') loadAnalytics(true);
+    else if (module === 'gen') loadGen(true);
     else if (module === 'home') boot();
     else load();
   });
@@ -4760,7 +5619,9 @@
   el('dClose').addEventListener('click', closeDrawer);
   el('dCancel').addEventListener('click', closeDrawer);
   // one backdrop, four drawers
-  const closeAllDrawers = () => { closeDrawer(); closeCampaign(); closeTask(); closeWorkflow(); };
+  const closeAllDrawers = () => {
+    closeDrawer(); closeCampaign(); closeTask(); closeWorkflow(); closePage(); closeSource();
+  };
   el('drawerBg').addEventListener('click', closeAllDrawers);
   el('dSave').addEventListener('click', saveDrawer);
   el('dDelete').addEventListener('click', deleteLead);
@@ -4828,6 +5689,8 @@
       if (el('taskDrawer').classList.contains('open')) saveTask();
       else if (el('campDrawer').classList.contains('open')) saveCampaign();
       else if (el('wfDrawer').classList.contains('open')) createWorkflow();
+      else if (el('pageDrawer').classList.contains('open')) savePage();
+      else if (el('srcDrawer').classList.contains('open')) saveSource();
       else saveDrawer();
     }
   });

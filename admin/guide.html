@@ -124,7 +124,7 @@
 <div class="page">
 
 <div class="doc-head">
-  <div class="kicker">Leads · Tasks · Campaigns · Analytics · Calculators</div>
+  <div class="kicker">Leads · Tasks · Generate · Campaigns · Analytics</div>
   <p class="lede">
     Everything on the admin side, in the order you'd actually use it. Signing in emails
     you a code each time, so there's no password to remember or lose.
@@ -144,6 +144,7 @@
     <li><a href="#table">Table view</a></li>
     <li><a href="#byhand">Adding a lead by hand</a></li>
     <li><a href="#tasks">Tasks &amp; workflows</a></li>
+    <li><a href="#generate">Generate</a></li>
     <li><a href="#campaigns">Campaigns</a></li>
     <li><a href="#tracking">The tracking link</a></li>
     <li><a href="#fairhousing">Fair housing rules</a></li>
@@ -438,8 +439,68 @@
   </div>
 </section>
 
+<section id="generate">
+  <div class="sec-head"><span class="n">11</span><h2>Generate</h2></div>
+  <div class="body">
+    <p>Three jobs behind one tab strip: pages that capture leads, a ranking of who to call
+      next, and the places leads arrive from.</p>
+
+    <h3>Landing pages</h3>
+    <p>A one-page site built around a single ask — a home valuation, a buyer guide, a
+      neighbourhood report. Point an ad, a postcard QR code or a social post at it and every
+      enquiry lands on your board already tagged with the campaign.</p>
+    <ol class="steps">
+      <li><div><strong>+ New page</strong><span>Name it, and the web address fills itself in. You can edit the address until you are happy — after that, leave it alone, because it is printed on things.</span></div></li>
+      <li><div><strong>Write the headline and bullets</strong><span>One bullet per line. Say what they get and what it costs them, which is nothing.</span></div></li>
+      <li><div><strong>Choose what to ask for</strong><span>Every extra field costs you some submissions. Phone and timeframe usually pay for themselves; property address only on a valuation page.</span></div></li>
+      <li><div><strong>Attach a campaign, then set it Live</strong><span>A draft returns a "not found" to the public, so you can build it in the open.</span></div></li>
+    </ol>
+    <div class="note">
+      <h3>Views and conversion are on the card</h3>
+      <p>Each page shows how many people saw it and how many filled it in. Under about 10%
+        the page is not the problem so much as the traffic — check who you are sending.</p>
+    </div>
+
+    <h3>Who to call next</h3>
+    <p>Two ranked lists over the people already in your database. <strong>Most likely to
+      move</strong> leans mostly on tenure: the window opens around year five after you
+      closed someone and is widest either side of year ten. <strong>Buyers worth a call
+      today</strong> ranks live leads by how far along and how engaged they are — showings
+      logged, budget known, follow-ups that have slipped.</p>
+    <p>Every row shows <em>why</em> it scored what it did. If a reason looks wrong, the fix is
+      in the lead record, not the score.</p>
+    <div class="note stop">
+      <h3>This reads your database, not the market</h3>
+      <p>It ranks people you have actually dealt with, using things this system recorded. It
+        does not look at strangers, property records, or anything describing who someone is.
+        Scoring a whole neighbourhood needs an MLS or property-data feed this site does not
+        have — and predicting moves from life events or anything standing in for a protected
+        class is a fair-housing problem, not just a data one. The last card on that tab spells
+        out both.</p>
+    </div>
+
+    <h3>Lead sources</h3>
+    <p>Each source gets its own private web address. Anything that can send a web request can
+      post a lead to it, and it arrives on the board tagged with the right source and
+      campaign. Field names are matched loosely, so <em>name</em>, <em>full_name</em> and
+      <em>firstName</em> all work without mapping.</p>
+    <dl class="fields">
+      <div><dt>Facebook / Instagram</dt><dd>Zapier or Make: trigger on a new lead from your Page, action "Webhooks → POST" to the address. The cleanest of the three, because Meta genuinely pushes the lead.</dd></div>
+      <div><dt>Zillow</dt><dd>Zillow emails or texts each lead and only offers a direct feed to CRMs it has partnered with. Point a Zapier email-parser mailbox at the notification and have it POST the parsed fields here.</dd></div>
+      <div><dt>Realtor.com and others</dt><dd>Same email-parser route.</dd></div>
+      <div><dt>Anything else</dt><dd>An open-house iPad, a Google Form, another website's form — if it can POST, it works.</dd></div>
+    </dl>
+    <div class="note stop">
+      <h3>Treat the address like a password</h3>
+      <p>Anyone who has it can add leads to your board. Do not paste it anywhere public. If it
+        does get out, <strong>New address</strong> invalidates the old one immediately —
+        remember to update whatever was posting to it.</p>
+    </div>
+  </div>
+</section>
+
 <section id="campaigns">
-  <div class="sec-head"><span class="n">11</span><h2>Campaigns</h2></div>
+  <div class="sec-head"><span class="n">12</span><h2>Campaigns</h2></div>
   <div class="body">
     <p>Pick <span class="ui">Campaigns</span> in the sidebar. This plans advertising and —
       the useful part — shows which of it actually produces business.</p>
@@ -472,7 +533,7 @@
 </section>
 
 <section id="tracking">
-  <div class="sec-head"><span class="n">12</span><h2>The tracking link</h2></div>
+  <div class="sec-head"><span class="n">13</span><h2>The tracking link</h2></div>
   <div class="body">
     <p>Every campaign gets its own web address when you save it:</p>
     <pre>https://jessicakortum.com/?utm_campaign=spring-sellers-a1b2</pre>
@@ -493,7 +554,7 @@
 </section>
 
 <section id="fairhousing">
-  <div class="sec-head"><span class="n">13</span><h2>Fair housing — read this once</h2></div>
+  <div class="sec-head"><span class="n">14</span><h2>Fair housing — read this once</h2></div>
   <div class="body">
     <div class="note stop">
       <h3>Housing ads are legally restricted</h3>
@@ -523,7 +584,7 @@
 </section>
 
 <section id="mailer">
-  <div class="sec-head"><span class="n">14</span><h2>Mailer &amp; exports</h2></div>
+  <div class="sec-head"><span class="n">15</span><h2>Mailer &amp; exports</h2></div>
   <div class="body">
     <dl class="fields">
       <div><dt>Export CSV</dt><dd>Every lead with every field. Your backup, and your way out if you ever move to another system — the data is yours and never trapped here.</dd></div>
@@ -539,7 +600,7 @@
 </section>
 
 <section id="analytics">
-  <div class="sec-head"><span class="n">15</span><h2>Analytics</h2></div>
+  <div class="sec-head"><span class="n">16</span><h2>Analytics</h2></div>
   <div class="body">
     <p>Pick <span class="ui">Analytics</span> in the sidebar. It reads your leads, tasks and
       campaigns together and tells you what they add up to. Pick a period in the top left —
@@ -600,7 +661,7 @@
 </section>
 
 <section id="calculators">
-  <div class="sec-head"><span class="n">16</span><h2>Calculators</h2></div>
+  <div class="sec-head"><span class="n">17</span><h2>Calculators</h2></div>
   <div class="body">
     <p>Pick <span class="ui">Calculators</span> in the sidebar. Five of them, all running in
       the browser — nothing is sent anywhere, so you can open one on a client's kitchen table
@@ -625,7 +686,7 @@
 </section>
 
 <section id="routine">
-  <div class="sec-head"><span class="n">17</span><h2>A working routine</h2></div>
+  <div class="sec-head"><span class="n">18</span><h2>A working routine</h2></div>
   <div class="body">
     <h3>Every morning — five minutes</h3>
     <ul class="plain">

@@ -647,6 +647,218 @@ check('over-long fields are capped, not refused',
   [longIns.args[1].length, longIns.args[2].length, longIns.args[5].length].join('/'));
 
 /* ------------------------------------------------------------------ */
+console.log('\n6e. lead generation: landing pages');
+
+const livePage = {
+  id:'p1', slug:'home-values', name:'South Tampa values', offer:'valuation',
+  headline:'What is your home worth?', subhead:'A real number.',
+  benefits:'From actual sales\nNo obligation', cta:'Send it',
+  area:'South Tampa', ask_phone:1, ask_address:1, ask_timeline:1,
+  campaign:'spring-sellers', status:'live', views:4,
+  created_at:'2026-08-01T00:00:00Z', updated_at:'2026-08-01T00:00:00Z'
+};
+let pageRow = livePage, pageSql = [];
+const pageDb = { prepare: (sql) => {
+  pageSql.push(sql);
+  return {
+    bind(...a){ this.args = a; pageSql[pageSql.length - 1] = { sql, args: a }; return this; },
+    run: async () => ({ meta:{ changes:1 } }),
+    all: async () => ({ results: [livePage] }),
+    first: async () => (/FROM landing_pages/i.test(sql) ? pageRow : null)
+  };
+} };
+
+for (const [method, body] of [['GET', null], ['POST', { name:'X' }]]) {
+  let r = await worker.fetch(req('/api/pages', method, body), { ...staticEnv(), DB: pageDb });
+  check(method + ' /api/pages -> 503 unconfigured', r.status === 503, 'got ' + r.status);
+  r = await worker.fetch(req('/api/pages', method, body), authEnv(pageDb));
+  check(method + ' /api/pages -> 401 without token', r.status === 401, 'got ' + r.status);
+}
+
+pageRow = null;   // no clash on create
+for (const [label, body, expected] of [
+  ['no name',      { offer:'valuation' },                 400],
+  ['bad offer',    { name:'X', offer:'lottery' },          400],
+  ['bad status',   { name:'X', status:'someday' },         400],
+  ['reserved slug',{ name:'X', slug:'admin' },             400],
+  ['valid',        { name:'Home values', slug:'Home Values!', offer:'valuation',
+                     status:'live', benefits:'a\nb' },     200]
+]) {
+  const r = await worker.fetch(authReq('/api/pages', 'POST', body), authEnv(pageDb));
+  check('page: ' + label.padEnd(13) + ' -> ' + expected, r.status === expected, 'got ' + r.status);
+}
+const slugged = await worker.fetch(authReq('/api/pages', 'POST',
+  { name:'Home values', slug:'Home Values!' }), authEnv(pageDb));
+check('a messy slug is normalised', (await slugged.json()).slug === 'home-values');
+
+pageRow = { id:'other' };   // now something already owns that slug
+const clash = await worker.fetch(authReq('/api/pages', 'POST', { name:'X', slug:'home-values' }), authEnv(pageDb));
+check('a taken address is refused, not overwritten', clash.status === 400, 'got ' + clash.status);
+
+// The public page
+pageRow = livePage;
+let lpRes = await worker.fetch(new Request('https://jessicakortum.com/l/home-values'),
+  { ...staticEnv(), DB: pageDb }, { waitUntil(){} });
+let lpHtml = await lpRes.text();
+check('GET /l/<slug> -> 200 html', lpRes.status === 200 &&
+  lpRes.headers.get('content-type')?.includes('text/html'), lpRes.status + ' ' + lpRes.headers.get('content-type'));
+check('the page renders its own copy', lpHtml.includes('What is your home worth?') &&
+  lpHtml.includes('South Tampa'));
+check('bullet lines become list items', (lpHtml.match(/<li>/g) || []).length === 2);
+check('optional fields appear when asked for',
+  lpHtml.includes('id="phone"') && lpHtml.includes('id="address"') && lpHtml.includes('id="timeline"'));
+check('landing pages are not indexed', /noindex/.test(lpHtml));
+check('security headers apply to it too',
+  lpRes.headers.get('content-security-policy') && lpRes.headers.get('x-frame-options') === 'DENY');
+
+// She authors this copy, but it is served to the public - one unescaped field
+// is a stored XSS on her own domain.
+pageRow = { ...livePage,
+  headline: '<script>alert(1)</script>',
+  subhead:  '" onload="alert(2)',
+  benefits: '<img src=x onerror=alert(3)>',
+  area:     "</title><script>alert(4)</script>",
+  cta:      '<b>hi</b>' };
+lpHtml = await (await worker.fetch(new Request('https://jessicakortum.com/l/home-values'),
+  { ...staticEnv(), DB: pageDb }, { waitUntil(){} })).text();
+const authored = lpHtml.slice(lpHtml.indexOf('<body>'));
+check('authored copy cannot inject a tag', !/<script>alert/.test(lpHtml) && !/<img src=x/.test(lpHtml));
+check('authored copy cannot break out of an attribute', !/onload="alert/.test(lpHtml));
+check('authored copy cannot close the title early', !/<\/title><script>/.test(lpHtml));
+check('it is escaped, not dropped', lpHtml.includes('&lt;script&gt;alert(1)'));
+
+pageRow = { ...livePage, status:'draft' };
+const draft = await worker.fetch(new Request('https://jessicakortum.com/l/home-values'),
+  { ...staticEnv(), DB: pageDb }, { waitUntil(){} });
+check('a draft is a 404 from the outside', draft.status === 404, 'got ' + draft.status);
+
+pageRow = null;
+const noPage = await worker.fetch(new Request('https://jessicakortum.com/l/nothing-here'),
+  { ...staticEnv(), DB: pageDb }, { waitUntil(){} });
+check('an unknown slug is a 404', noPage.status === 404, 'got ' + noPage.status);
+
+// Submitting
+pageRow = livePage;
+let lpLead = null;
+const lpSubmitDb = { prepare: (sql) => ({
+  bind(...a){ if (/INSERT INTO leads/i.test(sql)) lpLead = a; return this; },
+  run: async () => ({ meta:{ changes:1 } }),
+  all: async () => ({ results: [] }),
+  first: async () => (/FROM landing_pages/i.test(sql) ? pageRow : null)
+}) };
+const savedF = globalThis.fetch;
+globalThis.fetch = async () => new Response('{}', { status: 200 });
+
+for (const [label, body, expected] of [
+  ['no name',   { email:'a@b.com' },                           400],
+  ['bad email', { name:'Dana', email:'nope' },                 400],
+  ['bad phone', { name:'Dana', email:'a@b.com', phone:'123' }, 400],
+  ['valid',     { name:'Dana', email:'a@b.com', phone:'8135550142',
+                  address:'44 Bayshore', timeline:'1–3 months' }, 200]
+]) {
+  const r = await worker.fetch(req('/api/l/home-values', 'POST', body),
+    { ...staticEnv(), DB: lpSubmitDb });
+  check('submit: ' + label.padEnd(10) + ' -> ' + expected, r.status === expected, 'got ' + r.status);
+}
+check('the lead is tagged with the page campaign', lpLead && lpLead.includes('spring-sellers'),
+  JSON.stringify(lpLead));
+check('address and timeframe are kept',
+  lpLead && lpLead.some((v) => String(v).includes('44 Bayshore') && String(v).includes('1–3 months')));
+
+lpLead = null;
+const hp = await worker.fetch(req('/api/l/home-values', 'POST',
+  { name:'Bot', email:'b@b.com', company:'spam' }), { ...staticEnv(), DB: lpSubmitDb });
+check('honeypot looks like success but saves nothing', hp.status === 200 && lpLead === null);
+
+pageRow = { ...livePage, status:'draft' };
+const closedForm = await worker.fetch(req('/api/l/home-values', 'POST',
+  { name:'Dana', email:'a@b.com' }), { ...staticEnv(), DB: lpSubmitDb });
+check('a drafted page stops accepting submissions', closedForm.status === 404, 'got ' + closedForm.status);
+globalThis.fetch = savedF;
+
+/* ------------------------------------------------------------------ */
+console.log('\n6f. lead generation: inbound sources');
+
+let srcRow = { id:'s1', name:'Zillow', token:'tok_abcdefghij1234567890', map_source:'zillow',
+  campaign:'zillow-boost', active:1, received:3, last_at:'', created_at:'', updated_at:'' };
+let inLead = null, srcSql = [];
+const srcDb = { prepare: (sql) => {
+  srcSql.push(sql);
+  return {
+    bind(...a){ if (/INSERT INTO leads/i.test(sql)) inLead = a; return this; },
+    run: async () => ({ meta:{ changes:1 } }),
+    all: async () => ({ results: [srcRow] }),
+    first: async () => (/FROM lead_sources/i.test(sql) ? srcRow : null)
+  };
+} };
+
+for (const [method, body] of [['GET', null], ['POST', { name:'X' }]]) {
+  const r = await worker.fetch(req('/api/sources', method, body), authEnv(srcDb));
+  check(method + ' /api/sources -> 401 without token', r.status === 401, 'got ' + r.status);
+}
+const badMap = await worker.fetch(authReq('/api/sources', 'POST',
+  { name:'X', map_source:'carrier-pigeon' }), authEnv(srcDb));
+check('an unknown source mapping is refused', badMap.status === 400, 'got ' + badMap.status);
+const noName = await worker.fetch(authReq('/api/sources', 'POST', {}), authEnv(srcDb));
+check('a source needs a name', noName.status === 400, 'got ' + noName.status);
+
+srcSql = [];
+await worker.fetch(authReq('/api/sources', 'POST', { name:'Zillow', map_source:'zillow' }), authEnv(srcDb));
+const srcIns = srcSql.find((s) => /INSERT INTO lead_sources/i.test(s));
+check('creating a source generates a token', !!srcIns);
+
+srcSql = [];
+await worker.fetch(authReq('/api/sources/s1', 'PATCH', { rotate:true }), authEnv(srcDb));
+check('rotating replaces the token', srcSql.some((s) => /UPDATE lead_sources SET token = \?/i.test(s)),
+  srcSql.join(' | '));
+
+globalThis.fetch = async () => new Response('{}', { status: 200 });
+inLead = null;
+let inb = await worker.fetch(new Request('https://jessicakortum.com/api/inbound/tok_abcdefghij1234567890', {
+  method:'POST', headers:{ 'Content-Type':'application/json' },
+  body: JSON.stringify({ full_name:'Dana Whitfield', emailAddress:'d@e.com',
+                         Mobile:'8135550142', comments:'Saw 44 Bayshore' })
+}), { ...staticEnv(), DB: srcDb }, { waitUntil(){} });
+check('POST /api/inbound/<token> -> 200', inb.status === 200, 'got ' + inb.status);
+check('provider field spellings are matched loosely',
+  inLead && inLead.includes('Dana Whitfield') && inLead.includes('d@e.com'),
+  JSON.stringify(inLead));
+check('the lead carries the source mapping and campaign',
+  inLead && inLead.includes('zillow') && inLead.includes('zillow-boost'), JSON.stringify(inLead));
+
+inLead = null;
+inb = await worker.fetch(new Request('https://jessicakortum.com/api/inbound/tok_abcdefghij1234567890', {
+  method:'POST', headers:{ 'Content-Type':'application/x-www-form-urlencoded' },
+  body: 'name=Marcus&email=m%40e.com&phone=8135550143'
+}), { ...staticEnv(), DB: srcDb }, { waitUntil(){} });
+check('a plain form post works too', inb.status === 200 && inLead && inLead.includes('Marcus'),
+  inb.status + ' ' + JSON.stringify(inLead));
+
+const empty = await worker.fetch(new Request('https://jessicakortum.com/api/inbound/tok_abcdefghij1234567890', {
+  method:'POST', headers:{ 'Content-Type':'application/json' }, body: '{"foo":"bar"}'
+}), { ...staticEnv(), DB: srcDb }, { waitUntil(){} });
+check('a post with no contact detail is refused', empty.status === 400, 'got ' + empty.status);
+
+srcRow = { ...srcRow, active: 0 };
+const paused = await worker.fetch(new Request('https://jessicakortum.com/api/inbound/tok_abcdefghij1234567890', {
+  method:'POST', headers:{ 'Content-Type':'application/json' }, body: '{"name":"X","email":"x@y.com"}'
+}), { ...staticEnv(), DB: srcDb }, { waitUntil(){} });
+check('a paused source stops accepting', paused.status === 404, 'got ' + paused.status);
+
+srcRow = null;
+const wrongTok = await worker.fetch(new Request('https://jessicakortum.com/api/inbound/tok_wrongwrongwrong123', {
+  method:'POST', headers:{ 'Content-Type':'application/json' }, body: '{"name":"X","email":"x@y.com"}'
+}), { ...staticEnv(), DB: srcDb }, { waitUntil(){} });
+check('an unknown token is refused', wrongTok.status === 404, 'got ' + wrongTok.status);
+check('and says the same thing a paused one does', paused.status === wrongTok.status);
+
+const shortTok = await worker.fetch(new Request('https://jessicakortum.com/api/inbound/abc', {
+  method:'POST', headers:{ 'Content-Type':'application/json' }, body: '{}'
+}), { ...staticEnv(), DB: srcDb });
+check('a too-short token never reaches the handler', shortTok.status === 404, 'got ' + shortTok.status);
+globalThis.fetch = savedF;
+
+/* ------------------------------------------------------------------ */
 console.log('\n7c. SMS alert on a new lead');
 
 const smsDb = { prepare: () => ({ bind() { return this; },
