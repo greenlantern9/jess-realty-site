@@ -1014,6 +1014,125 @@ check('a too-short token never reaches the handler', shortTok.status === 404, 'g
 globalThis.fetch = savedF;
 
 /* ------------------------------------------------------------------ */
+console.log('\n6g. contacts and referrals');
+
+let conRow = { id:'n1', name:'Marcus Delgado', company:'Gulf Coast Inspections',
+  category:'inspector', phone:'8135550142', email:'m@example.com', rating:5, preferred:1 };
+let linkRow = null, conSql = [];
+const conDb = { prepare: (sql) => {
+  conSql.push(sql);
+  return {
+    bind(...a){ conSql[conSql.length - 1] = { sql, args: a }; return this; },
+    run: async () => ({ meta:{ changes:1 } }),
+    all: async () => ({ results: /^\s*SELECT l\.\*/i.test(sql)
+      ? [{ id:'k1', contact_id:'n1', lead_id:'L1', direction:'in', note:'',
+           created_at:'2026-08-01T00:00:00Z', lead_name:'Dana Whitfield', lead_status:'closed' }]
+      : [{ ...conRow, referrals_in:1, referrals_out:2 }] }),
+    first: async () => (/FROM contact_links/i.test(sql) ? linkRow : conRow)
+  };
+} };
+
+for (const [method, body] of [['GET', null], ['POST', { name:'X' }]]) {
+  let r = await worker.fetch(req('/api/contacts', method, body), { ...staticEnv(), DB: conDb });
+  check(method + ' /api/contacts -> 503 unconfigured', r.status === 503, 'got ' + r.status);
+  r = await worker.fetch(req('/api/contacts', method, body), authEnv(conDb));
+  check(method + ' /api/contacts -> 401 without token', r.status === 401, 'got ' + r.status);
+}
+for (const method of ['PATCH', 'DELETE']) {
+  const r = await worker.fetch(req('/api/contacts/n1', method, {}), authEnv(conDb));
+  check(method + ' /api/contacts/:id -> 401 without token', r.status === 401, 'got ' + r.status);
+}
+
+let conRes = await worker.fetch(authReq('/api/contacts'), authEnv(conDb));
+let conBody = await conRes.json();
+check('GET /api/contacts -> 200 with token', conRes.status === 200, 'got ' + conRes.status);
+check('referral counts come back both ways',
+  conBody.contacts?.[0]?.referrals_in === 1 && conBody.contacts[0].referrals_out === 2,
+  JSON.stringify(conBody.contacts?.[0]));
+// A join would multiply the contact rows and inflate the counts above it.
+check('referrals are stitched on, not joined',
+  Array.isArray(conBody.contacts[0].links) && conBody.contacts[0].links[0].lead_name === 'Dana Whitfield',
+  JSON.stringify(conBody.contacts[0].links));
+check('only one contact row comes back for two referrals', conBody.contacts.length === 1);
+
+for (const [label, body, expected] of [
+  ['no name',       { category:'plumber' },                     400],
+  ['bad category',  { name:'X', category:'astronaut' },         400],
+  ['bad email',     { name:'X', email:'nope' },                 400],
+  ['bad date',      { name:'X', last_used:'last tuesday' },      400],
+  ['valid',         { name:'Marcus', category:'inspector', rating:5,
+                      email:'m@example.com', phone:'8135550142' }, 200]
+]) {
+  const r = await worker.fetch(authReq('/api/contacts', 'POST', body), authEnv(conDb));
+  check('create: ' + label.padEnd(13) + ' -> ' + expected, r.status === expected, 'got ' + r.status);
+}
+
+conSql = [];
+await worker.fetch(authReq('/api/contacts', 'POST',
+  { name:'X', category:'plumber', rating: 99 }), authEnv(conDb));
+const conIns = conSql.find((s) => /INSERT INTO contacts/i.test(s.sql || s));
+check('a rating is clamped to 0-5', conIns.args[8] === 5, String(conIns.args[8]));
+conSql = [];
+await worker.fetch(authReq('/api/contacts', 'POST',
+  { name:'X', category:'plumber', rating: -4 }), authEnv(conDb));
+check('and cannot go negative',
+  conSql.find((s) => /INSERT INTO contacts/i.test(s.sql || s)).args[8] === 0);
+
+// Referrals
+linkRow = null;
+conSql = [];
+let conLk = await worker.fetch(authReq('/api/contacts/n1', 'PATCH',
+  { linkAdd:{ lead_id:'L1', direction:'in' } }), authEnv(conDb));
+check('recording a referral -> 200', conLk.status === 200, 'got ' + conLk.status);
+check('it writes a link row',
+  conSql.some((s) => /INSERT INTO contact_links/i.test(s.sql || s)), 'no insert');
+
+conLk = await worker.fetch(authReq('/api/contacts/n1', 'PATCH',
+  { linkAdd:{ lead_id:'', direction:'in' } }), authEnv(conDb));
+check('a referral needs a lead', conLk.status === 400, 'got ' + conLk.status);
+conLk = await worker.fetch(authReq('/api/contacts/n1', 'PATCH',
+  { linkAdd:{ lead_id:'L1', direction:'sideways' } }), authEnv(conDb));
+check('direction must be in or out', conLk.status === 400, 'got ' + conLk.status);
+
+linkRow = { id:'k1' };   // the same referral already exists
+conLk = await worker.fetch(authReq('/api/contacts/n1', 'PATCH',
+  { linkAdd:{ lead_id:'L1', direction:'in' } }), authEnv(conDb));
+check('the same referral cannot be recorded twice', conLk.status === 400, 'got ' + conLk.status);
+
+conSql = [];
+conLk = await worker.fetch(authReq('/api/contacts/n1', 'PATCH', { linkRemove:'k1' }), authEnv(conDb));
+check('removing a referral -> 200', conLk.status === 200, 'got ' + conLk.status);
+// Scoped to the contact so one id cannot delete another contact's referral.
+const rmSql = conSql.find((s) => /DELETE FROM contact_links/i.test(s.sql || s));
+check('the delete is scoped to that contact', /contact_id = \?/.test(rmSql.sql), rmSql.sql);
+
+conSql = [];
+await worker.fetch(authReq('/api/contacts/n1', 'PATCH', { rating: 3 }), authEnv(conDb));
+const upd = conSql.find((s) => /UPDATE contacts/i.test(s.sql || s));
+check('a patch touches only what it was given',
+  /SET rating = \?, updated_at = \?/.test(upd.sql), upd.sql);
+const noop = await worker.fetch(authReq('/api/contacts/n1', 'PATCH', {}), authEnv(conDb));
+check('an empty patch is a 400', noop.status === 400, 'got ' + noop.status);
+const blank = await worker.fetch(authReq('/api/contacts/n1', 'PATCH', { name:'  ' }), authEnv(conDb));
+check('a contact cannot be renamed to nothing', blank.status === 400, 'got ' + blank.status);
+
+conSql = [];
+const delCon = await worker.fetch(authReq('/api/contacts/n1', 'DELETE'), authEnv(conDb));
+check('DELETE /api/contacts/:id -> 200', delCon.status === 200, 'got ' + delCon.status);
+// Otherwise the referral rows point at a contact that is gone.
+check('deleting a contact takes its referrals with it',
+  conSql.some((s) => /DELETE FROM contact_links WHERE contact_id/i.test(s.sql || s)),
+  conSql.map((s) => s.sql || s).join(' | '));
+
+const goneCon = { prepare: () => ({ bind(){ return this; },
+  run: async () => ({ meta:{ changes:0 } }), all: async () => ({ results: [] }), first: async () => null }) };
+for (const method of ['PATCH', 'DELETE']) {
+  const r = await worker.fetch(authReq('/api/contacts/nope', method, { rating:1 }), authEnv(goneCon));
+  check(method + ' a contact that is not there -> 404', r.status === 404, 'got ' + r.status);
+}
+
+
+/* ------------------------------------------------------------------ */
 console.log('\n7c. SMS alert on a new lead');
 
 const smsDb = { prepare: () => ({ bind() { return this; },

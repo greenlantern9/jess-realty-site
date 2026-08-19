@@ -201,6 +201,20 @@ async function handleApi(request, env, url, ctx) {
     return methodNotAllowed('GET, POST');
   }
 
+  if (path === '/api/contacts') {
+    if (request.method === 'GET')  return handleContactList(request, env);
+    if (request.method === 'POST') return handleContactCreate(request, env);
+    return methodNotAllowed('GET, POST');
+  }
+
+  const contact = path.match(/^\/api\/contacts\/([^/]+)$/);
+  if (contact) {
+    const id = decodeURIComponent(contact[1]);
+    if (request.method === 'PATCH')  return handleContactUpdate(request, env, id);
+    if (request.method === 'DELETE') return handleContactDelete(request, env, id);
+    return methodNotAllowed('PATCH, DELETE');
+  }
+
   if (path === '/api/property') {
     if (request.method !== 'GET') return methodNotAllowed('GET');
     return handlePropertyLookup(request, env, url);
@@ -509,7 +523,39 @@ const SCHEMA_SQL = [
      created_at  TEXT NOT NULL,
      updated_at  TEXT NOT NULL
    )`,
-  `CREATE INDEX IF NOT EXISTS idx_cmas_created ON cmas(created_at DESC)`
+  `CREATE INDEX IF NOT EXISTS idx_cmas_created ON cmas(created_at DESC)`,
+  `CREATE TABLE IF NOT EXISTS contacts (
+     id          TEXT PRIMARY KEY,
+     name        TEXT NOT NULL,
+     company     TEXT NOT NULL DEFAULT '',
+     category    TEXT NOT NULL DEFAULT 'other',
+     phone       TEXT NOT NULL DEFAULT '',
+     email       TEXT NOT NULL DEFAULT '',
+     website     TEXT NOT NULL DEFAULT '',
+     address     TEXT NOT NULL DEFAULT '',
+     rating      INTEGER NOT NULL DEFAULT 0,
+     preferred   INTEGER NOT NULL DEFAULT 0,
+     licence     TEXT NOT NULL DEFAULT '',
+     tags        TEXT NOT NULL DEFAULT '',
+     notes       TEXT NOT NULL DEFAULT '',
+     last_used   TEXT NOT NULL DEFAULT '',
+     created_at  TEXT NOT NULL,
+     updated_at  TEXT NOT NULL
+   )`,
+  `CREATE INDEX IF NOT EXISTS idx_contacts_cat  ON contacts(category)`,
+  `CREATE INDEX IF NOT EXISTS idx_contacts_name ON contacts(name)`,
+  // A referral is a row here, so it can be counted from either end: how many
+  // clients this person sent me, and how many I sent them.
+  `CREATE TABLE IF NOT EXISTS contact_links (
+     id          TEXT PRIMARY KEY,
+     contact_id  TEXT NOT NULL,
+     lead_id     TEXT NOT NULL,
+     direction   TEXT NOT NULL DEFAULT 'out',
+     note        TEXT NOT NULL DEFAULT '',
+     created_at  TEXT NOT NULL
+   )`,
+  `CREATE INDEX IF NOT EXISTS idx_links_contact ON contact_links(contact_id)`,
+  `CREATE INDEX IF NOT EXISTS idx_links_lead    ON contact_links(lead_id)`
 ];
 
 // Columns added after the table already existed in production. Applied lazily
@@ -965,6 +1011,210 @@ async function handleExport(request, env) {
 }
 
 /* ------------------------------------------------------------------ *
+ * contacts
+ * ------------------------------------------------------------------ */
+
+function readContactBody(body) {
+  const str = (k, max) => String(body[k] ?? '').trim().slice(0, max);
+  const out = {
+    name:      str('name', CONTACT_LIMITS.name),
+    company:   str('company', CONTACT_LIMITS.company),
+    phone:     str('phone', CONTACT_LIMITS.phone),
+    email:     str('email', CONTACT_LIMITS.email),
+    website:   str('website', CONTACT_LIMITS.website),
+    address:   str('address', CONTACT_LIMITS.address),
+    licence:   str('licence', CONTACT_LIMITS.licence),
+    tags:      str('tags', CONTACT_LIMITS.tags),
+    notes:     str('notes', CONTACT_LIMITS.notes),
+    last_used: str('last_used', 10),
+    category:  body.category ?? 'other',
+    rating:    Math.max(0, Math.min(5, Math.round(Number(body.rating) || 0))),
+    preferred: body.preferred ? 1 : 0
+  };
+  const errors = {};
+  if (!out.name) errors.name = 'Give the contact a name.';
+  if (!CONTACT_CATEGORIES.has(out.category)) errors.category = 'Unknown category.';
+  if (out.email && !EMAIL_RE.test(out.email)) errors.email = 'That email does not look right.';
+  if (out.last_used && !DATE_RE.test(out.last_used)) errors.last_used = 'Use a calendar date.';
+  return { out, errors };
+}
+
+async function handleContactList(request, env) {
+  const auth = await requireAccess(env, request);
+  if (!auth.ok) return json({ error: auth.message }, auth.status);
+  if (!env.DB) return json({ error: 'Lead database is not bound.' }, 503);
+
+  try {
+    const { results } = await withSchema(env, () =>
+      env.DB.prepare(
+        `SELECT c.*,
+                (SELECT COUNT(*) FROM contact_links l
+                  WHERE l.contact_id = c.id AND l.direction = 'in')  AS referrals_in,
+                (SELECT COUNT(*) FROM contact_links l
+                  WHERE l.contact_id = c.id AND l.direction = 'out') AS referrals_out
+           FROM contacts c
+          ORDER BY c.preferred DESC, c.rating DESC, c.name`
+      ).all()
+    );
+    // Fetched separately and stitched together - one row per referral keeps the
+    // counts above honest, and joining here would multiply the contact rows.
+    const links = await withSchema(env, () =>
+      env.DB.prepare(
+        `SELECT l.*, ld.name AS lead_name, ld.status AS lead_status
+           FROM contact_links l
+           LEFT JOIN leads ld ON ld.id = l.lead_id
+          ORDER BY l.created_at DESC`
+      ).all()
+    );
+    const byContact = new Map();
+    for (const l of links.results ?? []) {
+      if (!byContact.has(l.contact_id)) byContact.set(l.contact_id, []);
+      byContact.get(l.contact_id).push(l);
+    }
+    const contacts = (results ?? []).map((c) => ({ ...c, links: byContact.get(c.id) || [] }));
+    return json({ contacts, user: auth.email });
+  } catch (err) {
+    console.error('Contact query failed:', err);
+    return json({ error: dbErrorMessage(err) }, 500);
+  }
+}
+
+async function handleContactCreate(request, env) {
+  const auth = await requireAccess(env, request);
+  if (!auth.ok) return json({ error: auth.message }, auth.status);
+  if (!env.DB) return json({ error: 'Lead database is not bound.' }, 503);
+
+  let body;
+  try { body = await request.json(); } catch { return json({ error: 'Invalid JSON.' }, 400); }
+  const { out, errors } = readContactBody(body);
+  if (Object.keys(errors).length) {
+    return json({ error: 'Please check the highlighted fields.', errors }, 400);
+  }
+
+  const id = crypto.randomUUID();
+  const now = new Date().toISOString();
+  try {
+    await withSchema(env, () =>
+      env.DB.prepare(
+        `INSERT INTO contacts
+           (id, name, company, category, phone, email, website, address, rating,
+            preferred, licence, tags, notes, last_used, created_at, updated_at)
+         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
+      ).bind(
+        id, out.name, out.company, out.category, out.phone, out.email, out.website,
+        out.address, out.rating, out.preferred, out.licence, out.tags, out.notes,
+        out.last_used, now, now
+      ).run()
+    );
+    return json({ success: true, id });
+  } catch (err) {
+    console.error('Contact insert failed:', err);
+    return json({ error: dbErrorMessage(err) }, 500);
+  }
+}
+
+async function handleContactUpdate(request, env, id) {
+  const auth = await requireAccess(env, request);
+  if (!auth.ok) return json({ error: auth.message }, auth.status);
+  if (!env.DB) return json({ error: 'Lead database is not bound.' }, 503);
+
+  let body;
+  try { body = await request.json(); } catch { return json({ error: 'Invalid JSON.' }, 400); }
+
+  // Referrals are their own rows, so they are added and removed one at a time
+  // rather than patched - the client never posts a replacement array.
+  if (body.linkAdd) {
+    const leadId = String(body.linkAdd.lead_id ?? '').trim().slice(0, 64);
+    const direction = String(body.linkAdd.direction ?? 'out');
+    if (!leadId) return json({ error: 'Pick a lead to link.' }, 400);
+    if (!CONTACT_DIRECTIONS.has(direction)) return json({ error: 'Unknown direction.' }, 400);
+    try {
+      const dupe = await withSchema(env, () =>
+        env.DB.prepare('SELECT id FROM contact_links WHERE contact_id = ? AND lead_id = ? AND direction = ?')
+          .bind(id, leadId, direction).first()
+      );
+      if (dupe) return json({ error: 'That referral is already recorded.' }, 400);
+      await withSchema(env, () =>
+        env.DB.prepare(
+          `INSERT INTO contact_links (id, contact_id, lead_id, direction, note, created_at)
+           VALUES (?,?,?,?,?,?)`
+        ).bind(crypto.randomUUID(), id, leadId, direction,
+               String(body.linkAdd.note ?? '').trim().slice(0, 300),
+               new Date().toISOString()).run()
+      );
+      return json({ success: true });
+    } catch (err) {
+      console.error('Referral insert failed:', err);
+      return json({ error: dbErrorMessage(err) }, 500);
+    }
+  }
+
+  if (body.linkRemove) {
+    try {
+      const res = await withSchema(env, () =>
+        env.DB.prepare('DELETE FROM contact_links WHERE id = ? AND contact_id = ?')
+          .bind(String(body.linkRemove), id).run()
+      );
+      if (!res.meta?.changes) return json({ error: 'Referral not found.' }, 404);
+      return json({ success: true });
+    } catch (err) {
+      console.error('Referral delete failed:', err);
+      return json({ error: dbErrorMessage(err) }, 500);
+    }
+  }
+
+  const { out, errors } = readContactBody({ name: 'placeholder', ...body });
+  if (body.name !== undefined && !String(body.name).trim()) {
+    return json({ error: 'Give the contact a name.', errors: { name: 'Required.' } }, 400);
+  }
+  delete errors.name;
+  if (Object.keys(errors).length) {
+    return json({ error: 'Please check the highlighted fields.', errors }, 400);
+  }
+
+  const sets = [], binds = [];
+  for (const f of ['name','company','category','phone','email','website','address',
+                   'rating','preferred','licence','tags','notes','last_used']) {
+    if (body[f] === undefined) continue;
+    sets.push(`${f} = ?`); binds.push(out[f]);
+  }
+  if (!sets.length) return json({ error: 'Nothing to update.' }, 400);
+  sets.push('updated_at = ?'); binds.push(new Date().toISOString());
+  binds.push(id);
+
+  try {
+    const res = await withSchema(env, () =>
+      env.DB.prepare(`UPDATE contacts SET ${sets.join(', ')} WHERE id = ?`).bind(...binds).run()
+    );
+    if (!res.meta?.changes) return json({ error: 'Contact not found.' }, 404);
+    return json({ success: true });
+  } catch (err) {
+    console.error('Contact update failed:', err);
+    return json({ error: dbErrorMessage(err) }, 500);
+  }
+}
+
+async function handleContactDelete(request, env, id) {
+  const auth = await requireAccess(env, request);
+  if (!auth.ok) return json({ error: auth.message }, auth.status);
+  if (!env.DB) return json({ error: 'Lead database is not bound.' }, 503);
+  try {
+    const res = await withSchema(env, () =>
+      env.DB.prepare('DELETE FROM contacts WHERE id = ?').bind(id).run()
+    );
+    if (!res.meta?.changes) return json({ error: 'Contact not found.' }, 404);
+    // The referral rows would otherwise linger pointing at nothing.
+    await withSchema(env, () =>
+      env.DB.prepare('DELETE FROM contact_links WHERE contact_id = ?').bind(id).run()
+    );
+    return json({ success: true });
+  } catch (err) {
+    console.error('Contact delete failed:', err);
+    return json({ error: dbErrorMessage(err) }, 500);
+  }
+}
+
+/* ------------------------------------------------------------------ *
  * CMA
  *
  * Storage only. Every number is computed in the browser from figures she
@@ -972,6 +1222,28 @@ async function handleExport(request, env) {
  * comparables from - see the note above the CMA module in admin/index.html.
  * The payload is stored as JSON and never interpreted server side.
  * ------------------------------------------------------------------ */
+
+/* ------------------------------------------------------------------ *
+ * Contacts - the referral network
+ *
+ * Two-way on purpose: a referral row records who sent whom, so the same
+ * person shows both "sent me 4 clients" and "I sent them 6". That is the
+ * number worth knowing when deciding who to call first, and the one a
+ * plain rolodex loses.
+ * ------------------------------------------------------------------ */
+
+const CONTACT_CATEGORIES = new Set([
+  'realtor', 'broker', 'loan_officer', 'title', 'inspector', 'appraiser',
+  'surveyor', 'insurance', 'attorney', 'stager', 'photographer', 'builder',
+  'handyman', 'plumber', 'electrician', 'hvac', 'roofer', 'painter',
+  'carpenter', 'flooring', 'cleaning', 'landscaper', 'pest', 'pool',
+  'mover', 'property_manager', 'accountant', 'warranty', 'other'
+]);
+const CONTACT_DIRECTIONS = new Set(['in', 'out']);
+const CONTACT_LIMITS = {
+  name: 120, company: 120, phone: 40, email: 200, website: 200,
+  address: 200, licence: 60, tags: 300, notes: 8000
+};
 
 const CMA_MAX_PAYLOAD = 60000;   // a CMA with a dozen comps is a few KB
 

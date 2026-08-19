@@ -274,7 +274,7 @@
      toggled by the attribute needs this or it stays on screen. Bitten by this
      twice already - .board, then the whole leads toolbar. */
   .board[hidden],.tablewrap[hidden],.tbl-foot[hidden],.camp-wrap[hidden],.calc-wrap[hidden],
-  .an-wrap[hidden],.home-wrap[hidden],.tools[hidden],.gen-wrap[hidden],.cma-wrap[hidden],
+  .an-wrap[hidden],.home-wrap[hidden],.tools[hidden],.gen-wrap[hidden],.cma-wrap[hidden],.con-wrap[hidden],
   .stats[hidden],.viewtoggle[hidden],.btn[hidden],.search[hidden]{display:none}
 
   /* ---------------- calculators ---------------- */
@@ -447,6 +447,59 @@
     .home-wrap{padding:15px 15px 34px}
     .hero h2{font-size:1.34rem}
     .brand{font-size:1.05rem}
+  }
+
+  /* ---------------- contacts ---------------- */
+  .con-wrap{flex:1;overflow-y:auto;padding:18px 22px 44px}
+  .con-inner{max-width:1280px;display:flex;flex-direction:column;gap:18px}
+  .con-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:13px}
+  .con{background:var(--ink-2);border:1px solid var(--line-soft);border-radius:4px;
+    padding:15px 16px;cursor:pointer;transition:border-color .2s,transform .15s;
+    display:flex;flex-direction:column;gap:8px}
+  .con:hover{border-color:var(--line);transform:translateY(-1px)}
+  .con.fav{border-left:3px solid var(--brass)}
+  .con-head{display:flex;align-items:baseline;gap:9px}
+  .con-head .nm{font-weight:650;font-size:.97rem;color:var(--cream);flex:1}
+  .fav-pin{font-size:.63rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;
+    color:var(--brass-bright);white-space:nowrap}
+  .con-sub{font-size:.75rem;color:var(--sage);letter-spacing:.02em}
+  .con-det{font-size:.79rem;color:var(--cream-soft);word-break:break-word}
+  .con-refs{display:flex;flex-wrap:wrap;gap:5px}
+  .con-refs .chip{text-transform:none;letter-spacing:.02em;font-size:.68rem}
+  .con-refs .chip.in{background:rgba(143,191,154,.16);color:var(--ok)}
+  .con-refs .chip.out{background:rgba(201,162,107,.16);color:var(--brass-bright)}
+  .con-refs .chip.zero{background:transparent;border:1px solid var(--line-soft);color:var(--sage)}
+  .con-act{display:flex;flex-wrap:wrap;gap:7px;margin-top:auto;padding-top:9px;
+    border-top:1px solid var(--line-soft)}
+  .con-act a{font-size:.74rem;font-weight:600;color:var(--brass-bright);text-decoration:none;
+    padding:3px 8px;border:1px solid var(--line-soft);border-radius:3px}
+  .con-act a:hover{border-color:var(--brass);background:rgba(201,162,107,.10)}
+
+  .stars{display:inline-flex;gap:1px;line-height:1}
+  .star{color:var(--ink-4);font-size:.92rem}
+  .star.on{color:var(--brass)}
+  .stars.pick .star{cursor:pointer;font-size:1.25rem;padding:0 1px;background:none;border:0}
+  .stars.pick .star:hover{color:var(--brass-bright)}
+
+  table.con-table td.nm{color:var(--cream);font-weight:600}
+  table.con-table tbody tr:hover{background:var(--ink-3)}
+
+  .ref-row{display:grid;grid-template-columns:auto 1fr auto auto;gap:10px;align-items:center;
+    padding:8px 0;border-bottom:1px solid var(--line-soft)}
+  .ref-row:last-child{border-bottom:0}
+  .ref-dir{font-size:.66rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+    padding:2px 7px;border-radius:2px;white-space:nowrap}
+  .ref-dir.in{background:rgba(143,191,154,.16);color:var(--ok)}
+  .ref-dir.out{background:rgba(201,162,107,.16);color:var(--brass-bright)}
+  .ref-nm{font-size:.86rem;color:var(--cream);font-weight:600}
+  .ref-when{font-size:.72rem;color:var(--sage);white-space:nowrap}
+  .ref-add{display:grid;grid-template-columns:1fr auto auto;gap:8px;margin-top:11px}
+  .ref-add select{padding:8px 10px;border-radius:3px;background:var(--ink-2);
+    border:1px solid var(--line-soft);color:var(--cream);font-size:.84rem}
+
+  @media(max-width:700px){
+    .con-wrap{padding:14px 15px 34px}
+    .ref-add{grid-template-columns:1fr}
   }
 
   /* ---------------- CMA ---------------- */
@@ -789,6 +842,10 @@
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v4M4.9 6.3l2.6 2.6M19.1 6.3l-2.6 2.6"/><path d="M8 13a4 4 0 1 1 8 0c0 1.6-1 2.4-1.4 3.2-.3.5-.4 1-.4 1.8h-4.4c0-.8-.1-1.3-.4-1.8C9 15.4 8 14.6 8 13Z"/><path d="M10 21h4"/></svg>
       <span>Generate</span>
     </button>
+    <button id="modContacts" type="button" title="Your referral network - who sends you clients and who you send clients to">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      <span>Contacts</span>
+    </button>
     <button id="modCma" type="button" title="Price a property from comparable sales, and produce the report">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 21h18"/><path d="M5 21V9l5-4 5 4v12"/><path d="M15 21V13h4v8"/><path d="M9 13h2M9 17h2"/></svg>
       <span>CMA</span>
@@ -924,6 +981,25 @@
   <button class="btn" id="addTask" type="button" title="One thing that has to get done" hidden>+ New task</button>
   <button class="btn ghost" id="runWorkflow" type="button" title="Lay out every step of a standard job at once, with dates already set" hidden>Start a workflow</button>
 
+  <span class="search" id="cqWrap" hidden>
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+      <circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>
+    </svg>
+    <input id="cq" type="search" title="Searches names, companies, phone numbers, tags and notes" placeholder="Search contacts…" aria-label="Search contacts">
+  </span>
+  <select id="fCat" aria-label="Filter by category" title="Narrow to one trade" hidden></select>
+  <select id="fRating" aria-label="Filter by rating" title="Only show people you rated at least this highly" hidden>
+    <option value="">Any rating</option>
+    <option value="5">5 stars</option>
+    <option value="4">4 stars and up</option>
+    <option value="3">3 stars and up</option>
+  </select>
+  <span class="viewtoggle" id="conViewToggle" role="group" aria-label="View" hidden>
+    <button id="viewConGrid" type="button" title="Cards" aria-pressed="true">Grid</button>
+    <button id="viewConList" type="button" title="Spreadsheet" aria-pressed="false">List</button>
+  </span>
+  <button class="btn" id="addContact" type="button" title="Add somebody to your referral network" hidden>+ New contact</button>
+
   <select id="anRange" aria-label="Period" title="Everything below is measured over this period" hidden></select>
   <button class="btn ghost" id="anCopy" type="button" title="Put a plain-text summary on the clipboard" hidden>Copy summary</button>
 
@@ -956,6 +1032,10 @@
 
 <div class="home-wrap" id="homeWrap" hidden>
   <div class="home-inner" id="homeInner"></div>
+</div>
+
+<div class="con-wrap" id="conWrap" hidden>
+  <div class="con-inner" id="conInner"></div>
 </div>
 
 <div class="cma-wrap" id="cmaWrap" hidden>
@@ -1149,6 +1229,107 @@
     <span class="saved" id="tSaved" hidden>Saved</span>
     <span class="spacer"></span>
     <button class="btn danger" id="tDelete" type="button">Delete</button>
+  </div>
+</aside>
+
+<aside class="drawer" id="conDrawer" aria-hidden="true" aria-label="Contact">
+  <div class="drawer-head">
+    <h2 id="nTitleHead">Contact</h2>
+    <button class="x" id="nClose" type="button" aria-label="Close">×</button>
+  </div>
+  <div class="drawer-body">
+    <div class="grid2">
+      <div class="fset" id="nfs-name">
+        <label for="nName">Name</label>
+        <input id="nName" type="text" placeholder="Marcus Delgado">
+        <span class="err" id="nerr-name"></span>
+      </div>
+      <div class="fset">
+        <label for="nCompany">Company</label>
+        <input id="nCompany" type="text" placeholder="Gulf Coast Home Inspections">
+      </div>
+    </div>
+
+    <div class="grid2">
+      <div class="fset">
+        <label for="nCat">What they do</label>
+        <select id="nCat"></select>
+      </div>
+      <div class="fset">
+        <label for="nLastUsed">Last used</label>
+        <input id="nLastUsed" type="date" title="The last time you sent someone their way">
+        <span class="err" id="nerr-last_used"></span>
+      </div>
+    </div>
+
+    <div class="fset">
+      <label>Your rating <span style="text-transform:none;letter-spacing:0">(private to you)</span></label>
+      <div id="nRating" data-value="0"></div>
+    </div>
+
+    <div class="grid2">
+      <div class="fset">
+        <label for="nPhone">Phone</label>
+        <input id="nPhone" type="tel" placeholder="(813) 555-0142">
+      </div>
+      <div class="fset" id="nfs-email">
+        <label for="nEmail">Email</label>
+        <input id="nEmail" type="email" placeholder="marcus@example.com">
+        <span class="err" id="nerr-email"></span>
+      </div>
+    </div>
+
+    <div class="grid2">
+      <div class="fset">
+        <label for="nSite">Website</label>
+        <input id="nSite" type="text" placeholder="gulfcoastinspections.com">
+      </div>
+      <div class="fset">
+        <label for="nLicence">Licence number</label>
+        <input id="nLicence" type="text" placeholder="HI1234">
+      </div>
+    </div>
+
+    <div class="fset">
+      <label for="nAddress">Address</label>
+      <input id="nAddress" type="text" placeholder="Office or service area">
+    </div>
+
+    <div class="fset">
+      <label for="nTags">Tags <span style="text-transform:none;letter-spacing:0">(comma separated)</span></label>
+      <input id="nTags" type="text" placeholder="fast, weekend calls, south tampa">
+    </div>
+
+    <div class="fset">
+      <label style="text-transform:none;letter-spacing:0;font-size:.85rem;color:var(--cream-soft);display:flex;gap:8px;align-items:center">
+        <input id="nFav" type="checkbox" style="width:auto"> My go-to for this category</label>
+    </div>
+
+    <div class="fset">
+      <label>Referrals</label>
+      <div id="nLinks"></div>
+      <div class="ref-add" id="nLinkAdd">
+        <select id="nLinkLead" aria-label="Lead to link"></select>
+        <select id="nLinkDir" aria-label="Direction">
+          <option value="out">I sent them</option>
+          <option value="in">They sent me</option>
+        </select>
+        <button class="btn ghost" id="nLinkAddBtn" type="button">Record</button>
+      </div>
+    </div>
+
+    <div class="fset">
+      <label for="nNotes">Notes</label>
+      <textarea id="nNotes" placeholder="Turns around inspections in 24 hours. Will do Saturdays."></textarea>
+    </div>
+
+    <div class="meta-line" id="nMeta"></div>
+  </div>
+  <div class="drawer-foot">
+    <button class="btn" id="nSave" type="button">Save</button>
+    <button class="btn ghost" id="nCancel" type="button">Cancel</button>
+    <span class="spacer"></span>
+    <button class="btn danger" id="nDelete" type="button">Delete</button>
   </div>
 </aside>
 
@@ -2657,6 +2838,7 @@
 
   const MODULE_TITLES = {
     home:'Home', leads:'Lead Board', tasks:'Tasks', gen:'Generate', cma:'CMA',
+    contacts:'Contacts',
     campaigns:'Campaigns', analytics:'Analytics', calc:'Calculators'
   };
 
@@ -2666,10 +2848,11 @@
           isLeads = next === 'leads', isCamp = next === 'campaigns',
           isCalc  = next === 'calc',  isTask = next === 'tasks',
           isAn    = next === 'analytics', isGen = next === 'gen',
-          isCma   = next === 'cma';
+          isCma   = next === 'cma',  isCon = next === 'contacts';
 
     [['modHome', isHome], ['modLeads', isLeads], ['modTasks', isTask], ['modGen', isGen],
-     ['modCma', isCma], ['modCampaigns', isCamp], ['modAnalytics', isAn], ['modCalc', isCalc]]
+     ['modCma', isCma], ['modContacts', isCon], ['modCampaigns', isCamp],
+     ['modAnalytics', isAn], ['modCalc', isCalc]]
       .forEach(([id, on]) => el(id).setAttribute('aria-current', on ? 'page' : 'false'));
     // The masthead is the product name now, so the module goes in the tab title.
     document.title = (MODULE_TITLES[next] || 'Home') + ' · JKortumRealty CRM';
@@ -2692,8 +2875,14 @@
       target.hidden = !isTask;
     });
     ['anRange','anCopy'].forEach(id => { el(id).hidden = !isAn; });
+    ['cq','fCat','fRating','addContact'].forEach(id => {
+      const e = el(id);
+      const target = e.closest('.search') || e;
+      target.hidden = !isCon;
+    });
+    el('conViewToggle').hidden = !isCon;
     // Home has no filters of its own; an empty toolbar is just a stripe.
-    document.querySelector('.tools').hidden = isHome || isCalc;
+    document.querySelector('.tools').hidden = isHome || isCalc || isCma || isGen;
     document.querySelector('.viewtoggle').hidden = !isLeads;
     el('stTotal').closest('.stats').hidden = !isLeads;
     el('taskStats').hidden = !isTask;
@@ -2707,6 +2896,7 @@
     el('homeWrap').hidden = !isHome;
     el('genWrap').hidden = !isGen;
     el('cmaWrap').hidden = !isCma;
+    el('conWrap').hidden = !isCon;
     if (!isLeads){ board.hidden = true; el('tablewrap').hidden = true; el('tblFoot').hidden = true; }
 
     if (isCamp) loadCampaigns();
@@ -2715,6 +2905,7 @@
     else if (isAn) loadAnalytics();
     else if (isGen) loadGen();
     else if (isCma) loadCmas();
+    else if (isCon) loadContacts();
     else if (isHome) renderHome();
     else render();
   }
@@ -5879,6 +6070,497 @@
     }
   }
 
+  /* ================= contacts =================
+     The referral network: everyone who can send Jessica a client, and everyone
+     she can send a client to. Referrals are recorded in both directions, so a
+     contact shows what the relationship is actually worth rather than just a
+     phone number. */
+
+  const CONTACT_CATS = [
+    { id:'realtor',          label:'Realtor',                 g:'Trade' },
+    { id:'broker',           label:'Broker',                  g:'Trade' },
+    { id:'loan_officer',     label:'Loan officer',            g:'Transaction' },
+    { id:'title',            label:'Title / closing attorney',g:'Transaction' },
+    { id:'inspector',        label:'Home inspector',          g:'Transaction' },
+    { id:'appraiser',        label:'Appraiser',               g:'Transaction' },
+    { id:'surveyor',         label:'Surveyor',                g:'Transaction' },
+    { id:'insurance',        label:'Insurance agent',         g:'Transaction' },
+    { id:'attorney',         label:'Attorney',                g:'Transaction' },
+    { id:'accountant',       label:'Accountant / CPA',        g:'Transaction' },
+    { id:'stager',           label:'Stager',                  g:'Listing prep' },
+    { id:'photographer',     label:'Photographer',            g:'Listing prep' },
+    { id:'cleaning',         label:'Cleaning service',        g:'Listing prep' },
+    { id:'landscaper',       label:'Landscaper',              g:'Listing prep' },
+    { id:'mover',            label:'Mover',                   g:'Listing prep' },
+    { id:'builder',          label:'Builder',                 g:'Trades' },
+    { id:'handyman',         label:'Handyman',                g:'Trades' },
+    { id:'plumber',          label:'Plumber',                 g:'Trades' },
+    { id:'electrician',      label:'Electrician',             g:'Trades' },
+    { id:'hvac',             label:'HVAC',                    g:'Trades' },
+    { id:'roofer',           label:'Roofer',                  g:'Trades' },
+    { id:'painter',          label:'Painter',                 g:'Trades' },
+    { id:'carpenter',        label:'Carpenter',               g:'Trades' },
+    { id:'flooring',         label:'Flooring',                g:'Trades' },
+    { id:'pool',             label:'Pool service',            g:'Trades' },
+    { id:'pest',             label:'Pest control',            g:'Trades' },
+    { id:'property_manager', label:'Property manager',        g:'Other' },
+    { id:'warranty',         label:'Home warranty',           g:'Other' },
+    { id:'other',            label:'Other',                   g:'Other' }
+  ];
+  const CONTACT_LABEL = Object.fromEntries(CONTACT_CATS.map((c) => [c.id, c.label]));
+
+  let contacts = [], contactsLoaded = false, activeContact = null;
+  let conView = store.get('conView', 'grid');
+
+  async function loadContacts(force){
+    if (force || !contactsLoaded){
+      try {
+        contacts = (await api('/api/contacts')).contacts || [];
+        contactsLoaded = true;
+        hideBanner();
+      } catch (err) {
+        if (err.message !== 'unauthorized') showBanner(err.message);
+      }
+    }
+    renderContacts();
+  }
+
+  function visibleContacts(){
+    const q = el('cq').value.trim().toLowerCase();
+    const cat = el('fCat').value;
+    const minRating = Number(el('fRating').value) || 0;
+    return contacts.filter((c) => {
+      if (cat === '__preferred' ? !Number(c.preferred) : (cat && c.category !== cat)) return false;
+      if (minRating && (Number(c.rating) || 0) < minRating) return false;
+      if (!q) return true;
+      return [c.name, c.company, c.phone, c.email, c.tags, c.notes, c.address,
+              CONTACT_LABEL[c.category]]
+        .some((v) => String(v || '').toLowerCase().includes(q));
+    });
+  }
+
+  function starRow(rating, onPick){
+    const box = document.createElement('span');
+    box.className = 'stars' + (onPick ? ' pick' : '');
+    for (let i = 1; i <= 5; i++){
+      const s = document.createElement(onPick ? 'button' : 'span');
+      if (onPick){ s.type = 'button'; s.title = i + ' out of 5'; }
+      s.className = 'star' + (i <= (Number(rating) || 0) ? ' on' : '');
+      s.textContent = '★';
+      if (onPick) s.addEventListener('click', (e) => {
+        e.stopPropagation();
+        // Clicking the star you are already on clears it.
+        onPick(i === Number(rating) ? 0 : i);
+      });
+      box.appendChild(s);
+    }
+    return box;
+  }
+
+  function contactActions(c, parent){
+    const mk = (href, label, title) => {
+      const a = document.createElement('a');
+      a.href = href; a.textContent = label; a.title = title;
+      a.addEventListener('click', (e) => e.stopPropagation());
+      parent.appendChild(a);
+    };
+    const digits = String(c.phone || '').replace(/\D/g, '');
+    if (digits) mk('tel:' + digits, 'Call', 'Call ' + c.name);
+    if (digits) mk('sms:' + digits, 'Text', 'Text ' + c.name);
+    if (c.email) mk('mailto:' + c.email, 'Email', 'Email ' + c.name);
+    if (c.website){
+      const url = /^https?:/i.test(c.website) ? c.website : 'https://' + c.website;
+      const a = document.createElement('a');
+      a.href = url; a.target = '_blank'; a.rel = 'noopener noreferrer';
+      a.textContent = 'Site';
+      a.addEventListener('click', (e) => e.stopPropagation());
+      parent.appendChild(a);
+    }
+  }
+
+  function renderContacts(){
+    const wrap = el('conInner');
+    wrap.textContent = '';
+    const list = visibleContacts();
+
+    const withRefs = contacts.filter((c) => Number(c.referrals_in) + Number(c.referrals_out) > 0);
+    const stats = document.createElement('div');
+    stats.className = 'an-kpis';
+    [
+      [String(contacts.length), 'In your network', ''],
+      [String(contacts.filter((c) => Number(c.preferred)).length), 'Go-to people', ''],
+      [String(contacts.reduce((a, c) => a + Number(c.referrals_in || 0), 0)), 'Clients sent to you', ''],
+      [String(contacts.reduce((a, c) => a + Number(c.referrals_out || 0), 0)), 'Clients you sent out', ''],
+      [withRefs.length + ' of ' + contacts.length, 'Two-way so far', '']
+    ].forEach(([v, l]) => stats.appendChild(kpi(v, l)));
+    if (contacts.length) wrap.appendChild(stats);
+
+    const card = anCard(
+      list.length === contacts.length ? 'Your referral network'
+        : list.length + ' of ' + contacts.length + ' contacts',
+      'Everyone who can send you a client, and everyone you can send one to. ' +
+      'A star rating is your own — it is never shown to anybody else.');
+
+    if (!contacts.length){
+      const e = document.createElement('div');
+      e.className = 'an-empty';
+      e.textContent = 'Nobody yet. Start with the two or three you already call every week.';
+      card.body.appendChild(e);
+    } else if (!list.length){
+      const e = document.createElement('div');
+      e.className = 'an-empty';
+      e.textContent = 'Nothing matches those filters.';
+      card.body.appendChild(e);
+    } else if (conView === 'grid'){
+      const grid = document.createElement('div');
+      grid.className = 'con-grid';
+      list.forEach((c) => grid.appendChild(contactCard(c)));
+      card.body.appendChild(grid);
+    } else {
+      card.body.appendChild(contactTable(list));
+    }
+    wrap.appendChild(card);
+  }
+
+  function contactCard(c){
+    const a = document.createElement('article');
+    a.className = 'con' + (Number(c.preferred) ? ' fav' : '');
+    a.addEventListener('click', () => openContact(c.id));
+
+    const head = document.createElement('div');
+    head.className = 'con-head';
+    const nm = document.createElement('span');
+    nm.className = 'nm';
+    nm.textContent = c.name;
+    head.appendChild(nm);
+    if (Number(c.preferred)){
+      const f = document.createElement('span');
+      f.className = 'fav-pin';
+      f.textContent = '● Go-to';
+      head.appendChild(f);
+    }
+    a.appendChild(head);
+
+    const sub = document.createElement('div');
+    sub.className = 'con-sub';
+    sub.textContent = [c.company, CONTACT_LABEL[c.category] || c.category].filter(Boolean).join(' · ');
+    a.appendChild(sub);
+
+    a.appendChild(starRow(c.rating));
+
+    if (c.phone || c.email){
+      const d = document.createElement('div');
+      d.className = 'con-det';
+      d.textContent = [c.phone, c.email].filter(Boolean).join('  ·  ');
+      a.appendChild(d);
+    }
+
+    const refs = document.createElement('div');
+    refs.className = 'con-refs';
+    const inN = Number(c.referrals_in) || 0, outN = Number(c.referrals_out) || 0;
+    const chip = (t, cls) => { const s = document.createElement('span'); s.className = 'chip ' + cls; s.textContent = t; refs.appendChild(s); };
+    chip('↙ ' + inN + ' sent to you', inN ? 'in' : 'zero');
+    chip('↗ ' + outN + ' you sent', outN ? 'out' : 'zero');
+    a.appendChild(refs);
+
+    const act = document.createElement('div');
+    act.className = 'con-act';
+    contactActions(c, act);
+    if (act.childElementCount) a.appendChild(act);
+    return a;
+  }
+
+  function contactTable(list){
+    const sc = document.createElement('div');
+    sc.className = 'grid-scroll';
+    const t = document.createElement('table');
+    t.className = 'an con-table';
+    const thead = document.createElement('thead');
+    const hr = document.createElement('tr');
+    ['Name', 'Company', 'Category', 'Rating', 'Phone', 'Email', 'Sent to you', 'You sent', 'Last used']
+      .forEach((h, i) => {
+        const th = document.createElement('th');
+        th.textContent = h;
+        if (i >= 6) th.style.textAlign = 'right';
+        hr.appendChild(th);
+      });
+    thead.appendChild(hr);
+    const tb = document.createElement('tbody');
+    list.forEach((c) => {
+      const tr = document.createElement('tr');
+      tr.style.cursor = 'pointer';
+      tr.addEventListener('click', () => openContact(c.id));
+      const td = (text, cls) => {
+        const d = document.createElement('td');
+        if (cls) d.className = cls;
+        d.textContent = text;
+        tr.appendChild(d);
+        return d;
+      };
+      const nameCell = td('', 'nm');
+      if (Number(c.preferred)){
+        const p = document.createElement('span');
+        p.className = 'fav-pin';
+        p.style.marginRight = '6px';
+        p.textContent = '●';
+        nameCell.appendChild(p);
+      }
+      nameCell.appendChild(document.createTextNode(c.name));
+      td(c.company || '—');
+      td(CONTACT_LABEL[c.category] || c.category);
+      const rt = document.createElement('td');
+      rt.appendChild(starRow(c.rating));
+      tr.appendChild(rt);
+      td(c.phone || '—');
+      td(c.email || '—');
+      td(String(Number(c.referrals_in) || 0), 'num');
+      td(String(Number(c.referrals_out) || 0), 'num');
+      td(c.last_used || '—', 'num');
+      tb.appendChild(tr);
+    });
+    t.append(thead, tb);
+    sc.appendChild(t);
+    return sc;
+  }
+
+  /* ---- drawer ---- */
+
+  function setContactError(name, msg){
+    const fs = el('nfs-' + name);
+    if (fs) fs.classList.toggle('invalid', !!msg);
+    const e = el('nerr-' + name);
+    if (e) e.textContent = msg || '';
+  }
+
+  function openContact(id){
+    ['name','email','last_used'].forEach((n) => setContactError(n, ''));
+    activeContact = id;
+    const c = id ? contacts.find((x) => x.id === id) : null;
+    if (id && !c) return;
+
+    el('nTitleHead').textContent = c ? 'Contact' : 'New contact';
+    openTaskDrawer('conDrawer');
+
+    el('nName').value    = c ? c.name : '';
+    el('nCompany').value = c ? (c.company || '') : '';
+    el('nCat').value     = c ? c.category : 'other';
+    el('nPhone').value   = c ? (c.phone || '') : '';
+    el('nEmail').value   = c ? (c.email || '') : '';
+    el('nSite').value    = c ? (c.website || '') : '';
+    el('nAddress').value = c ? (c.address || '') : '';
+    el('nLicence').value = c ? (c.licence || '') : '';
+    el('nTags').value    = c ? (c.tags || '') : '';
+    el('nNotes').value   = c ? (c.notes || '') : '';
+    el('nLastUsed').value = c ? (c.last_used || '') : '';
+    el('nFav').checked   = c ? !!Number(c.preferred) : false;
+
+    const rateBox = el('nRating');
+    rateBox.textContent = '';
+    let working = c ? Number(c.rating) || 0 : 0;
+    const paint = () => {
+      rateBox.textContent = '';
+      rateBox.appendChild(starRow(working, (v) => { working = v; paint(); }));
+      rateBox.dataset.value = String(working);
+    };
+    paint();
+
+    el('nDelete').style.display = c ? '' : 'none';
+    el('nMeta').textContent = c
+      ? 'Added ' + fullDate(c.created_at) +
+        ' · ' + (Number(c.referrals_in) || 0) + ' sent to you, ' +
+        (Number(c.referrals_out) || 0) + ' you sent'
+      : '';
+
+    renderContactLinks(c);
+    setTimeout(() => el('nName').focus(), 120);
+  }
+
+  function renderContactLinks(c){
+    const box = el('nLinks');
+    box.textContent = '';
+    if (!c){
+      const p = document.createElement('div');
+      p.className = 'an-empty';
+      p.textContent = 'Save the contact first, then record referrals here.';
+      box.appendChild(p);
+      el('nLinkAdd').style.display = 'none';
+      return;
+    }
+    el('nLinkAdd').style.display = '';
+
+    const sel = el('nLinkLead');
+    sel.textContent = '';
+    const none = document.createElement('option');
+    none.value = ''; none.textContent = '— pick a lead —';
+    sel.appendChild(none);
+    leads.slice().sort((a, b) => String(a.name).localeCompare(String(b.name))).forEach((l) => {
+      const o = document.createElement('option');
+      o.value = l.id;
+      const st = STAGES.find((s) => s.id === l.status);
+      o.textContent = l.name + (st ? ' · ' + st.label : '');
+      sel.appendChild(o);
+    });
+
+    if (!c.links || !c.links.length){
+      const p = document.createElement('div');
+      p.className = 'an-empty';
+      p.textContent = 'No referrals recorded yet.';
+      box.appendChild(p);
+      return;
+    }
+    c.links.forEach((l) => {
+      const row = document.createElement('div');
+      row.className = 'ref-row';
+      const dir = document.createElement('span');
+      dir.className = 'ref-dir ' + l.direction;
+      dir.textContent = l.direction === 'in' ? '↙ sent to you' : '↗ you sent';
+      const nm = document.createElement('span');
+      nm.className = 'ref-nm';
+      nm.textContent = l.lead_name || '(deleted lead)';
+      const when = document.createElement('span');
+      when.className = 'ref-when';
+      when.textContent = ago(l.created_at) + ' ago';
+      const rm = document.createElement('button');
+      rm.type = 'button';
+      rm.className = 'rm';
+      rm.textContent = '×';
+      rm.title = 'Remove this referral';
+      rm.addEventListener('click', () => removeReferral(l.id));
+      row.append(dir, nm, when, rm);
+      box.appendChild(row);
+    });
+  }
+
+  function closeContact(){
+    activeContact = null;
+    drawerOpen = false;
+    el('conDrawer').classList.remove('open');
+    el('conDrawer').setAttribute('aria-hidden', 'true');
+    el('drawerBg').classList.remove('open');
+  }
+
+  async function saveContact(){
+    ['name','email','last_used'].forEach((n) => setContactError(n, ''));
+    const payload = {
+      name: el('nName').value.trim(),
+      company: el('nCompany').value.trim(),
+      category: el('nCat').value,
+      phone: el('nPhone').value.trim(),
+      email: el('nEmail').value.trim(),
+      website: el('nSite').value.trim(),
+      address: el('nAddress').value.trim(),
+      licence: el('nLicence').value.trim(),
+      tags: el('nTags').value.trim(),
+      notes: el('nNotes').value,
+      last_used: el('nLastUsed').value,
+      rating: Number(el('nRating').dataset.value) || 0,
+      preferred: el('nFav').checked
+    };
+    if (!payload.name){ setContactError('name', 'Give the contact a name.'); el('nName').focus(); return; }
+
+    const btn = el('nSave');
+    btn.disabled = true; btn.textContent = 'Saving…';
+    try {
+      if (activeContact){
+        await api('/api/contacts/' + encodeURIComponent(activeContact), {
+          method:'PATCH', body: JSON.stringify(payload) });
+      } else {
+        await api('/api/contacts', { method:'POST', body: JSON.stringify(payload) });
+      }
+      await loadContacts(true);
+      closeContact();
+      hideBanner();
+    } catch (err) {
+      if (err.fieldErrors) Object.entries(err.fieldErrors).forEach(([f, m]) => setContactError(f, m));
+      if (err.message !== 'unauthorized') showBanner(err.message);
+    } finally {
+      btn.disabled = false; btn.textContent = 'Save';
+    }
+  }
+
+  async function addReferral(){
+    if (!activeContact) return;
+    const leadId = el('nLinkLead').value;
+    if (!leadId){ showBanner('Pick a lead first.'); return; }
+    try {
+      await api('/api/contacts/' + encodeURIComponent(activeContact), {
+        method:'PATCH',
+        body: JSON.stringify({ linkAdd: { lead_id: leadId, direction: el('nLinkDir').value } })
+      });
+      await loadContacts(true);
+      renderContactLinks(contacts.find((x) => x.id === activeContact));
+      hideBanner();
+    } catch (err) {
+      if (err.message !== 'unauthorized') showBanner(err.message);
+    }
+  }
+
+  async function removeReferral(linkId){
+    if (!activeContact) return;
+    try {
+      await api('/api/contacts/' + encodeURIComponent(activeContact), {
+        method:'PATCH', body: JSON.stringify({ linkRemove: linkId })
+      });
+      await loadContacts(true);
+      renderContactLinks(contacts.find((x) => x.id === activeContact));
+    } catch (err) {
+      if (err.message !== 'unauthorized') showBanner(err.message);
+    }
+  }
+
+  async function deleteContact(){
+    if (!activeContact) return;
+    const c = contacts.find((x) => x.id === activeContact);
+    if (!c) return;
+    if (!confirm('Delete ' + c.name + '? The referrals recorded against them go too.')) return;
+    try {
+      await api('/api/contacts/' + encodeURIComponent(activeContact), { method:'DELETE' });
+      closeContact();
+      await loadContacts(true);
+    } catch (err) {
+      if (err.message !== 'unauthorized') showBanner('Could not delete: ' + err.message);
+    }
+  }
+
+  function setContactView(next){
+    conView = next;
+    store.set('conView', next);
+    el('viewConGrid').setAttribute('aria-pressed', String(next === 'grid'));
+    el('viewConList').setAttribute('aria-pressed', String(next === 'list'));
+    renderContacts();
+  }
+
+  fillSelect(el('nCat'), CONTACT_CATS, 'id', 'label');
+  (() => {
+    const f = el('fCat');
+    f.textContent = '';
+    [['', 'All categories'], ['__preferred', 'Go-to people only']].forEach(([v, l]) => {
+      const o = document.createElement('option'); o.value = v; o.textContent = l; f.appendChild(o);
+    });
+    let group = null;
+    CONTACT_CATS.forEach((c) => {
+      if (c.g !== group){ group = c.g; }
+      const o = document.createElement('option');
+      o.value = c.id; o.textContent = c.label;
+      f.appendChild(o);
+    });
+  })();
+
+  el('modContacts').addEventListener('click', () => setModule('contacts'));
+  el('addContact').addEventListener('click', () => openContact(null));
+  el('nClose').addEventListener('click', closeContact);
+  el('nCancel').addEventListener('click', closeContact);
+  el('nSave').addEventListener('click', saveContact);
+  el('nDelete').addEventListener('click', deleteContact);
+  el('nLinkAddBtn').addEventListener('click', addReferral);
+  el('viewConGrid').addEventListener('click', () => setContactView('grid'));
+  el('viewConList').addEventListener('click', () => setContactView('list'));
+  el('cq').addEventListener('input', renderContacts);
+  el('fCat').addEventListener('change', renderContacts);
+  el('fRating').addEventListener('change', renderContacts);
+  el('viewConGrid').setAttribute('aria-pressed', String(conView === 'grid'));
+  el('viewConList').setAttribute('aria-pressed', String(conView === 'list'));
+
   el('modCma').addEventListener('click', () => setModule('cma'));
   el('pClose').addEventListener('click', closePage);
   el('pCancel').addEventListener('click', closePage);
@@ -5936,6 +6618,10 @@
       icon:[['path', { d:'M12 3v4M4.9 6.3l2.6 2.6M19.1 6.3l-2.6 2.6' }],
             ['path', { d:'M8 13a4 4 0 1 1 8 0c0 1.6-1 2.4-1.4 3.2-.3.5-.4 1-.4 1.8h-4.4c0-.8-.1-1.3-.4-1.8C9 15.4 8 14.6 8 13Z' }],
             ['path', { d:'M10 21h4' }]] },
+    { id:'contacts', name:'Contacts', d:'Your referral network, both directions.',
+      icon:[['path', { d:'M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2' }],
+            ['circle', { cx:9, cy:7, r:4 }],
+            ['path', { d:'M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75' }]] },
     { id:'cma', name:'CMA', d:'Price a property from comps, and produce the report.',
       icon:[['path', { d:'M3 21h18' }], ['path', { d:'M5 21V9l5-4 5 4v12' }],
             ['path', { d:'M15 21V13h4v8' }]] },
@@ -6117,6 +6803,7 @@
       leads: openLeads.length + ' live · ' + leads.length + ' all time',
       tasks: openTasks.length + ' open · ' + lateTasks.length + ' overdue',
       cma: cmasLoaded ? cmas.length + ' saved' : 'Comps and reports',
+      contacts: contactsLoaded ? contacts.length + ' people' : 'Your referral network',
       gen: pagesLoaded
         ? pages.filter((p) => p.status === 'live').length + ' pages live · ' +
           sources.filter((s) => Number(s.active)).length + ' sources on'
@@ -6294,6 +6981,20 @@
         sub:[CHANNEL_LABEL[c.channel] || c.channel, c.status, c.geo].filter(Boolean).join(' · '),
         tag: Number(c.spend) ? money0(c.spend) : '',
         open(){ setModule('campaigns'); openCampaign(c.id); }
+      }))
+    });
+
+    const conHits = contacts.filter((c) => gMatches(terms, gNorm([
+      c.name, c.company, c.phone, c.email, c.tags, c.notes, CONTACT_LABEL[c.category]
+    ].join(' '))));
+    if (conHits.length) groups.push({
+      label:'Contacts', total:conHits.length,
+      items: conHits.slice(0, G_LIMIT_PER_GROUP).map((c) => ({
+        kind:'contact', id:c.id, glyph:'☎', title:c.name,
+        sub:[c.company, CONTACT_LABEL[c.category] || c.category, c.phone]
+          .filter(Boolean).join(' · '),
+        tag: Number(c.rating) ? '★'.repeat(Number(c.rating)) : '',
+        open(){ setModule('contacts'); openContact(c.id); }
       }))
     });
 
@@ -6557,6 +7258,7 @@
     else if (module === 'analytics') loadAnalytics(true);
     else if (module === 'gen') loadGen(true);
     else if (module === 'cma') loadCmas(true);
+    else if (module === 'contacts') loadContacts(true);
     else if (module === 'home') boot();
     else load();
   });
@@ -6571,7 +7273,7 @@
   el('dCancel').addEventListener('click', closeDrawer);
   // one backdrop, four drawers
   const closeAllDrawers = () => {
-    closeDrawer(); closeCampaign(); closeTask(); closeWorkflow(); closePage(); closeSource();
+    closeDrawer(); closeCampaign(); closeTask(); closeWorkflow(); closePage(); closeSource(); closeContact();
   };
   el('drawerBg').addEventListener('click', closeAllDrawers);
   el('dSave').addEventListener('click', saveDrawer);
@@ -6642,6 +7344,7 @@
       else if (el('wfDrawer').classList.contains('open')) createWorkflow();
       else if (el('pageDrawer').classList.contains('open')) savePage();
       else if (el('srcDrawer').classList.contains('open')) saveSource();
+      else if (el('conDrawer').classList.contains('open')) saveContact();
       else saveDrawer();
     }
   });
