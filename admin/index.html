@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <meta name="robots" content="noindex, nofollow" />
-<title>Lead Board · Jessica Kortum</title>
+<title>JKortumRealty CRM</title>
 
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -173,7 +173,7 @@
      toggled by the attribute needs this or it stays on screen. Bitten by this
      twice already - .board, then the whole leads toolbar. */
   .board[hidden],.tablewrap[hidden],.tbl-foot[hidden],.camp-wrap[hidden],.calc-wrap[hidden],
-  .an-wrap[hidden],
+  .an-wrap[hidden],.home-wrap[hidden],.tools[hidden],
   .stats[hidden],.viewtoggle[hidden],.btn[hidden],.search[hidden]{display:none}
 
   /* ---------------- module switch (Leads | Campaigns) ---------------- */
@@ -277,6 +277,84 @@
     text-transform:none;letter-spacing:.02em;font-size:.68rem}
   .tnote{font-size:.75rem;color:var(--sage);margin-top:7px;line-height:1.5;
     display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+
+  /* ---------------- brand ---------------- */
+  /* .bar h1 already sets a size, so this needs to match it for specificity. */
+  .bar .brand{display:flex;align-items:baseline;gap:7px;font-family:var(--serif);font-size:1.24rem;
+    font-weight:500;letter-spacing:-.01em;white-space:nowrap}
+  .brand .mark{color:var(--brass-bright)}
+  .brand .ver{font-family:var(--sans);font-size:.58rem;font-weight:700;letter-spacing:.12em;
+    text-transform:uppercase;color:var(--sage);border:1px solid var(--line-soft);
+    border-radius:9px;padding:2px 6px;align-self:center}
+
+  /* ---------------- dashboard home ---------------- */
+  .home-wrap{flex:1;overflow-y:auto;padding:20px 22px 44px}
+  .home-inner{max-width:1180px;display:flex;flex-direction:column;gap:18px}
+  .hero h2{font-family:var(--serif);font-size:1.6rem;font-weight:500;color:var(--cream)}
+  .hero p{font-size:.9rem;color:var(--sage);margin-top:6px;line-height:1.6;max-width:70ch}
+  .hero p b{color:var(--cream-soft);font-weight:600}
+
+  .act-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:11px}
+  .act{background:var(--ink-2);border:1px solid var(--line-soft);border-radius:4px;
+    padding:15px 16px;text-align:left;display:flex;flex-direction:column;gap:5px;
+    transition:border-color .2s,transform .15s;width:100%}
+  .act:hover{border-color:var(--line);transform:translateY(-1px)}
+  .act[disabled]{opacity:.5;cursor:default;transform:none}
+  .act .v{font-family:var(--serif);font-size:1.7rem;line-height:1.1;color:var(--cream)}
+  .act .l{font-size:.68rem;letter-spacing:.11em;text-transform:uppercase;color:var(--sage)}
+  .act.hot{border-left:3px solid var(--hot)}
+  .act.hot .v{color:#eda071}
+  .act.due{border-left:3px solid var(--brass)}
+  .act.ok{border-left:3px solid var(--ok)}
+
+  .today{display:flex;flex-direction:column}
+  .trow{display:grid;grid-template-columns:24px 1fr auto;gap:11px;align-items:center;
+    padding:10px 4px;border-bottom:1px solid var(--line-soft);cursor:pointer;text-align:left;
+    width:100%;transition:background .15s}
+  .trow:last-of-type{border-bottom:0}
+  .trow:hover{background:var(--ink-3)}
+  .trow .ico{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;
+    justify-content:center;font-size:.72rem;background:var(--ink-3);border:1px solid var(--line-soft);
+    color:var(--sage)}
+  .trow.lead .ico{color:var(--brass-bright)}
+  .trow.task .ico{color:#cbb6e3}
+  .trow .t{display:block;font-size:.88rem;color:var(--cream);font-weight:600;line-height:1.4}
+  .trow .s{display:block;font-size:.74rem;color:var(--sage);margin-top:2px}
+  .trow .when{font-size:.66rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;
+    padding:3px 8px;border-radius:2px;white-space:nowrap;color:var(--sage);
+    border:1px solid var(--line-soft)}
+  .trow .when.late{background:rgba(221,127,74,.18);color:#eda071;border-color:transparent}
+  .trow .when.now{background:rgba(201,162,107,.20);color:var(--brass-bright);border-color:transparent}
+  .today-more{margin-top:12px}
+
+  .mods{display:grid;grid-template-columns:repeat(auto-fit,minmax(224px,1fr));gap:12px}
+  .mod{background:var(--ink-2);border:1px solid var(--line-soft);border-radius:4px;
+    padding:16px 17px;text-align:left;display:flex;flex-direction:column;gap:8px;
+    transition:border-color .2s,transform .15s;width:100%}
+  .mod:hover{border-color:var(--brass);transform:translateY(-1px)}
+  .mod .top{display:flex;align-items:center;gap:9px}
+  .mod .top svg{color:var(--brass);flex-shrink:0}
+  .mod .nm{font-size:.98rem;font-weight:650;color:var(--cream)}
+  .mod .d{font-size:.79rem;color:var(--sage);line-height:1.55}
+  .mod .stat{font-size:.75rem;color:var(--cream-soft);margin-top:auto;padding-top:9px;
+    border-top:1px solid var(--line-soft)}
+  .mod .stat b{color:var(--brass-bright);font-weight:650}
+
+  .feed{display:flex;flex-direction:column}
+  .feed .frow{display:grid;grid-template-columns:22px 1fr auto;gap:10px;align-items:baseline;
+    padding:8px 4px;border-bottom:1px solid var(--line-soft);cursor:pointer;text-align:left;width:100%}
+  .feed .frow:last-child{border-bottom:0}
+  .feed .frow:hover{background:var(--ink-3)}
+  .feed .fi{font-size:.72rem;text-align:center;color:var(--sage)}
+  .feed .ft{font-size:.83rem;color:var(--cream-soft);line-height:1.5;word-break:break-word}
+  .feed .ft b{color:var(--cream);font-weight:600}
+  .feed .fw{font-size:.7rem;color:var(--sage);white-space:nowrap}
+
+  @media(max-width:700px){
+    .home-wrap{padding:15px 15px 34px}
+    .hero h2{font-size:1.34rem}
+    .brand{font-size:1.05rem}
+  }
 
   /* ---------------- analytics ---------------- */
   .an-wrap{flex:1;overflow-y:auto;padding:18px 22px 44px}
@@ -470,9 +548,10 @@
 <body>
 
 <header class="bar">
-  <h1 id="moduleTitle">Lead Board</h1>
+  <h1 class="brand"><span class="mark">JKortumRealty</span> CRM <span class="ver">v1</span></h1>
   <nav class="modules" aria-label="Sections">
-    <button id="modLeads" type="button" title="Your pipeline" aria-current="page">Leads</button>
+    <button id="modHome" type="button" title="What needs you today" aria-current="page">Home</button>
+    <button id="modLeads" type="button" title="Your pipeline">Leads</button>
     <button id="modTasks" type="button" title="What has to get done, and by when">Tasks</button>
     <button id="modCampaigns" type="button" title="Advertising, spend and what it actually produced">Campaigns</button>
     <button id="modAnalytics" type="button" title="What the numbers say, and what to do about it">Analytics</button>
@@ -586,6 +665,10 @@
 
 <div class="an-wrap" id="anWrap" hidden>
   <div class="an-inner" id="anInner"></div>
+</div>
+
+<div class="home-wrap" id="homeWrap" hidden>
+  <div class="home-inner" id="homeInner"></div>
 </div>
 
 <div class="calc-wrap" id="calcWrap" hidden>
@@ -1474,6 +1557,9 @@
 
   function render(){
     renderStats(visibleLeads());
+    // Another module owns the screen; showing the board here would put two
+    // views up at once.
+    if (module !== 'leads') return;
     const isTable = view === 'table';
     board.hidden = isTable;
     el('tablewrap').hidden = !isTable;
@@ -2139,23 +2225,25 @@
 
   let campaigns = [];
   let activeCampaign = null;   // null while creating
-  let module = 'leads';
+  let module = 'home';
 
   const MODULE_TITLES = {
-    leads:'Lead Board', tasks:'Tasks', campaigns:'Campaigns',
+    home:'Home', leads:'Lead Board', tasks:'Tasks', campaigns:'Campaigns',
     analytics:'Analytics', calc:'Calculators'
   };
 
   function setModule(next){
     module = next;
-    const isLeads = next === 'leads', isCamp = next === 'campaigns',
+    const isHome  = next === 'home',
+          isLeads = next === 'leads', isCamp = next === 'campaigns',
           isCalc  = next === 'calc',  isTask = next === 'tasks',
           isAn    = next === 'analytics';
 
-    [['modLeads', isLeads], ['modTasks', isTask], ['modCampaigns', isCamp],
-     ['modAnalytics', isAn], ['modCalc', isCalc]]
+    [['modHome', isHome], ['modLeads', isLeads], ['modTasks', isTask],
+     ['modCampaigns', isCamp], ['modAnalytics', isAn], ['modCalc', isCalc]]
       .forEach(([id, on]) => el(id).setAttribute('aria-current', on ? 'page' : 'false'));
-    el('moduleTitle').textContent = MODULE_TITLES[next] || 'Lead Board';
+    // The masthead is the product name now, so the module goes in the tab title.
+    document.title = (MODULE_TITLES[next] || 'Home') + ' · JKortumRealty CRM';
     store.set('module', next);
 
     // Every one of these sets an explicit display, so the [hidden] guard rule
@@ -2173,6 +2261,8 @@
       target.hidden = !isTask;
     });
     ['anRange','anCopy'].forEach(id => { el(id).hidden = !isAn; });
+    // Home has no filters of its own; an empty toolbar is just a stripe.
+    document.querySelector('.tools').hidden = isHome || isCalc;
     document.querySelector('.viewtoggle').hidden = !isLeads;
     el('stTotal').closest('.stats').hidden = !isLeads;
     el('taskStats').hidden = !isTask;
@@ -2183,12 +2273,14 @@
     el('calcWrap').hidden = !isCalc;
     el('taskBoard').hidden = !isTask;
     el('anWrap').hidden = !isAn;
+    el('homeWrap').hidden = !isHome;
     if (!isLeads){ board.hidden = true; el('tablewrap').hidden = true; el('tblFoot').hidden = true; }
 
     if (isCamp) loadCampaigns();
     else if (isCalc) renderCalc();
     else if (isTask) loadTasks();
     else if (isAn) loadAnalytics();
+    else if (isHome) renderHome();
     else render();
   }
 
@@ -2556,6 +2648,10 @@
     const d = daysUntil(t.due_on);
     if (mode === 'none')    return d === null;
     if (d === null)         return false;
+    // A finished task cannot be late, whatever its date says. Without this the
+    // Overdue filter fills up with completed work and stops being usable - and
+    // it would disagree with the counts on the dashboard and in the header.
+    if (t.status === 'done') return false;
     if (mode === 'overdue') return d < 0;
     if (mode === 'today')   return d === 0;
     if (mode === 'week')    return d >= 0 && d <= 7;
@@ -3063,8 +3159,11 @@
   // money0() comes from the calculators block above - same format, and it
   // already handles negatives.
 
-  function anWindow(){
-    const r = AN_RANGES.find((x) => x.id === anRange) || AN_RANGES[1];
+  // rangeId lets the dashboard ask for a fixed window without disturbing the
+  // one the Analytics screen is set to - and keeps both reading the same code,
+  // so the two screens can never disagree about a number.
+  function anWindow(rangeId){
+    const r = AN_RANGES.find((x) => x.id === (rangeId || anRange)) || AN_RANGES[1];
     const to = Date.now();
     if (!r.days) return { from:-Infinity, to, prevFrom:null, prevTo:null, days:null, label:r.label };
     const from = to - r.days * DAY;
@@ -3107,8 +3206,8 @@
     };
   }
 
-  function anCompute(){
-    const win = anWindow();
+  function anCompute(rangeId){
+    const win = anWindow(rangeId);
     const F = new Map(leads.map((l) => [l.id, leadFacts(l)]));
     const f = (l) => F.get(l.id);
     const inWin  = (t) => t !== null && t >= win.from && t <= win.to;
@@ -3844,6 +3943,307 @@
 
   el('modAnalytics').addEventListener('click', () => setModule('analytics'));
 
+  /* ================= dashboard home =================
+     The landing screen. Its job is to answer "what needs me right now" before
+     anything else, so the work that is actually late comes first and the
+     module buttons come after. Every figure here is computed by the same code
+     the Analytics screen uses, so the two can never disagree.                */
+
+  // Icons as element descriptions rather than markup strings - this file builds
+  // every node through the DOM and never assigns innerHTML.
+  const MODULE_CARDS = [
+    { id:'leads', name:'Leads', d:'Your pipeline, from first enquiry to closing.',
+      icon:[['rect', { x:3, y:4, width:5, height:16, rx:1 }],
+            ['rect', { x:10, y:4, width:5, height:11, rx:1 }],
+            ['rect', { x:17, y:4, width:4, height:7, rx:1 }]] },
+    { id:'tasks', name:'Tasks', d:'What has to get done, and by when.',
+      icon:[['path', { d:'M4 7h16M4 12h11M4 17h9' }],
+            ['path', { d:'M15.5 18.5 18 21l4-5' }]] },
+    { id:'campaigns', name:'Campaigns', d:'Advertising, spend, and what it produced.',
+      icon:[['path', { d:'M4 10v4a1 1 0 0 0 1 1h3l6 4V5L8 9H5a1 1 0 0 0-1 1Z' }],
+            ['path', { d:'M18 9.5a4 4 0 0 1 0 5' }]] },
+    { id:'analytics', name:'Analytics', d:'What the numbers say, and what to do about it.',
+      icon:[['path', { d:'M4 19h16' }], ['path', { d:'M6 15l4-5 3.5 3.5L20 6' }]] },
+    { id:'calc', name:'Calculators', d:'Payment, affordability, seller net, cash to close.',
+      icon:[['rect', { x:5, y:3, width:14, height:18, rx:2 }],
+            ['path', { d:'M8 7h8M8 11.5h2M12 11.5h2M16 11.5h.4M8 16h2M12 16h2M16 16h.4' }]] }
+  ];
+
+  function greeting(){
+    const h = new Date().getHours();
+    return h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening';
+  }
+
+  // Leads due for a follow-up and tasks due, merged into one list. Overdue
+  // first, longest overdue at the top - the order you would actually work in.
+  function todayItems(){
+    const out = [];
+    leads.forEach((l) => {
+      if (l.status === 'closed' || l.status === 'lost') return;
+      const d = daysUntil(l.next_follow_up);
+      if (d === null || d > 0) return;
+      out.push({
+        kind:'lead', id:l.id, d, glyph:'◆', title:l.name,
+        sub: (STAGE_LABEL[l.status] || l.status) +
+             (l.intent ? ' · ' + l.intent : '') +
+             (l.phone ? ' · ' + l.phone : '')
+      });
+    });
+    tasks.forEach((t) => {
+      if (t.status === 'done') return;
+      const d = daysUntil(t.due_on);
+      if (d === null || d > 0) return;
+      out.push({
+        kind:'task', id:t.id, d, glyph:'✓', title:t.title,
+        sub: [t.lead_name, t.campaign_name, t.assignee].filter(Boolean).join(' · ') || 'No link'
+      });
+    });
+    return out.sort((a, b) => a.d - b.d || a.title.localeCompare(b.title));
+  }
+
+  function actionTile(parent, value, label, cls, run){
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'act ' + (value ? cls : '');
+    const v = document.createElement('div');
+    v.className = 'v';
+    v.textContent = String(value);
+    const l = document.createElement('div');
+    l.className = 'l';
+    l.textContent = label;
+    b.append(v, l);
+    if (value) b.addEventListener('click', run); else b.disabled = true;
+    parent.appendChild(b);
+  }
+
+  function renderHome(){
+    const wrap = el('homeInner');
+    wrap.textContent = '';
+
+    const openLeads = leads.filter((l) => l.status !== 'closed' && l.status !== 'lost');
+    const lateLeads = openLeads.filter((l) => { const d = daysUntil(l.next_follow_up); return d !== null && d < 0; });
+    const dueLeads  = openLeads.filter((l) => daysUntil(l.next_follow_up) === 0);
+    const openTasks = tasks.filter((t) => t.status !== 'done');
+    const lateTasks = openTasks.filter((t) => { const d = daysUntil(t.due_on); return d !== null && d < 0; });
+    const dueTasks  = openTasks.filter((t) => daysUntil(t.due_on) === 0);
+    const untouched = leads.filter((l) => l.status === 'new');
+    const items = todayItems();
+
+    /* greeting */
+    const hero = document.createElement('div');
+    hero.className = 'hero';
+    const h2 = document.createElement('h2');
+    h2.textContent = greeting() + '.';
+    const p = document.createElement('p');
+    p.append(document.createTextNode(
+      new Date().toLocaleDateString(undefined, { weekday:'long', day:'numeric', month:'long' }) + '. '));
+    if (!leads.length && !tasks.length){
+      p.append(document.createTextNode(
+        'Nothing on the board yet. Add a lead, or wait for the website form to bring one in — ' +
+        'everything else here fills itself in from there.'));
+    } else if (items.length){
+      const b = document.createElement('b');
+      b.textContent = items.length + ' thing' + (items.length === 1 ? '' : 's') + ' need you today';
+      p.append(b, document.createTextNode(
+        ' — ' + lateLeads.length + ' follow-up' + (lateLeads.length === 1 ? '' : 's') +
+        ' and ' + lateTasks.length + ' task' + (lateTasks.length === 1 ? '' : 's') + ' already overdue.'));
+    } else {
+      const b = document.createElement('b');
+      b.textContent = 'Nothing is overdue.';
+      p.append(b, document.createTextNode(' ' + openLeads.length + ' live lead' +
+        (openLeads.length === 1 ? '' : 's') + ' and ' + openTasks.length + ' open task' +
+        (openTasks.length === 1 ? '' : 's') + ' on the board.'));
+    }
+    hero.append(h2, p);
+    wrap.appendChild(hero);
+
+    /* needs you now */
+    const acts = document.createElement('div');
+    acts.className = 'act-grid';
+    actionTile(acts, lateLeads.length, 'Follow-ups overdue', 'hot',
+      () => { el('fDue').value = 'overdue'; el('q').value = ''; setModule('leads'); });
+    actionTile(acts, dueLeads.length, 'Follow-ups due today', 'due',
+      () => { el('fDue').value = 'today'; el('q').value = ''; setModule('leads'); });
+    actionTile(acts, lateTasks.length, 'Tasks overdue', 'hot',
+      () => { el('fTaskDue').value = 'overdue'; el('tq').value = ''; setModule('tasks'); });
+    actionTile(acts, dueTasks.length, 'Tasks due today', 'due',
+      () => { el('fTaskDue').value = 'today'; el('tq').value = ''; setModule('tasks'); });
+    actionTile(acts, untouched.length, 'Leads never contacted', 'hot',
+      () => { el('fDue').value = ''; el('q').value = ''; setModule('leads'); });
+    wrap.appendChild(acts);
+
+    /* the actual list */
+    const list = anCard('Today',
+      'Follow-ups and tasks that are due or already late, worst first. Click any row to open it.');
+    if (!items.length){
+      const e = document.createElement('div');
+      e.className = 'an-empty';
+      e.textContent = leads.length || tasks.length
+        ? 'Clear. Nothing is due today and nothing is overdue.'
+        : 'Nothing due — there is nothing on the board yet.';
+      list.body.appendChild(e);
+    } else {
+      const box = document.createElement('div');
+      box.className = 'today';
+      items.slice(0, 12).forEach((it) => {
+        const row = document.createElement('button');
+        row.type = 'button';
+        row.className = 'trow ' + it.kind;
+        const ico = document.createElement('span');
+        ico.className = 'ico';
+        ico.textContent = it.glyph;
+        const mid = document.createElement('span');
+        const t = document.createElement('span');
+        t.className = 't';
+        t.textContent = it.title;
+        const s = document.createElement('span');
+        s.className = 's';
+        s.textContent = it.sub;
+        mid.append(t, s);
+        const when = document.createElement('span');
+        when.className = 'when ' + (it.d < 0 ? 'late' : 'now');
+        when.textContent = it.d < 0
+          ? Math.abs(it.d) + 'd overdue'
+          : 'Due today';
+        row.append(ico, mid, when);
+        row.addEventListener('click', () => {
+          if (it.kind === 'lead'){ setModule('leads'); openDrawer(it.id); }
+          else { setModule('tasks'); openTask(it.id); }
+        });
+        box.appendChild(row);
+      });
+      list.body.appendChild(box);
+      if (items.length > 12){
+        const more = document.createElement('div');
+        more.className = 'today-more';
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'btn ghost';
+        btn.textContent = 'See the other ' + (items.length - 12);
+        btn.addEventListener('click', () => {
+          el('fDue').value = 'overdue'; el('q').value = ''; setModule('leads');
+        });
+        more.appendChild(btn);
+        list.body.appendChild(more);
+      }
+    }
+    wrap.appendChild(list);
+
+    /* the rest of the system */
+    const nav = anCard('Everything else', 'The five places work lives.');
+    const grid = document.createElement('div');
+    grid.className = 'mods';
+    const stats = {
+      leads: openLeads.length + ' live · ' + leads.length + ' all time',
+      tasks: openTasks.length + ' open · ' + lateTasks.length + ' overdue',
+      campaigns: campaigns.length
+        ? campaigns.filter((c) => c.status === 'running').length + ' running · ' +
+          money0(campaigns.reduce((a, c) => a + (Number(c.spend) || 0), 0)) + ' spent'
+        : 'none yet',
+      analytics: 'Last 90 days',
+      calc: 'Five of them'
+    };
+    MODULE_CARDS.forEach((mc) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'mod';
+
+      const top = document.createElement('div');
+      top.className = 'top';
+      const svg = svgEl('svg', { width:19, height:19, viewBox:'0 0 24 24', fill:'none',
+        stroke:'currentColor', 'stroke-width':1.9, 'stroke-linecap':'round',
+        'stroke-linejoin':'round', 'aria-hidden':'true' });
+      mc.icon.forEach(([tag, attrs]) => svg.appendChild(svgEl(tag, attrs)));
+      const nm = document.createElement('span');
+      nm.className = 'nm';
+      nm.textContent = mc.name;
+      top.append(svg, nm);
+
+      const d = document.createElement('div');
+      d.className = 'd';
+      d.textContent = mc.d;
+
+      const st = document.createElement('div');
+      st.className = 'stat';
+      const sb = document.createElement('b');
+      sb.textContent = stats[mc.id];
+      st.appendChild(sb);
+
+      b.append(top, d, st);
+      b.addEventListener('click', () => setModule(mc.id));
+      grid.appendChild(b);
+    });
+    nav.body.appendChild(grid);
+    wrap.appendChild(nav);
+
+    /* at a glance - same numbers the Analytics screen would give for 30 days */
+    if (leads.length){
+      const m = anCompute('30');
+      const glance = anCard('Last 30 days',
+        'The short version. Analytics has the rest, over whichever period you like.');
+      const k = document.createElement('div');
+      k.className = 'an-kpis';
+      k.append(
+        kpi(String(m.arrived.length), 'New leads',
+          { delta: deltaPct(m.arrived.length, m.arrivedPrev.length) }),
+        kpi(String(m.won.length), 'Closed', { delta: deltaPct(m.won.length, m.wonPrev.length) }),
+        kpi(humanDur(m.medianResponse), 'First contact',
+          { sub: m.responses.length ? 'median of ' + m.responses.length : 'nothing logged' }),
+        kpi(money0(m.pipeline), 'Open pipeline',
+          { sub: m.open.length + ' live lead' + (m.open.length === 1 ? '' : 's') }),
+        kpi(m.totalSpend ? money0(m.totalSpend) : '—', 'Ad spend',
+          { sub: m.totalSpend ? 'all time' : 'nothing recorded' })
+      );
+      glance.body.appendChild(k);
+      const go = document.createElement('div');
+      go.className = 'today-more';
+      const gb = document.createElement('button');
+      gb.type = 'button';
+      gb.className = 'btn ghost';
+      gb.textContent = 'Open Analytics';
+      gb.addEventListener('click', () => setModule('analytics'));
+      go.appendChild(gb);
+      glance.body.appendChild(go);
+      wrap.appendChild(glance);
+    }
+
+    /* latest activity */
+    const recent = [];
+    leads.forEach((l) => readActivity(l.activity).forEach((e) => {
+      const at = ts(e.at);
+      if (at !== null) recent.push({ at, type:e.type, text:e.text, name:l.name, id:l.id });
+    }));
+    recent.sort((a, b) => b.at - a.at);
+    if (recent.length){
+      const feed = anCard('Lately', 'The last few things logged against a lead.');
+      const box = document.createElement('div');
+      box.className = 'feed';
+      recent.slice(0, 7).forEach((r) => {
+        const row = document.createElement('button');
+        row.type = 'button';
+        row.className = 'frow';
+        const i = document.createElement('span');
+        i.className = 'fi';
+        i.textContent = ACTIVITY_ICON[r.type] || '•';
+        const t = document.createElement('span');
+        t.className = 'ft';
+        const b = document.createElement('b');
+        b.textContent = r.name;
+        t.append(b, document.createTextNode(' — ' + r.text));
+        const w = document.createElement('span');
+        w.className = 'fw';
+        w.textContent = ago(new Date(r.at).toISOString());
+        row.append(i, t, w);
+        row.addEventListener('click', () => { setModule('leads'); openDrawer(r.id); });
+        box.appendChild(row);
+      });
+      feed.body.appendChild(box);
+      wrap.appendChild(feed);
+    }
+  }
+
+  el('modHome').addEventListener('click', () => setModule('home'));
+
   fillSelect(el('tStatus'), TASK_COLS, 'id', 'label');
   fillSelect(el('tPriority'), TASK_PRIOS, 'id', 'label');
 
@@ -3898,6 +4298,7 @@
     if (module === 'campaigns') loadCampaigns();
     else if (module === 'tasks') loadTasks();
     else if (module === 'analytics') loadAnalytics(true);
+    else if (module === 'home') boot();
     else load();
   });
   el('viewBoard').addEventListener('click', () => setView('board'));
@@ -3967,7 +4368,30 @@
     }
   });
 
-  load();
+  // The dashboard reads all three datasets, so fetch them together on the way
+  // in. It also means every other module is already warm when you click it.
+  async function boot(){
+    skeleton.textContent = 'Loading…';
+    try {
+      const [leadData] = await Promise.all([
+        api('/api/leads'),
+        api('/api/tasks').then((d) => { tasks = d.tasks || []; tasksLoaded = true; })
+          .catch((e) => { if (e.message === 'unauthorized') throw e; }),
+        api('/api/campaigns').then((d) => { campaigns = d.campaigns || []; campaignsLoaded = true; })
+          .catch((e) => { if (e.message === 'unauthorized') throw e; })
+      ]);
+      leads = leadData.leads || [];
+      if (leadData.user){ el('whoEmail').textContent = leadData.user; el('who').hidden = false; }
+      hideBanner();
+    } catch (err) {
+      if (err.message !== 'unauthorized') showBanner(err.message);
+    } finally {
+      skeleton.hidden = true;
+      setModule('home');
+    }
+  }
+
+  boot();
 </script>
 </body>
 </html>
