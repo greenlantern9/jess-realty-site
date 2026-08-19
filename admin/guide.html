@@ -74,9 +74,12 @@
   ol.steps li > div{display:grid;gap:5px}
 
   ul.plain{list-style:none;display:grid;gap:10px}
-  ul.plain li{display:grid;grid-template-columns:auto 1fr;gap:11px;align-items:start}
-  ul.plain li::before{content:"";width:5px;height:5px;border-radius:50%;
-    background:var(--brass);margin-top:10px}
+  /* The bullet is positioned, not a grid column. As a grid the item's own
+     inline content (a <strong>, a run of text) became separate grid items and
+     spilled onto extra rows at the wrong indent. */
+  ul.plain li{position:relative;padding-left:17px;max-width:64ch}
+  ul.plain li::before{content:"";position:absolute;left:0;top:.66em;
+    width:5px;height:5px;border-radius:50%;background:var(--brass)}
 
   dl.fields{display:grid;border-top:1px solid var(--line-soft)}
   dl.fields > div{display:grid;grid-template-columns:172px 1fr;gap:16px;padding:11px 0;
@@ -101,6 +104,9 @@
   th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line-soft);vertical-align:top}
   th{font-size:.67rem;letter-spacing:.12em;text-transform:uppercase;color:var(--sage)}
   .scroll{overflow-x:auto}
+  /* Tables whose first column is a short label. Auto layout hands almost all
+     the width to a long description and breaks "In progress" over two lines. */
+  table.labels td:first-child,table.labels th:first-child{white-space:nowrap}
   .stage{display:inline-flex;align-items:center;gap:7px;font-weight:650;white-space:nowrap}
   .dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
 
@@ -209,7 +215,7 @@
   <div class="body">
     <p>Six columns, left to right, following a deal as it progresses:</p>
     <div class="scroll">
-      <table>
+      <table class="labels">
         <thead><tr><th>Stage</th><th>Means</th></tr></thead>
         <tbody>
           <tr><td><span class="stage"><span class="dot" style="background:#c9a26b"></span>New</span></td><td>Arrived, not yet spoken to</td></tr>
@@ -336,7 +342,7 @@
       appraisal nobody has chased, the photographer who needs booking on Tuesday.</p>
     <p>It is the same kind of board, with four columns:</p>
     <div class="scroll">
-      <table>
+      <table class="labels">
         <thead><tr><th>Column</th><th>What belongs there</th></tr></thead>
         <tbody>
           <tr><td><strong>To do</strong></td><td>Not started</td></tr>
@@ -402,7 +408,7 @@
       <li><div><strong>Update "Spent so far" as you go</strong><span>No connection to your ad account, so this is manual — a minute a week.</span></div></li>
     </ol>
     <div class="scroll">
-      <table>
+      <table class="labels">
         <thead><tr><th>Figure</th><th>What it tells you</th></tr></thead>
         <tbody>
           <tr><td><strong>Spend</strong></td><td>What you've put in so far</td></tr>
