@@ -274,7 +274,7 @@
      toggled by the attribute needs this or it stays on screen. Bitten by this
      twice already - .board, then the whole leads toolbar. */
   .board[hidden],.tablewrap[hidden],.tbl-foot[hidden],.camp-wrap[hidden],.calc-wrap[hidden],
-  .an-wrap[hidden],.home-wrap[hidden],.tools[hidden],.gen-wrap[hidden],
+  .an-wrap[hidden],.home-wrap[hidden],.tools[hidden],.gen-wrap[hidden],.cma-wrap[hidden],
   .stats[hidden],.viewtoggle[hidden],.btn[hidden],.search[hidden]{display:none}
 
   /* ---------------- calculators ---------------- */
@@ -448,6 +448,57 @@
     .hero h2{font-size:1.34rem}
     .brand{font-size:1.05rem}
   }
+
+  /* ---------------- CMA ---------------- */
+  .cma-wrap{flex:1;overflow-y:auto;padding:18px 22px 44px}
+  .cma-inner{max-width:1280px;display:flex;flex-direction:column;gap:18px}
+  .cma-bar{display:flex;gap:9px;flex-wrap:wrap;align-items:center}
+  .cma-bar .sp{margin-left:auto}
+
+  .cma-form{display:grid;grid-template-columns:repeat(auto-fit,minmax(132px,1fr));gap:12px}
+  .cf{display:grid;gap:5px}
+  .cf label{font-size:.66rem;letter-spacing:.12em;text-transform:uppercase;color:var(--sage)}
+  .cf input,.cf select{width:100%;padding:9px 11px;border-radius:3px;background:var(--ink);
+    border:1px solid var(--line-soft);color:var(--cream);font-variant-numeric:tabular-nums}
+  .cf input:focus,.cf select:focus{outline:none;border-color:var(--brass)}
+  .cf.wide{grid-column:span 3}
+  @media(max-width:760px){ .cf.wide{grid-column:1/-1} }
+
+  .grid-scroll{overflow-x:auto;scrollbar-width:thin;scrollbar-color:var(--line) transparent}
+  table.cma{border-collapse:separate;border-spacing:0;font-size:.82rem;min-width:100%}
+  table.cma th,table.cma td{padding:7px 9px;border-bottom:1px solid var(--line-soft);
+    white-space:nowrap;text-align:right;font-variant-numeric:tabular-nums}
+  table.cma th{font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:var(--sage);
+    font-weight:700;position:sticky;top:0;background:var(--ink-2);z-index:1}
+  table.cma th:first-child,table.cma td:first-child{text-align:left;white-space:normal;
+    min-width:150px;position:sticky;left:0;background:var(--ink-2);z-index:2}
+  table.cma thead th:first-child{z-index:3}
+  table.cma td.subj{color:var(--brass-bright);font-weight:600}
+  table.cma tr.tot td{border-top:1px solid var(--line);font-weight:700;color:var(--cream)}
+  table.cma td.pos{color:var(--ok)} table.cma td.neg{color:var(--hot)}
+  table.cma input{width:88px;padding:5px 7px;border-radius:3px;background:var(--ink);
+    border:1px solid var(--line-soft);color:var(--cream);font-size:.8rem;text-align:right;
+    font-variant-numeric:tabular-nums}
+  table.cma input:focus{outline:none;border-color:var(--brass)}
+  table.cma input.txt{width:150px;text-align:left}
+  table.cma .rm{color:var(--danger);font-size:1rem;line-height:1;padding:0 4px}
+
+  .verdict{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
+  .vbox{background:var(--ink-3);border:1px solid var(--line-soft);border-radius:4px;padding:16px 17px}
+  .vbox .v{font-family:var(--serif);font-size:1.6rem;color:var(--cream);line-height:1.15;
+    font-variant-numeric:tabular-nums}
+  .vbox.head .v{color:var(--brass-bright);font-size:1.85rem}
+  .vbox .l{font-size:.65rem;letter-spacing:.12em;text-transform:uppercase;color:var(--sage);margin-top:6px}
+  .vbox .s{font-size:.75rem;color:var(--sage);margin-top:6px;line-height:1.5}
+
+  .cma-list{display:flex;flex-direction:column}
+  .cma-item{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;
+    padding:11px 4px;border-bottom:1px solid var(--line-soft);cursor:pointer;width:100%;
+    text-align:left;transition:background .15s}
+  .cma-item:last-of-type{border-bottom:0}
+  .cma-item:hover{background:var(--ink-3)}
+  .cma-item .ad{display:block;font-size:.9rem;font-weight:650;color:var(--cream)}
+  .cma-item .mt{display:block;font-size:.74rem;color:var(--sage);margin-top:2px}
 
   /* ---------------- lead generation ---------------- */
   .gen-wrap{flex:1;overflow-y:auto;padding:18px 22px 44px}
@@ -738,6 +789,10 @@
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v4M4.9 6.3l2.6 2.6M19.1 6.3l-2.6 2.6"/><path d="M8 13a4 4 0 1 1 8 0c0 1.6-1 2.4-1.4 3.2-.3.5-.4 1-.4 1.8h-4.4c0-.8-.1-1.3-.4-1.8C9 15.4 8 14.6 8 13Z"/><path d="M10 21h4"/></svg>
       <span>Generate</span>
     </button>
+    <button id="modCma" type="button" title="Price a property from comparable sales, and produce the report">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 21h18"/><path d="M5 21V9l5-4 5 4v12"/><path d="M15 21V13h4v8"/><path d="M9 13h2M9 17h2"/></svg>
+      <span>CMA</span>
+    </button>
     <button id="modCampaigns" type="button" title="Advertising, spend and what it actually produced">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10v4a1 1 0 0 0 1 1h3l6 4V5L8 9H5a1 1 0 0 0-1 1Z"/><path d="M18 9.5a4 4 0 0 1 0 5"/></svg>
       <span>Campaigns</span>
@@ -901,6 +956,10 @@
 
 <div class="home-wrap" id="homeWrap" hidden>
   <div class="home-inner" id="homeInner"></div>
+</div>
+
+<div class="cma-wrap" id="cmaWrap" hidden>
+  <div class="cma-inner" id="cmaInner"></div>
 </div>
 
 <div class="gen-wrap" id="genWrap" hidden>
@@ -2597,7 +2656,7 @@
   let module = 'home';
 
   const MODULE_TITLES = {
-    home:'Home', leads:'Lead Board', tasks:'Tasks', gen:'Generate',
+    home:'Home', leads:'Lead Board', tasks:'Tasks', gen:'Generate', cma:'CMA',
     campaigns:'Campaigns', analytics:'Analytics', calc:'Calculators'
   };
 
@@ -2606,10 +2665,11 @@
     const isHome  = next === 'home',
           isLeads = next === 'leads', isCamp = next === 'campaigns',
           isCalc  = next === 'calc',  isTask = next === 'tasks',
-          isAn    = next === 'analytics', isGen = next === 'gen';
+          isAn    = next === 'analytics', isGen = next === 'gen',
+          isCma   = next === 'cma';
 
     [['modHome', isHome], ['modLeads', isLeads], ['modTasks', isTask], ['modGen', isGen],
-     ['modCampaigns', isCamp], ['modAnalytics', isAn], ['modCalc', isCalc]]
+     ['modCma', isCma], ['modCampaigns', isCamp], ['modAnalytics', isAn], ['modCalc', isCalc]]
       .forEach(([id, on]) => el(id).setAttribute('aria-current', on ? 'page' : 'false'));
     // The masthead is the product name now, so the module goes in the tab title.
     document.title = (MODULE_TITLES[next] || 'Home') + ' · JKortumRealty CRM';
@@ -2646,6 +2706,7 @@
     el('anWrap').hidden = !isAn;
     el('homeWrap').hidden = !isHome;
     el('genWrap').hidden = !isGen;
+    el('cmaWrap').hidden = !isCma;
     if (!isLeads){ board.hidden = true; el('tablewrap').hidden = true; el('tblFoot').hidden = true; }
 
     if (isCamp) loadCampaigns();
@@ -2653,6 +2714,7 @@
     else if (isTask) loadTasks();
     else if (isAn) loadAnalytics();
     else if (isGen) loadGen();
+    else if (isCma) loadCmas();
     else if (isHome) renderHome();
     else render();
   }
@@ -4934,6 +4996,768 @@
   fillSelect(el('pOffer'), LP_OFFER_LIST, 'id', 'label');
 
   el('modGen').addEventListener('click', () => setModule('gen'));
+
+  /* ================= CMA =================
+     A comparative market analysis: subject property, comparable sales, and a
+     dollar adjustment for every way each comp differs from the subject.
+
+     SCOPE. The comps are typed in, not fetched — there is no MLS or
+     public-records feed on this site, so nothing here can look up an address.
+     That is less of a gap than it sounds: pulling raw comps is the easy half,
+     and choosing and adjusting them is the professional judgement a CMA is
+     actually made of. What this does is the arithmetic, the reconciliation and
+     the report. If a data feed ever arrives, it fills in the comp rows and
+     everything below still applies.
+
+     A CMA is not an appraisal, and the report says so — an agent presenting
+     one as an appraisal is a licensing problem, not a wording preference. */
+
+  const CMA_CONDS = [
+    { id:'poor', label:'Needs work', n:-2 },
+    { id:'fair', label:'Dated',      n:-1 },
+    { id:'avg',  label:'Average',    n:0 },
+    { id:'good', label:'Updated',    n:1 },
+    { id:'exc',  label:'Renovated',  n:2 }
+  ];
+  const CMA_COND_N = Object.fromEntries(CMA_CONDS.map((c) => [c.id, c.n]));
+  const CMA_COND_LABEL = Object.fromEntries(CMA_CONDS.map((c) => [c.id, c.label]));
+  const CMA_STATUS = [
+    { id:'sold',    label:'Sold' },
+    { id:'pending', label:'Pending' },
+    { id:'active',  label:'Active' }
+  ];
+
+  // Starting points, all editable. They are ordinary Florida figures, not
+  // quotes, and the right numbers differ by neighbourhood.
+  const CMA_RATES = {
+    sqft: 0,        // 0 means derive it from the comps
+    bed: 8000, bath: 10000, garage: 7000, pool: 30000,
+    year: 400, lot: 3, condition: 15000
+  };
+  const CMA_ROWS = [
+    { k:'sqft',  label:'Living area',  unit:'per sq ft' },
+    { k:'bed',   label:'Bedrooms',     unit:'per bed' },
+    { k:'bath',  label:'Bathrooms',    unit:'per bath' },
+    { k:'garage',label:'Garage bays',  unit:'per bay' },
+    { k:'pool',  label:'Pool',         unit:'flat' },
+    { k:'year',  label:'Age',          unit:'per year' },
+    { k:'lot',   label:'Lot size',     unit:'per sq ft' },
+    { k:'cond',  label:'Condition',    unit:'per step' }
+  ];
+
+  const AGENT = {
+    name: 'Jessica Kortum', title: 'REALTOR®', brokerage: 'Agile Group Realty',
+    license: 'SL3634399', email: 'jkortumrealtor@gmail.com', site: 'jessicakortum.com'
+  };
+
+  let cmas = [], cmasLoaded = false, cmaDoc = null, cmaId = null;
+
+  const n = (v) => { const x = parseFloat(String(v ?? '').replace(/[$,\s]/g, '')); return Number.isFinite(x) ? x : 0; };
+  const n0 = (v) => Math.round(n(v)).toLocaleString('en-US');
+  const round5 = (v) => Math.round(v / 5000) * 5000;
+
+  function blankCma(){
+    return {
+      subject: { address:'', beds:3, baths:2, sqft:1800, lot:6000, year:2000,
+                 garage:2, pool:0, cond:'avg' },
+      comps: [],
+      rates: { ...CMA_RATES },
+      notes: '',
+      client: '', lead_id: ''
+    };
+  }
+  function blankComp(){
+    return { address:'', price:0, date:'', beds:3, baths:2, sqft:1800, lot:6000,
+             year:2000, garage:2, pool:0, cond:'avg', dom:0, status:'sold' };
+  }
+
+  function cmaCompute(doc){
+    const s = doc.subject;
+    const comps = (doc.comps || []).filter((c) => n(c.price) > 0 && n(c.sqft) > 0);
+    const psfs = comps.map((c) => n(c.price) / n(c.sqft));
+    const avgPsf = psfs.length ? psfs.reduce((a, b) => a + b, 0) / psfs.length : 0;
+    // Living area is not linear with price - a bigger house costs more but not
+    // proportionally - so the trade adjusts at a fraction of market $/sq ft.
+    const sqftRate = n(doc.rates.sqft) || Math.round(avgPsf * 0.5);
+
+    const rows = comps.map((c) => {
+      const adj = {
+        sqft:   (n(s.sqft) - n(c.sqft)) * sqftRate,
+        bed:    (n(s.beds) - n(c.beds)) * n(doc.rates.bed),
+        bath:   (n(s.baths) - n(c.baths)) * n(doc.rates.bath),
+        garage: (n(s.garage) - n(c.garage)) * n(doc.rates.garage),
+        pool:   ((s.pool ? 1 : 0) - (c.pool ? 1 : 0)) * n(doc.rates.pool),
+        year:   (n(s.year) - n(c.year)) * n(doc.rates.year),
+        lot:    (n(s.lot) - n(c.lot)) * n(doc.rates.lot),
+        cond:   ((CMA_COND_N[s.cond] || 0) - (CMA_COND_N[c.cond] || 0)) * n(doc.rates.condition)
+      };
+      const vals = Object.values(adj);
+      const net = vals.reduce((a, b) => a + b, 0);
+      const gross = vals.reduce((a, b) => a + Math.abs(b), 0);
+      const price = n(c.price);
+      return { comp:c, adj, net, gross, adjusted: price + net,
+               netPct: price ? net / price * 100 : 0,
+               grossPct: price ? gross / price * 100 : 0,
+               psf: n(c.sqft) ? price / n(c.sqft) : 0 };
+    });
+
+    // The comp that needed least adjustment is the strongest evidence, so it
+    // carries the most weight in the reconciliation.
+    const weights = rows.map((r) => 1 / (1 + Math.pow(r.grossPct / 10, 2)));
+    const wSum = weights.reduce((a, b) => a + b, 0);
+    rows.forEach((r, i) => { r.weight = wSum ? weights[i] / wSum : 0; });
+
+    const indicated = wSum ? rows.reduce((a, r, i) => a + r.adjusted * weights[i], 0) / wSum : 0;
+    const adjVals = rows.map((r) => r.adjusted);
+    const sold = rows.filter((r) => r.comp.status === 'sold');
+    const doms = comps.map((c) => n(c.dom)).filter((d) => d > 0);
+
+    return {
+      rows, sqftRate, avgPsf, indicated,
+      low: adjVals.length ? Math.min(...adjVals) : 0,
+      high: adjVals.length ? Math.max(...adjVals) : 0,
+      listLow: round5(indicated * 0.98), listHigh: round5(indicated * 1.03),
+      subjectPsf: n(s.sqft) && indicated ? indicated / n(s.sqft) : 0,
+      soldCount: sold.length, compCount: rows.length,
+      medianDom: doms.length ? median(doms) : null
+    };
+  }
+
+  /* ---- editor ---- */
+
+  function cmaField(parent, label, value, onInput, opts = {}){
+    const w = document.createElement('div');
+    w.className = 'cf' + (opts.wide ? ' wide' : '');
+    const l = document.createElement('label');
+    l.textContent = label;
+    let inp;
+    if (opts.options){
+      inp = document.createElement('select');
+      fillSelect(inp, opts.options, 'id', 'label');
+      inp.value = value;
+      inp.addEventListener('change', () => onInput(inp.value));
+    } else {
+      inp = document.createElement('input');
+      inp.type = opts.type || 'text';
+      if (opts.placeholder) inp.placeholder = opts.placeholder;
+      inp.value = value ?? '';
+      inp.addEventListener('input', () => onInput(inp.value));
+    }
+    const id = 'cf-' + Math.random().toString(36).slice(2, 8);
+    inp.id = id; l.htmlFor = id;
+    w.append(l, inp);
+    parent.appendChild(w);
+    return inp;
+  }
+
+  function renderCma(){
+    const wrap = el('cmaInner');
+    wrap.textContent = '';
+    if (!cmaDoc){ renderCmaList(wrap); return; }
+    renderCmaEditor(wrap);
+  }
+
+  function renderCmaList(wrap){
+    const card = anCard('Comparative market analysis',
+      'Price a property from comparable sales, then hand the seller a report that shows your ' +
+      'working. Comps are entered from your MLS search — this site has no feed to pull them.');
+    const bar = document.createElement('div');
+    bar.className = 'cma-bar';
+    bar.style.marginBottom = '14px';
+    const add = document.createElement('button');
+    add.type = 'button';
+    add.className = 'btn';
+    add.textContent = '+ New CMA';
+    add.addEventListener('click', () => { cmaId = null; cmaDoc = blankCma(); renderCma(); });
+    bar.appendChild(add);
+    card.body.appendChild(bar);
+
+    if (!cmas.length){
+      const e = document.createElement('div');
+      e.className = 'an-empty';
+      e.textContent = 'Nothing yet. A first CMA takes about ten minutes once you have the comps.';
+      card.body.appendChild(e);
+    } else {
+      const list = document.createElement('div');
+      list.className = 'cma-list';
+      cmas.forEach((c) => {
+        let payload = {};
+        try { payload = JSON.parse(c.payload || '{}'); } catch {}
+        const nComps = (payload.comps || []).length;
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'cma-item';
+        const left = document.createElement('span');
+        const ad = document.createElement('span');
+        ad.className = 'ad';
+        ad.textContent = c.address;
+        const mt = document.createElement('span');
+        mt.className = 'mt';
+        mt.textContent = [c.client || 'No client named', nComps + ' comp' + (nComps === 1 ? '' : 's'),
+                          'updated ' + ago(c.updated_at) + ' ago'].join(' · ');
+        left.append(ad, mt);
+        const open = document.createElement('span');
+        open.className = 'sig-act';
+        open.textContent = 'Open →';
+        b.append(left, open);
+        b.addEventListener('click', () => {
+          cmaId = c.id;
+          cmaDoc = Object.assign(blankCma(), payload, { client: c.client, lead_id: c.lead_id });
+          cmaDoc.subject = Object.assign(blankCma().subject, payload.subject || {});
+          cmaDoc.subject.address = c.address;
+          cmaDoc.rates = Object.assign({ ...CMA_RATES }, payload.rates || {});
+          renderCma();
+        });
+        list.appendChild(b);
+      });
+      card.body.appendChild(list);
+    }
+    wrap.appendChild(card);
+  }
+
+  function renderCmaEditor(wrap){
+    const d = cmaDoc;
+    const m = cmaCompute(d);
+    const touch = () => renderCma();
+
+    /* toolbar */
+    const bar = document.createElement('div');
+    bar.className = 'cma-bar';
+    const back = document.createElement('button');
+    back.type = 'button'; back.className = 'btn ghost'; back.textContent = '← All CMAs';
+    back.addEventListener('click', () => { cmaDoc = null; cmaId = null; renderCma(); });
+    const save = document.createElement('button');
+    save.type = 'button'; save.className = 'btn'; save.textContent = cmaId ? 'Save' : 'Save CMA';
+    save.addEventListener('click', () => saveCma(save));
+    const sp = document.createElement('span'); sp.className = 'sp';
+    const dl = document.createElement('button');
+    dl.type = 'button'; dl.className = 'btn'; dl.textContent = 'Download report';
+    dl.addEventListener('click', () => downloadCmaReport());
+    const pr = document.createElement('button');
+    pr.type = 'button'; pr.className = 'btn ghost'; pr.textContent = 'Print / PDF';
+    pr.addEventListener('click', () => printCmaReport());
+    bar.append(back, save, sp, dl, pr);
+    if (cmaId){
+      const del = document.createElement('button');
+      del.type = 'button'; del.className = 'btn danger'; del.textContent = 'Delete';
+      del.addEventListener('click', deleteCma);
+      bar.appendChild(del);
+    }
+    wrap.appendChild(bar);
+
+    /* subject */
+    const sub = anCard('Subject property', 'The home you are pricing.');
+    const sf = document.createElement('div');
+    sf.className = 'cma-form';
+    const s = d.subject;
+    cmaField(sf, 'Address', s.address, (v) => { s.address = v; }, { wide:true, placeholder:'4412 W Bayshore Blvd, Tampa' });
+    cmaField(sf, 'Client', d.client, (v) => { d.client = v; }, { placeholder:'Seller name' });
+    cmaField(sf, 'Beds', s.beds, (v) => { s.beds = v; touch(); });
+    cmaField(sf, 'Baths', s.baths, (v) => { s.baths = v; touch(); });
+    cmaField(sf, 'Living sq ft', s.sqft, (v) => { s.sqft = v; touch(); });
+    cmaField(sf, 'Lot sq ft', s.lot, (v) => { s.lot = v; touch(); });
+    cmaField(sf, 'Year built', s.year, (v) => { s.year = v; touch(); });
+    cmaField(sf, 'Garage bays', s.garage, (v) => { s.garage = v; touch(); });
+    cmaField(sf, 'Pool', s.pool ? '1' : '0', (v) => { s.pool = v === '1'; touch(); },
+      { options:[{ id:'0', label:'No' }, { id:'1', label:'Yes' }] });
+    cmaField(sf, 'Condition', s.cond, (v) => { s.cond = v; touch(); }, { options:CMA_CONDS });
+    sub.body.appendChild(sf);
+    wrap.appendChild(sub);
+
+    /* comps */
+    const cc = anCard('Comparable sales',
+      'Pull these from your MLS search. Recent, close, and similar beats a long list — three ' +
+      'to six good ones is a stronger CMA than ten loose ones.');
+    const cbar = document.createElement('div');
+    cbar.className = 'cma-bar';
+    cbar.style.marginBottom = '12px';
+    const addc = document.createElement('button');
+    addc.type = 'button'; addc.className = 'btn ghost'; addc.textContent = '+ Add comparable';
+    addc.addEventListener('click', () => { d.comps.push(blankComp()); touch(); });
+    cbar.appendChild(addc);
+    cc.body.appendChild(cbar);
+
+    if (!d.comps.length){
+      const e = document.createElement('div');
+      e.className = 'an-empty';
+      e.textContent = 'No comparables yet. Add at least three.';
+      cc.body.appendChild(e);
+    } else {
+      const sc = document.createElement('div');
+      sc.className = 'grid-scroll';
+      const t = document.createElement('table');
+      t.className = 'cma';
+      const cols = ['Address', 'Status', 'Sale price', 'Sold', 'Beds', 'Baths', 'Sq ft',
+                    'Lot', 'Year', 'Gar', 'Pool', 'Condition', 'DOM', ''];
+      const thead = document.createElement('thead');
+      const hr = document.createElement('tr');
+      cols.forEach((c) => { const th = document.createElement('th'); th.textContent = c; hr.appendChild(th); });
+      thead.appendChild(hr);
+      const tb = document.createElement('tbody');
+
+      d.comps.forEach((c, i) => {
+        const tr = document.createElement('tr');
+        const cell = (build) => { const td = document.createElement('td'); build(td); tr.appendChild(td); return td; };
+        const inp = (val, on, cls) => {
+          const x = document.createElement('input');
+          x.value = val ?? ''; if (cls) x.className = cls;
+          x.addEventListener('input', () => on(x.value));
+          x.addEventListener('change', touch);
+          return x;
+        };
+        cell((td) => td.appendChild(inp(c.address, (v) => { c.address = v; }, 'txt')));
+        cell((td) => {
+          const sel = document.createElement('select');
+          fillSelect(sel, CMA_STATUS, 'id', 'label');
+          sel.value = c.status;
+          sel.addEventListener('change', () => { c.status = sel.value; touch(); });
+          td.appendChild(sel);
+        });
+        cell((td) => td.appendChild(inp(c.price, (v) => { c.price = v; })));
+        cell((td) => { const x = inp(c.date, (v) => { c.date = v; }); x.type = 'date'; td.appendChild(x); });
+        cell((td) => td.appendChild(inp(c.beds, (v) => { c.beds = v; })));
+        cell((td) => td.appendChild(inp(c.baths, (v) => { c.baths = v; })));
+        cell((td) => td.appendChild(inp(c.sqft, (v) => { c.sqft = v; })));
+        cell((td) => td.appendChild(inp(c.lot, (v) => { c.lot = v; })));
+        cell((td) => td.appendChild(inp(c.year, (v) => { c.year = v; })));
+        cell((td) => td.appendChild(inp(c.garage, (v) => { c.garage = v; })));
+        cell((td) => {
+          const sel = document.createElement('select');
+          fillSelect(sel, [{ id:'0', label:'No' }, { id:'1', label:'Yes' }], 'id', 'label');
+          sel.value = c.pool ? '1' : '0';
+          sel.addEventListener('change', () => { c.pool = sel.value === '1'; touch(); });
+          td.appendChild(sel);
+        });
+        cell((td) => {
+          const sel = document.createElement('select');
+          fillSelect(sel, CMA_CONDS, 'id', 'label');
+          sel.value = c.cond;
+          sel.addEventListener('change', () => { c.cond = sel.value; touch(); });
+          td.appendChild(sel);
+        });
+        cell((td) => td.appendChild(inp(c.dom, (v) => { c.dom = v; })));
+        cell((td) => {
+          const x = document.createElement('button');
+          x.type = 'button'; x.className = 'rm'; x.textContent = '×';
+          x.title = 'Remove this comparable';
+          x.addEventListener('click', () => { d.comps.splice(i, 1); touch(); });
+          td.appendChild(x);
+        });
+        tb.appendChild(tr);
+      });
+      t.append(thead, tb);
+      sc.appendChild(t);
+      cc.body.appendChild(sc);
+    }
+    wrap.appendChild(cc);
+
+    /* adjustment rates */
+    const rc = anCard('What each difference is worth',
+      'The dollar value of one unit of difference. These are ordinary Florida starting points, ' +
+      'not quotes — the right numbers are the ones your market actually pays.');
+    const rf = document.createElement('div');
+    rf.className = 'cma-form';
+    cmaField(rf, 'Per sq ft', d.rates.sqft || '', (v) => { d.rates.sqft = v; touch(); },
+      { placeholder: m.sqftRate ? 'auto: $' + m.sqftRate : 'auto' });
+    cmaField(rf, 'Per bedroom', d.rates.bed, (v) => { d.rates.bed = v; touch(); });
+    cmaField(rf, 'Per bathroom', d.rates.bath, (v) => { d.rates.bath = v; touch(); });
+    cmaField(rf, 'Per garage bay', d.rates.garage, (v) => { d.rates.garage = v; touch(); });
+    cmaField(rf, 'Pool', d.rates.pool, (v) => { d.rates.pool = v; touch(); });
+    cmaField(rf, 'Per year of age', d.rates.year, (v) => { d.rates.year = v; touch(); });
+    cmaField(rf, 'Per lot sq ft', d.rates.lot, (v) => { d.rates.lot = v; touch(); });
+    cmaField(rf, 'Per condition step', d.rates.condition, (v) => { d.rates.condition = v; touch(); });
+    rc.body.appendChild(rf);
+    const rn = document.createElement('p');
+    rn.className = 'an-caveat';
+    rn.style.marginTop = '12px';
+    rn.textContent = m.sqftRate
+      ? 'Leaving "per sq ft" blank uses $' + m.sqftRate + ' — half the average $' +
+        Math.round(m.avgPsf) + '/sq ft across your comps, because price does not rise ' +
+        'proportionally with size.'
+      : 'Add comps with a price and a size and the per-sq-ft rate works itself out.';
+    rc.body.appendChild(rn);
+    wrap.appendChild(rc);
+
+    /* the grid */
+    if (m.rows.length){
+      const gc = anCard('Adjustment grid',
+        'Each comp adjusted to match the subject. A plus means the comp was inferior and its ' +
+        'price is adjusted up; a minus means it was better.');
+      gc.body.appendChild(cmaGridTable(m, d));
+      wrap.appendChild(gc);
+
+      /* reconciliation */
+      const vc = anCard('Indicated value',
+        'Weighted towards the comps that needed least adjusting, because those are the ' +
+        'strongest evidence.');
+      const v = document.createElement('div');
+      v.className = 'verdict';
+      const box = (val, label, sub, cls) => {
+        const b = document.createElement('div');
+        b.className = 'vbox ' + (cls || '');
+        const vv = document.createElement('div'); vv.className = 'v'; vv.textContent = val;
+        const ll = document.createElement('div'); ll.className = 'l'; ll.textContent = label;
+        b.append(vv, ll);
+        if (sub){ const ss = document.createElement('div'); ss.className = 's'; ss.textContent = sub; b.appendChild(ss); }
+        v.appendChild(b);
+      };
+      box('$' + n0(m.indicated), 'Indicated value',
+        'From ' + m.compCount + ' comparable' + (m.compCount === 1 ? '' : 's'), 'head');
+      box('$' + n0(m.listLow) + ' – $' + n0(m.listHigh), 'Suggested list range', 'Around the indicated value');
+      box('$' + n0(m.low) + ' – $' + n0(m.high), 'Adjusted spread', 'Widest to narrowest comp');
+      box('$' + Math.round(m.subjectPsf).toLocaleString('en-US'), 'Implied $/sq ft',
+        'Market average $' + Math.round(m.avgPsf));
+      if (m.medianDom !== null) box(Math.round(m.medianDom) + ' days', 'Median days on market', 'Across your comps');
+      vc.body.appendChild(v);
+      wrap.appendChild(vc);
+    }
+
+    /* notes */
+    const nc = anCard('Notes for the report',
+      'Anything the numbers do not say — a busy road, a new roof, what the last listing did.');
+    const ta = document.createElement('textarea');
+    ta.className = 'cma-notes';
+    ta.style.cssText = 'width:100%;min-height:110px;padding:11px 13px;border-radius:3px;' +
+      'background:var(--ink);border:1px solid var(--line-soft);color:var(--cream);' +
+      'font:inherit;line-height:1.55;resize:vertical';
+    ta.value = d.notes || '';
+    ta.placeholder = 'Backs onto the greenbelt, which the comps on Himes do not.';
+    ta.addEventListener('input', () => { d.notes = ta.value; });
+    nc.body.appendChild(ta);
+    wrap.appendChild(nc);
+
+    const disc = document.createElement('p');
+    disc.className = 'an-caveat';
+    const db = document.createElement('b');
+    db.textContent = 'This is a CMA, not an appraisal. ';
+    disc.append(db, document.createTextNode(
+      'The report carries that in writing. It is an opinion of value prepared by a licensed ' +
+      'real estate agent from comparable sales, not by a state-certified appraiser, and it ' +
+      'cannot be used as the basis for a mortgage.'));
+    wrap.appendChild(disc);
+  }
+
+  function cmaGridTable(m, d){
+    const sc = document.createElement('div');
+    sc.className = 'grid-scroll';
+    const t = document.createElement('table');
+    t.className = 'cma';
+    const thead = document.createElement('thead');
+    const hr = document.createElement('tr');
+    ['', 'Subject'].concat(m.rows.map((r, i) => 'Comp ' + (i + 1))).forEach((h) => {
+      const th = document.createElement('th'); th.textContent = h; hr.appendChild(th);
+    });
+    thead.appendChild(hr);
+
+    const tb = document.createElement('tbody');
+    const row = (label, subjVal, cells, cls) => {
+      const tr = document.createElement('tr');
+      if (cls) tr.className = cls;
+      const th = document.createElement('td'); th.textContent = label; tr.appendChild(th);
+      const sd = document.createElement('td'); sd.className = 'subj'; sd.textContent = subjVal; tr.appendChild(sd);
+      cells.forEach((c) => {
+        const td = document.createElement('td');
+        td.textContent = c.text;
+        if (c.cls) td.className = c.cls;
+        tr.appendChild(td);
+      });
+      tb.appendChild(tr);
+    };
+    const money = (v) => (v > 0 ? '+$' : v < 0 ? '−$' : '$') + Math.abs(Math.round(v)).toLocaleString('en-US');
+    const s = d.subject;
+
+    row('Address', s.address || '—', m.rows.map((r) => ({ text: r.comp.address || '—' })));
+    row('Sale price', '—', m.rows.map((r) => ({ text: '$' + n0(r.comp.price) })));
+    row('$/sq ft', '—', m.rows.map((r) => ({ text: '$' + Math.round(r.psf) })));
+    row('Beds / baths', n(s.beds) + ' / ' + n(s.baths),
+      m.rows.map((r) => ({ text: n(r.comp.beds) + ' / ' + n(r.comp.baths) })));
+    row('Living area', n0(s.sqft), m.rows.map((r) => ({ text: n0(r.comp.sqft) })));
+    row('Condition', CMA_COND_LABEL[s.cond] || '—',
+      m.rows.map((r) => ({ text: CMA_COND_LABEL[r.comp.cond] || '—' })));
+
+    CMA_ROWS.forEach((def) => {
+      const any = m.rows.some((r) => Math.round(r.adj[def.k]) !== 0);
+      if (!any) return;
+      row(def.label + ' adj.', '', m.rows.map((r) => ({
+        text: Math.round(r.adj[def.k]) ? money(r.adj[def.k]) : '—',
+        cls: r.adj[def.k] > 0 ? 'pos' : r.adj[def.k] < 0 ? 'neg' : ''
+      })));
+    });
+
+    row('Net adjustment', '', m.rows.map((r) => ({
+      text: money(r.net) + '  (' + (r.netPct >= 0 ? '+' : '−') + Math.abs(r.netPct).toFixed(1) + '%)',
+      cls: r.net > 0 ? 'pos' : r.net < 0 ? 'neg' : ''
+    })));
+    row('Gross adjustment', '', m.rows.map((r) => ({ text: r.grossPct.toFixed(1) + '%' })));
+    row('Adjusted value', '', m.rows.map((r) => ({ text: '$' + n0(r.adjusted) })), 'tot');
+    row('Weight', '', m.rows.map((r) => ({ text: Math.round(r.weight * 100) + '%' })));
+
+    t.append(thead, tb);
+    sc.appendChild(t);
+    return sc;
+  }
+
+  /* ---- the report ---- */
+
+  const rEsc = (v) => String(v ?? '')
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+
+  function cmaReportHtml(){
+    const d = cmaDoc, m = cmaCompute(d), s = d.subject;
+    const today = new Date().toLocaleDateString('en-US', { dateStyle: 'long' });
+    const money = (v) => (v < 0 ? '−$' : '$') + Math.abs(Math.round(v)).toLocaleString('en-US');
+    const signed = (v) => (v > 0 ? '+$' : v < 0 ? '−$' : '$') + Math.abs(Math.round(v)).toLocaleString('en-US');
+
+    const gridRows = [];
+    const push = (label, subj, cells, cls) => gridRows.push(
+      `<tr${cls ? ` class="${cls}"` : ''}><th>${rEsc(label)}</th><td class="subj">${rEsc(subj)}</td>` +
+      cells.map((c) => `<td${c.cls ? ` class="${c.cls}"` : ''}>${rEsc(c.text)}</td>`).join('') + '</tr>');
+
+    push('Address', s.address || '—', m.rows.map((r) => ({ text: r.comp.address || '—' })), 'addr');
+    push('Status', 'Subject', m.rows.map((r) => ({
+      text: (CMA_STATUS.find((x) => x.id === r.comp.status) || {}).label || r.comp.status })));
+    push('Sale price', '—', m.rows.map((r) => ({ text: money(n(r.comp.price)) })));
+    push('Sale date', '—', m.rows.map((r) => ({ text: r.comp.date || '—' })));
+    push('$ per sq ft', '—', m.rows.map((r) => ({ text: '$' + Math.round(r.psf) })));
+    push('Beds / baths', n(s.beds) + ' / ' + n(s.baths),
+      m.rows.map((r) => ({ text: n(r.comp.beds) + ' / ' + n(r.comp.baths) })));
+    push('Living area', n0(s.sqft) + ' sq ft', m.rows.map((r) => ({ text: n0(r.comp.sqft) + ' sq ft' })));
+    push('Lot', n0(s.lot) + ' sq ft', m.rows.map((r) => ({ text: n0(r.comp.lot) + ' sq ft' })));
+    push('Year built', n(s.year) || '—', m.rows.map((r) => ({ text: n(r.comp.year) || '—' })));
+    push('Garage', n(s.garage) + ' bay' + (n(s.garage) === 1 ? '' : 's'),
+      m.rows.map((r) => ({ text: n(r.comp.garage) + ' bay' + (n(r.comp.garage) === 1 ? '' : 's') })));
+    push('Pool', s.pool ? 'Yes' : 'No', m.rows.map((r) => ({ text: r.comp.pool ? 'Yes' : 'No' })));
+    push('Condition', CMA_COND_LABEL[s.cond] || '—',
+      m.rows.map((r) => ({ text: CMA_COND_LABEL[r.comp.cond] || '—' })));
+    gridRows.push('<tr class="sep"><th colspan="' + (m.rows.length + 2) + '">Adjustments</th></tr>');
+    CMA_ROWS.forEach((def) => {
+      if (!m.rows.some((r) => Math.round(r.adj[def.k]) !== 0)) return;
+      push(def.label, '', m.rows.map((r) => ({
+        text: Math.round(r.adj[def.k]) ? signed(r.adj[def.k]) : '—',
+        cls: r.adj[def.k] > 0 ? 'pos' : r.adj[def.k] < 0 ? 'neg' : '' })));
+    });
+    push('Net adjustment', '', m.rows.map((r) => ({
+      text: signed(r.net) + ' (' + (r.netPct >= 0 ? '+' : '−') + Math.abs(r.netPct).toFixed(1) + '%)',
+      cls: r.net > 0 ? 'pos' : r.net < 0 ? 'neg' : '' })), 'net');
+    push('Gross adjustment', '', m.rows.map((r) => ({ text: r.grossPct.toFixed(1) + '%' })));
+    push('Adjusted value', '', m.rows.map((r) => ({ text: money(r.adjusted) })), 'tot');
+    push('Weight in reconciliation', '', m.rows.map((r) => ({ text: Math.round(r.weight * 100) + '%' })));
+
+    return `<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CMA · ${rEsc(s.address || 'Property')}</title>
+<style>
+  @page{size:letter;margin:14mm}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font:15px/1.6 "Helvetica Neue",Helvetica,Arial,sans-serif;color:#232019;background:#f7f5f0}
+  .sheet{max-width:940px;margin:0 auto;background:#fff;padding:42px 46px 46px}
+  .top{display:flex;justify-content:space-between;align-items:flex-start;gap:24px;
+    padding-bottom:20px;border-bottom:3px solid #c9a26b}
+  .kick{font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:#a8894f;font-weight:700}
+  h1{font-size:27px;font-weight:600;line-height:1.2;margin-top:9px;letter-spacing:-.01em}
+  .who{text-align:right;font-size:12px;line-height:1.65;color:#5f584b}
+  .who b{display:block;font-size:15px;color:#232019}
+  h2{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#a8894f;
+    margin:30px 0 12px;font-weight:700}
+  .hero{display:grid;grid-template-columns:1.25fr 1fr 1fr;gap:1px;background:#e6e0d4;
+    border:1px solid #e6e0d4;margin-top:24px}
+  .hero div{background:#fbfaf7;padding:16px 18px}
+  .hero .v{font-size:24px;font-weight:600;letter-spacing:-.01em}
+  .hero .big .v{font-size:30px;color:#8a6c34}
+  .hero .l{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#7a7365;margin-top:6px}
+  dl.sum{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:#e6e0d4;
+    border:1px solid #e6e0d4}
+  dl.sum > div{background:#fff;padding:11px 14px}
+  dl.sum dt{font-size:9.5px;letter-spacing:.13em;text-transform:uppercase;color:#7a7365}
+  dl.sum dd{font-size:15px;font-weight:600;margin-top:3px}
+  .gridwrap{overflow-x:auto}
+  /* Six or seven columns will not fit a letter page at full size, and a comp
+     clipped off the right edge of a printed CMA is worse than small type. */
+  table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:${
+    m.rows.length >= 5 ? '9.5' : m.rows.length === 4 ? '10.5' : '12'}px}
+  th,td{padding:${m.rows.length >= 4 ? '5px 6px' : '7px 9px'};text-align:right;
+    border-bottom:1px solid #eae5da;font-variant-numeric:tabular-nums;white-space:nowrap;
+    overflow-wrap:anywhere}
+  tbody th{width:${m.rows.length >= 4 ? '82px' : '110px'}}
+  tr.addr td,tr.addr th{white-space:normal;line-height:1.35}
+  thead th{font-size:9.5px;letter-spacing:.11em;text-transform:uppercase;color:#7a7365;
+    border-bottom:1.5px solid #c9a26b;background:#fbfaf7}
+  tbody th{text-align:left;font-weight:600;color:#41392c;white-space:normal;font-size:11.5px}
+  td.subj{background:#fdf9f1;font-weight:600}
+  tr.sep th{background:#f4efe4;color:#8a6c34;font-size:9.5px;letter-spacing:.13em;
+    text-transform:uppercase;padding:6px 9px}
+  tr.net td,tr.net th{border-top:1px solid #d9d2c4}
+  tr.tot td,tr.tot th{border-top:2px solid #c9a26b;border-bottom:2px solid #c9a26b;
+    font-weight:700;font-size:13px;background:#fdf9f1}
+  td.pos{color:#1f7a45} td.neg{color:#b1502a}
+  .notes{background:#fbfaf7;border-left:3px solid #c9a26b;padding:15px 18px;
+    white-space:pre-wrap;font-size:13.5px;line-height:1.7}
+  .method{font-size:12px;line-height:1.75;color:#5f584b}
+  .method b{color:#232019}
+  .legal{margin-top:30px;padding-top:16px;border-top:1px solid #e6e0d4;
+    font-size:10.5px;line-height:1.7;color:#6d6659}
+  .legal b{color:#232019}
+  .sign{margin-top:26px;display:flex;justify-content:space-between;gap:30px;
+    font-size:12px;color:#5f584b}
+  @media print{ body{background:#fff} .sheet{max-width:none;padding:0} h2{page-break-after:avoid}
+    table{page-break-inside:auto} tr{page-break-inside:avoid} .legal{page-break-inside:avoid} }
+</style></head>
+<body><div class="sheet">
+  <div class="top">
+    <div>
+      <div class="kick">Comparative Market Analysis</div>
+      <h1>${rEsc(s.address || 'Subject property')}</h1>
+      <div style="font-size:12.5px;color:#5f584b;margin-top:7px">
+        ${d.client ? 'Prepared for ' + rEsc(d.client) + ' · ' : ''}${rEsc(today)}
+      </div>
+    </div>
+    <div class="who">
+      <b>${rEsc(AGENT.name)}</b>
+      ${rEsc(AGENT.title)} · ${rEsc(AGENT.brokerage)}<br>
+      License ${rEsc(AGENT.license)}<br>
+      ${rEsc(AGENT.email)}<br>${rEsc(AGENT.site)}
+    </div>
+  </div>
+
+  <div class="hero">
+    <div class="big"><div class="v">${money(m.indicated)}</div><div class="l">Indicated market value</div></div>
+    <div><div class="v">${money(m.listLow)} – ${money(m.listHigh)}</div><div class="l">Suggested list range</div></div>
+    <div><div class="v">$${Math.round(m.subjectPsf).toLocaleString('en-US')}</div><div class="l">Implied $ per sq ft</div></div>
+  </div>
+
+  <h2>Subject property</h2>
+  <dl class="sum">
+    <div><dt>Bedrooms</dt><dd>${n(s.beds)}</dd></div>
+    <div><dt>Bathrooms</dt><dd>${n(s.baths)}</dd></div>
+    <div><dt>Living area</dt><dd>${n0(s.sqft)} sq ft</dd></div>
+    <div><dt>Lot</dt><dd>${n0(s.lot)} sq ft</dd></div>
+    <div><dt>Year built</dt><dd>${n(s.year) || '—'}</dd></div>
+    <div><dt>Garage</dt><dd>${n(s.garage)} bay${n(s.garage) === 1 ? '' : 's'}</dd></div>
+    <div><dt>Pool</dt><dd>${s.pool ? 'Yes' : 'No'}</dd></div>
+    <div><dt>Condition</dt><dd>${rEsc(CMA_COND_LABEL[s.cond] || '—')}</dd></div>
+  </dl>
+
+  <h2>Comparable sales and adjustments</h2>
+  <div class="gridwrap"><table><thead><tr><th>&nbsp;</th><th>Subject</th>${
+    m.rows.map((r, i) => `<th>Comp ${i + 1}</th>`).join('')}</tr></thead>
+    <tbody>${gridRows.join('')}</tbody></table></div>
+
+  <h2>How this was reached</h2>
+  <p class="method">
+    Each comparable is adjusted to the subject: where a comp is inferior its price is adjusted
+    <b>up</b>, and where it is superior, <b>down</b>. Living area is adjusted at
+    <b>$${m.sqftRate}/sq ft</b>, roughly half the ${'$' + Math.round(m.avgPsf)}/sq ft the comps
+    themselves sold at, because price does not rise proportionally with size.
+    ${m.compCount} comparable${m.compCount === 1 ? '' : 's'}${m.soldCount ? ', ' + m.soldCount + ' of them closed sales' : ''}
+    were used. The reconciled figure is weighted towards the comps needing the least
+    adjustment, since those are the strongest evidence of what the subject is worth.
+    ${m.medianDom !== null ? 'Median time on market across these properties was ' + Math.round(m.medianDom) + ' days.' : ''}
+  </p>
+
+  ${d.notes && d.notes.trim() ? `<h2>Agent notes</h2><div class="notes">${rEsc(d.notes.trim())}</div>` : ''}
+
+  <div class="sign">
+    <div>Prepared by <b>${rEsc(AGENT.name)}</b>, ${rEsc(AGENT.title)}<br>License ${rEsc(AGENT.license)}</div>
+    <div>${rEsc(today)}</div>
+  </div>
+
+  <div class="legal">
+    <b>This is a Comparative Market Analysis, not an appraisal.</b> It is an opinion of value
+    prepared by a licensed real estate agent using comparable sales data, and it was not
+    prepared by a state-certified appraiser. It does not comply with USPAP and may not be
+    relied upon as the basis for a mortgage, a legal proceeding, or a tax matter. Comparable
+    sales information is believed accurate but is not guaranteed and should be independently
+    verified. Market conditions change; this analysis reflects ${rEsc(today)}.
+    <br><br>
+    ${rEsc(AGENT.name)} · ${rEsc(AGENT.title)} · ${rEsc(AGENT.brokerage)} · License ${rEsc(AGENT.license)}.
+    Equal Housing Opportunity.
+  </div>
+</div></body></html>`;
+  }
+
+  function cmaFileName(){
+    const a = (cmaDoc.subject.address || 'property').toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 50) || 'property';
+    return 'cma-' + a + '-' + todayISO() + '.html';
+  }
+
+  function downloadCmaReport(){
+    if (!cmaDoc.comps.length){ showBanner('Add at least one comparable before producing a report.'); return; }
+    const blob = new Blob([cmaReportHtml()], { type: 'text/html;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = cmaFileName();
+    document.body.appendChild(a); a.click(); a.remove();
+    URL.revokeObjectURL(url);
+    hideBanner();
+  }
+
+  function printCmaReport(){
+    if (!cmaDoc.comps.length){ showBanner('Add at least one comparable before producing a report.'); return; }
+    const w = window.open('', '_blank');
+    if (!w){ showBanner('Your browser blocked the report window. Allow pop-ups for this site.'); return; }
+    w.document.write(cmaReportHtml());
+    w.document.close();
+    w.addEventListener('load', () => setTimeout(() => w.print(), 250));
+    hideBanner();
+  }
+
+  /* ---- storage ---- */
+
+  async function loadCmas(force){
+    if (force || !cmasLoaded){
+      try {
+        cmas = (await api('/api/cmas')).cmas || [];
+        cmasLoaded = true;
+        hideBanner();
+      } catch (err) {
+        if (err.message !== 'unauthorized') showBanner(err.message);
+      }
+    }
+    renderCma();
+  }
+
+  async function saveCma(btn){
+    if (!cmaDoc.subject.address.trim()){ showBanner('Enter the subject address first.'); return; }
+    const payload = {
+      address: cmaDoc.subject.address.trim(),
+      client: cmaDoc.client || '',
+      lead_id: cmaDoc.lead_id || '',
+      payload: JSON.stringify({ subject: cmaDoc.subject, comps: cmaDoc.comps,
+                                rates: cmaDoc.rates, notes: cmaDoc.notes })
+    };
+    btn.disabled = true; btn.textContent = 'Saving…';
+    try {
+      if (cmaId){
+        await api('/api/cmas/' + encodeURIComponent(cmaId), { method:'PATCH', body: JSON.stringify(payload) });
+      } else {
+        const r = await api('/api/cmas', { method:'POST', body: JSON.stringify(payload) });
+        cmaId = r.id;
+      }
+      await loadCmas(true);
+      hideBanner();
+    } catch (err) {
+      if (err.message !== 'unauthorized') showBanner(err.message);
+    } finally {
+      btn.disabled = false; btn.textContent = 'Save';
+    }
+  }
+
+  async function deleteCma(){
+    if (!cmaId) return;
+    if (!confirm('Delete the CMA for ' + (cmaDoc.subject.address || 'this property') + '?')) return;
+    try {
+      await api('/api/cmas/' + encodeURIComponent(cmaId), { method:'DELETE' });
+      cmaId = null; cmaDoc = null;
+      await loadCmas(true);
+    } catch (err) {
+      if (err.message !== 'unauthorized') showBanner('Could not delete: ' + err.message);
+    }
+  }
+
+  el('modCma').addEventListener('click', () => setModule('cma'));
   el('pClose').addEventListener('click', closePage);
   el('pCancel').addEventListener('click', closePage);
   el('pSave').addEventListener('click', savePage);
@@ -4990,6 +5814,9 @@
       icon:[['path', { d:'M12 3v4M4.9 6.3l2.6 2.6M19.1 6.3l-2.6 2.6' }],
             ['path', { d:'M8 13a4 4 0 1 1 8 0c0 1.6-1 2.4-1.4 3.2-.3.5-.4 1-.4 1.8h-4.4c0-.8-.1-1.3-.4-1.8C9 15.4 8 14.6 8 13Z' }],
             ['path', { d:'M10 21h4' }]] },
+    { id:'cma', name:'CMA', d:'Price a property from comps, and produce the report.',
+      icon:[['path', { d:'M3 21h18' }], ['path', { d:'M5 21V9l5-4 5 4v12' }],
+            ['path', { d:'M15 21V13h4v8' }]] },
     { id:'campaigns', name:'Campaigns', d:'Advertising, spend, and what it produced.',
       icon:[['path', { d:'M4 10v4a1 1 0 0 0 1 1h3l6 4V5L8 9H5a1 1 0 0 0-1 1Z' }],
             ['path', { d:'M18 9.5a4 4 0 0 1 0 5' }]] },
@@ -5167,6 +5994,7 @@
     const stats = {
       leads: openLeads.length + ' live · ' + leads.length + ' all time',
       tasks: openTasks.length + ' open · ' + lateTasks.length + ' overdue',
+      cma: cmasLoaded ? cmas.length + ' saved' : 'Comps and reports',
       gen: pagesLoaded
         ? pages.filter((p) => p.status === 'live').length + ' pages live · ' +
           sources.filter((s) => Number(s.active)).length + ' sources on'
@@ -5606,6 +6434,7 @@
     else if (module === 'tasks') loadTasks();
     else if (module === 'analytics') loadAnalytics(true);
     else if (module === 'gen') loadGen(true);
+    else if (module === 'cma') loadCmas(true);
     else if (module === 'home') boot();
     else load();
   });

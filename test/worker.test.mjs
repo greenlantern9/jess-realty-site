@@ -647,6 +647,68 @@ check('over-long fields are capped, not refused',
   [longIns.args[1].length, longIns.args[2].length, longIns.args[5].length].join('/'));
 
 /* ------------------------------------------------------------------ */
+console.log('\n6d2. CMA storage');
+
+let cmaRow = { id:'c1', address:'4412 Bayshore', client:'Dana', lead_id:'L1',
+  payload:'{"comps":[]}', created_at:'', updated_at:'' };
+let cmaSql = [];
+const cmaDb = { prepare: (sql) => {
+  cmaSql.push(sql);
+  return {
+    bind(...a){ cmaSql[cmaSql.length - 1] = { sql, args: a }; return this; },
+    run: async () => ({ meta:{ changes:1 } }),
+    all: async () => ({ results: [cmaRow] }),
+    first: async () => cmaRow
+  };
+} };
+
+for (const [method, body] of [['GET', null], ['POST', { address:'X' }]]) {
+  let r = await worker.fetch(req('/api/cmas', method, body), { ...staticEnv(), DB: cmaDb });
+  check(method + ' /api/cmas -> 503 unconfigured', r.status === 503, 'got ' + r.status);
+  r = await worker.fetch(req('/api/cmas', method, body), authEnv(cmaDb));
+  check(method + ' /api/cmas -> 401 without token', r.status === 401, 'got ' + r.status);
+}
+for (const method of ['PATCH', 'DELETE']) {
+  const r = await worker.fetch(req('/api/cmas/c1', method, {}), authEnv(cmaDb));
+  check(method + ' /api/cmas/:id -> 401 without token', r.status === 401, 'got ' + r.status);
+}
+
+const noAddr = await worker.fetch(authReq('/api/cmas', 'POST', { payload:{} }), authEnv(cmaDb));
+check('a CMA needs an address', noAddr.status === 400, 'got ' + noAddr.status);
+
+cmaSql = [];
+const madeCma = await worker.fetch(authReq('/api/cmas', 'POST',
+  { address:'4412 Bayshore', client:'Dana', payload:{ comps:[{ price: 500000 }] } }), authEnv(cmaDb));
+check('creating a CMA -> 200 with an id', madeCma.status === 200 && !!(await madeCma.json()).id);
+const cmaIns = cmaSql.find((s) => /INSERT INTO cmas/i.test(s.sql || s));
+check('the payload is stored as a JSON string',
+  cmaIns && typeof cmaIns.args[4] === 'string' && cmaIns.args[4].includes('500000'),
+  JSON.stringify(cmaIns && cmaIns.args[4]));
+
+const huge = await worker.fetch(authReq('/api/cmas', 'POST',
+  { address:'X', payload: 'x'.repeat(70000) }), authEnv(cmaDb));
+check('an oversized payload is refused', huge.status === 400, 'got ' + huge.status);
+
+cmaSql = [];
+await worker.fetch(authReq('/api/cmas/c1', 'PATCH', { client:'Marcus' }), authEnv(cmaDb));
+const cmaUpd = cmaSql.find((s) => /UPDATE cmas/i.test(s.sql || s));
+check('a patch touches only what it was given',
+  /SET client = \?, updated_at = \?/.test(cmaUpd.sql), cmaUpd.sql);
+const cmaEmpty = await worker.fetch(authReq('/api/cmas/c1', 'PATCH', {}), authEnv(cmaDb));
+check('an empty patch is a 400', cmaEmpty.status === 400, 'got ' + cmaEmpty.status);
+const cmaBlank = await worker.fetch(authReq('/api/cmas/c1', 'PATCH', { address:'  ' }), authEnv(cmaDb));
+check('a CMA cannot be renamed to nothing', cmaBlank.status === 400, 'got ' + cmaBlank.status);
+
+const goneCma = { prepare: () => ({ bind(){ return this; },
+  run: async () => ({ meta:{ changes:0 } }), all: async () => ({ results: [] }), first: async () => null }) };
+for (const method of ['PATCH', 'DELETE']) {
+  const r = await worker.fetch(authReq('/api/cmas/nope', method, { client:'x' }), authEnv(goneCma));
+  check(method + ' a CMA that is not there -> 404', r.status === 404, 'got ' + r.status);
+}
+const delCma = await worker.fetch(authReq('/api/cmas/c1', 'DELETE'), authEnv(cmaDb));
+check('DELETE /api/cmas/:id -> 200', delCma.status === 200, 'got ' + delCma.status);
+
+/* ------------------------------------------------------------------ */
 console.log('\n6e. lead generation: landing pages');
 
 const livePage = {

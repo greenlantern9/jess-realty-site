@@ -201,6 +201,20 @@ async function handleApi(request, env, url, ctx) {
     return methodNotAllowed('GET, POST');
   }
 
+  if (path === '/api/cmas') {
+    if (request.method === 'GET')  return handleCmaList(request, env);
+    if (request.method === 'POST') return handleCmaCreate(request, env);
+    return methodNotAllowed('GET, POST');
+  }
+
+  const cma = path.match(/^\/api\/cmas\/([^/]+)$/);
+  if (cma) {
+    const id = decodeURIComponent(cma[1]);
+    if (request.method === 'PATCH')  return handleCmaUpdate(request, env, id);
+    if (request.method === 'DELETE') return handleCmaDelete(request, env, id);
+    return methodNotAllowed('PATCH, DELETE');
+  }
+
   if (path === '/api/pages') {
     if (request.method === 'GET')  return handlePageList(request, env);
     if (request.method === 'POST') return handlePageCreate(request, env);
@@ -477,7 +491,20 @@ const SCHEMA_SQL = [
      created_at  TEXT NOT NULL,
      updated_at  TEXT NOT NULL
    )`,
-  `CREATE UNIQUE INDEX IF NOT EXISTS idx_sources_token ON lead_sources(token)`
+  `CREATE UNIQUE INDEX IF NOT EXISTS idx_sources_token ON lead_sources(token)`,
+  // The subject, the comparables and the adjustment settings travel together
+  // and are only ever read as a whole, so they live as one JSON payload rather
+  // than three joined tables.
+  `CREATE TABLE IF NOT EXISTS cmas (
+     id          TEXT PRIMARY KEY,
+     address     TEXT NOT NULL,
+     client      TEXT NOT NULL DEFAULT '',
+     lead_id     TEXT NOT NULL DEFAULT '',
+     payload     TEXT NOT NULL DEFAULT '{}',
+     created_at  TEXT NOT NULL,
+     updated_at  TEXT NOT NULL
+   )`,
+  `CREATE INDEX IF NOT EXISTS idx_cmas_created ON cmas(created_at DESC)`
 ];
 
 // Columns added after the table already existed in production. Applied lazily
@@ -928,6 +955,127 @@ async function handleExport(request, env) {
     });
   } catch (err) {
     console.error('Export failed:', err);
+    return json({ error: dbErrorMessage(err) }, 500);
+  }
+}
+
+/* ------------------------------------------------------------------ *
+ * CMA
+ *
+ * Storage only. Every number is computed in the browser from figures she
+ * typed in, because there is no MLS or public-records feed here to pull
+ * comparables from - see the note above the CMA module in admin/index.html.
+ * The payload is stored as JSON and never interpreted server side.
+ * ------------------------------------------------------------------ */
+
+const CMA_MAX_PAYLOAD = 60000;   // a CMA with a dozen comps is a few KB
+
+async function handleCmaList(request, env) {
+  const auth = await requireAccess(env, request);
+  if (!auth.ok) return json({ error: auth.message }, auth.status);
+  if (!env.DB) return json({ error: 'Lead database is not bound.' }, 503);
+  try {
+    const { results } = await withSchema(env, () =>
+      env.DB.prepare('SELECT * FROM cmas ORDER BY updated_at DESC').all()
+    );
+    return json({ cmas: results ?? [], user: auth.email });
+  } catch (err) {
+    console.error('CMA query failed:', err);
+    return json({ error: dbErrorMessage(err) }, 500);
+  }
+}
+
+function readCmaBody(body) {
+  const address = String(body.address ?? '').trim().slice(0, 200);
+  const client  = String(body.client ?? '').trim().slice(0, 120);
+  const leadId  = String(body.lead_id ?? '').trim().slice(0, 64);
+  let payload = body.payload;
+  if (typeof payload !== 'string') {
+    try { payload = JSON.stringify(payload ?? {}); } catch { payload = '{}'; }
+  }
+  const errors = {};
+  if (!address) errors.address = 'Enter the property address.';
+  if (payload.length > CMA_MAX_PAYLOAD) errors.payload = 'That is too much data for one CMA.';
+  return { address, client, leadId, payload, errors };
+}
+
+async function handleCmaCreate(request, env) {
+  const auth = await requireAccess(env, request);
+  if (!auth.ok) return json({ error: auth.message }, auth.status);
+  if (!env.DB) return json({ error: 'Lead database is not bound.' }, 503);
+
+  let body;
+  try { body = await request.json(); } catch { return json({ error: 'Invalid JSON.' }, 400); }
+  const { address, client, leadId, payload, errors } = readCmaBody(body);
+  if (Object.keys(errors).length) {
+    return json({ error: 'Please check the highlighted fields.', errors }, 400);
+  }
+
+  const id = crypto.randomUUID();
+  const now = new Date().toISOString();
+  try {
+    await withSchema(env, () =>
+      env.DB.prepare(
+        `INSERT INTO cmas (id, address, client, lead_id, payload, created_at, updated_at)
+         VALUES (?,?,?,?,?,?,?)`
+      ).bind(id, address, client, leadId, payload, now, now).run()
+    );
+    return json({ success: true, id });
+  } catch (err) {
+    console.error('CMA insert failed:', err);
+    return json({ error: dbErrorMessage(err) }, 500);
+  }
+}
+
+async function handleCmaUpdate(request, env, id) {
+  const auth = await requireAccess(env, request);
+  if (!auth.ok) return json({ error: auth.message }, auth.status);
+  if (!env.DB) return json({ error: 'Lead database is not bound.' }, 503);
+
+  let body;
+  try { body = await request.json(); } catch { return json({ error: 'Invalid JSON.' }, 400); }
+  const { address, client, leadId, payload, errors } = readCmaBody({ address: 'x', ...body });
+  if (body.address !== undefined && !String(body.address).trim()) {
+    return json({ error: 'Enter the property address.', errors: { address: 'Required.' } }, 400);
+  }
+  delete errors.address;
+  if (Object.keys(errors).length) {
+    return json({ error: 'Please check the highlighted fields.', errors }, 400);
+  }
+
+  const sets = [], binds = [];
+  if (body.address !== undefined) { sets.push('address = ?'); binds.push(address); }
+  if (body.client  !== undefined) { sets.push('client = ?');  binds.push(client); }
+  if (body.lead_id !== undefined) { sets.push('lead_id = ?'); binds.push(leadId); }
+  if (body.payload !== undefined) { sets.push('payload = ?'); binds.push(payload); }
+  if (!sets.length) return json({ error: 'Nothing to update.' }, 400);
+  sets.push('updated_at = ?'); binds.push(new Date().toISOString());
+  binds.push(id);
+
+  try {
+    const res = await withSchema(env, () =>
+      env.DB.prepare(`UPDATE cmas SET ${sets.join(', ')} WHERE id = ?`).bind(...binds).run()
+    );
+    if (!res.meta?.changes) return json({ error: 'CMA not found.' }, 404);
+    return json({ success: true });
+  } catch (err) {
+    console.error('CMA update failed:', err);
+    return json({ error: dbErrorMessage(err) }, 500);
+  }
+}
+
+async function handleCmaDelete(request, env, id) {
+  const auth = await requireAccess(env, request);
+  if (!auth.ok) return json({ error: auth.message }, auth.status);
+  if (!env.DB) return json({ error: 'Lead database is not bound.' }, 503);
+  try {
+    const res = await withSchema(env, () =>
+      env.DB.prepare('DELETE FROM cmas WHERE id = ?').bind(id).run()
+    );
+    if (!res.meta?.changes) return json({ error: 'CMA not found.' }, 404);
+    return json({ success: true });
+  } catch (err) {
+    console.error('CMA delete failed:', err);
     return json({ error: dbErrorMessage(err) }, 500);
   }
 }
