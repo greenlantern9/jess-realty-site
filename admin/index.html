@@ -309,8 +309,8 @@
 <header class="bar">
   <h1 id="moduleTitle">Lead Board</h1>
   <nav class="modules" aria-label="Sections">
-    <button id="modLeads" type="button" aria-current="page">Leads</button>
-    <button id="modCampaigns" type="button">Campaigns</button>
+    <button id="modLeads" type="button" title="Your pipeline" aria-current="page">Leads</button>
+    <button id="modCampaigns" type="button" title="Advertising, spend and what it actually produced">Campaigns</button>
   </nav>
   <div class="bar-right">
     <span class="who" id="who" hidden>
@@ -320,8 +320,13 @@
       </svg>
       <span><span class="who-label">Securely signed in as </span><b id="whoEmail"></b></span>
     </span>
-    <button class="btn ghost" id="refresh" type="button">Refresh</button>
-    <a class="btn ghost" href="/cdn-cgi/access/logout">Sign out</a>
+    <a class="btn ghost" href="/admin/guide.html" title="How the board and campaigns work">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="2.2" stroke-linecap="round" aria-hidden="true">
+        <circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3 2.45V14"/><path d="M12 17.5h.01"/>
+      </svg>Guide</a>
+    <button class="btn ghost" id="refresh" type="button" title="Reload from the database">Refresh</button>
+    <a class="btn ghost" href="/cdn-cgi/access/logout" title="End this session on this device">Sign out</a>
   </div>
 </header>
 
@@ -331,16 +336,16 @@
          stroke-width="2" stroke-linecap="round" aria-hidden="true">
       <circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>
     </svg>
-    <input id="q" type="search" placeholder="Search name, email, phone, tags, notes…" aria-label="Search leads">
+    <input id="q" type="search" title="Searches names, emails, phone numbers, tags and notes" placeholder="Search name, email, phone, tags, notes…" aria-label="Search leads">
   </div>
-  <select id="fPriority" aria-label="Filter by priority">
+  <select id="fPriority" aria-label="Filter by priority" title="Hot, warm or cold - the coloured stripe on each card">
     <option value="">All priorities</option>
     <option value="hot">Hot</option>
     <option value="warm">Warm</option>
     <option value="cold">Cold</option>
   </select>
-  <select id="fSource" aria-label="Filter by source"></select>
-  <select id="fDue" aria-label="Filter by follow-up">
+  <select id="fSource" aria-label="Filter by source" title="Where the lead came from"></select>
+  <select id="fDue" aria-label="Filter by follow-up" title="Narrow to leads that need chasing today">
     <option value="">Any follow-up</option>
     <option value="overdue">Overdue</option>
     <option value="today">Due today</option>
@@ -348,20 +353,20 @@
     <option value="none">No date set</option>
   </select>
   <span class="viewtoggle" role="group" aria-label="View">
-    <button id="viewBoard" type="button" aria-pressed="true">
+    <button id="viewBoard" type="button" title="Kanban - best for moving one lead along" aria-pressed="true">
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true">
         <rect x="3" y="4" width="5" height="16" rx="1"/><rect x="10" y="4" width="5" height="11" rx="1"/><rect x="17" y="4" width="4" height="7" rx="1"/>
       </svg>Board</button>
-    <button id="viewTable" type="button" aria-pressed="false">
+    <button id="viewTable" type="button" title="Spreadsheet - best for scanning everyone at once" aria-pressed="false">
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true">
         <rect x="3" y="4" width="18" height="16" rx="1.5"/><path d="M3 9.5h18M3 15h18M9 4v16"/>
       </svg>Table</button>
   </span>
 
-  <button class="btn" id="addLead" type="button">+ New lead</button>
-  <button class="btn ghost" id="exportCsv" type="button">Export CSV</button>
-  <button class="btn" id="newCampaign" type="button" hidden>+ New campaign</button>
-  <button class="btn ghost" id="mailerCsv" type="button" hidden>Mailer CSV</button>
+  <button class="btn" id="addLead" type="button" title="Log someone who never used the website - open house, sign call, referral">+ New lead</button>
+  <button class="btn ghost" id="exportCsv" type="button" title="Download every lead and field. Your backup.">Export CSV</button>
+  <button class="btn" id="newCampaign" type="button" title="Plan an ad, mailer or open house and measure what it produces" hidden>+ New campaign</button>
+  <button class="btn ghost" id="mailerCsv" type="button" title="Mail-merge list built from your own contacts" hidden>Mailer CSV</button>
 
   <div class="stats">
     <span class="stat">Total <b id="stTotal">0</b></span>
@@ -425,7 +430,7 @@
       </div>
       <div class="fset">
         <label for="cBudget">Budget</label>
-        <input id="cBudget" type="text" placeholder="500">
+        <input id="cBudget" title="What you are prepared to spend in total" type="text" placeholder="500">
         <span class="err" id="cerr-budget"></span>
       </div>
     </div>
@@ -433,7 +438,7 @@
     <div class="grid2">
       <div class="fset">
         <label for="cSpend">Spent so far</label>
-        <input id="cSpend" type="text" placeholder="0">
+        <input id="cSpend" title="Update as you go - there is no link to your ad account" type="text" placeholder="0">
         <span class="err" id="cerr-spend"></span>
       </div>
       <div class="fset">
@@ -449,17 +454,17 @@
 
     <div class="fset">
       <label for="cGeo">Where <span style="text-transform:none;letter-spacing:0">(cities or a ≥15 mile radius)</span></label>
-      <input id="cGeo" type="text" placeholder="Tampa + 20 mile radius">
+      <input id="cGeo" title="Towns or a radius. Housing ads require at least 15 miles." type="text" placeholder="Tampa + 20 mile radius">
     </div>
 
     <div class="fset">
       <label for="cAudience">Who it speaks to <span style="text-transform:none;letter-spacing:0">(describe intent, not people)</span></label>
-      <textarea id="cAudience" placeholder="Homeowners weighing a move this year — message is about pricing, not who they are."></textarea>
+      <textarea id="cAudience" title="Describe why someone would respond, not who they are" placeholder="Homeowners weighing a move this year — message is about pricing, not who they are."></textarea>
     </div>
 
     <div class="fset">
       <label for="cCreative">Ad copy</label>
-      <textarea id="cCreative" placeholder="Headline, body, call to action…"></textarea>
+      <textarea id="cCreative" title="The headline and body of the ad or mailer" placeholder="Headline, body, call to action…"></textarea>
     </div>
 
     <div id="cWarnBox"></div>
@@ -526,7 +531,7 @@
       </div>
       <div class="fset">
         <label for="dPriority">Priority</label>
-        <select id="dPriority">
+        <select id="dPriority" title="Shows as the coloured stripe down the left of each card">
           <option value="hot">Hot</option>
           <option value="warm">Warm</option>
           <option value="cold">Cold</option>
@@ -556,19 +561,19 @@
     <div class="grid2">
       <div class="fset" id="fs-next_follow_up">
         <label for="dFollow">Next follow-up</label>
-        <input id="dFollow" type="date">
+        <input id="dFollow" title="The date you next intend to reach out. Overdue leads are counted at the top." type="date">
         <span class="err" id="err-next_follow_up"></span>
       </div>
       <div class="fset" id="fs-budget">
         <label for="dBudget">Budget / price point</label>
-        <input id="dBudget" type="text" inputmode="numeric" placeholder="450000 or 450k">
+        <input id="dBudget" title="Accepts 450000, 450k or $450,000. Adds into the Pipeline total." type="text" inputmode="numeric" placeholder="450000 or 450k">
         <span class="err" id="err-budget"></span>
       </div>
     </div>
 
     <div class="fset">
       <label for="dTags">Tags <span style="text-transform:none;letter-spacing:0">(comma separated)</span></label>
-      <input id="dTags" type="text" placeholder="first-time, waterfront, pre-approved">
+      <input id="dTags" title="Comma separated. You can filter and search on these later." type="text" placeholder="first-time, waterfront, pre-approved">
     </div>
 
     <div class="fset" id="fs-message">
@@ -579,9 +584,9 @@
     <div class="fset">
       <div class="notes-head">
         <label for="dNotes">Private notes</label>
-        <button class="linkbtn" id="dStamp" type="button">+ Add dated entry</button>
+        <button class="linkbtn" id="dStamp" type="button" title="Drop today's date at the top of the notes">+ Add dated entry</button>
       </div>
-      <textarea id="dNotes" placeholder="Call summaries, budget, follow-up dates — only you see this."></textarea>
+      <textarea id="dNotes" title="Private to you - never shown anywhere public" placeholder="Call summaries, budget, follow-up dates — only you see this."></textarea>
     </div>
 
     <div class="fset" id="fs-activity">

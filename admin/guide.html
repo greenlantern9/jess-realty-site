@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="robots" content="noindex, nofollow" />
+<title>How to · Lead Board &amp; Campaigns</title>
+
+<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500&family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
+<style>
+  :root{
+    --ink:#232019; --ink-2:#2e2a22; --ink-3:#18150f; --ink-4:#3d3628;
+    --cream:#f4f0e6; --cream-soft:#d0c8b8; --sage:#9a9081;
+    --brass:#c9a26b; --brass-bright:#e3c08c;
+    --line-soft:rgba(244,240,230,.12); --line:rgba(201,162,107,.32);
+    --hot:#dd7f4a; --ok:#8fbf9a; --danger:#d97d72;
+    --serif:"Fraunces",Georgia,serif;
+    --sans:"Hanken Grotesk",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--ink);color:var(--cream);font-family:var(--sans);
+    font-size:16px;line-height:1.65;-webkit-font-smoothing:antialiased}
+  a{color:var(--brass-bright)}
+  a:focus-visible{outline:2px solid var(--brass);outline-offset:3px}
+
+  header.bar{display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+    padding:14px 22px;background:var(--ink-3);border-bottom:1px solid var(--line-soft);
+    position:sticky;top:0;z-index:20}
+  .bar h1{font-family:var(--serif);font-size:1.25rem;font-weight:500}
+  .btn{display:inline-flex;align-items:center;gap:7px;padding:9px 15px;border-radius:3px;
+    font-size:.82rem;font-weight:600;text-decoration:none;
+    background:transparent;border:1px solid var(--line);color:var(--cream)}
+  .btn:hover{background:rgba(201,162,107,.10);border-color:var(--brass)}
+  .bar .btn{margin-left:auto}
+
+  .page{max-width:800px;margin:0 auto;padding:34px 22px 90px}
+  h2,h3{font-weight:600;line-height:1.2}
+  h2{font-family:var(--serif);font-size:1.5rem;font-weight:500}
+  h3{font-size:1.02rem;font-weight:700}
+  p{max-width:64ch}
+
+  .lede{color:var(--cream-soft);font-size:1.04rem;margin-top:14px;max-width:62ch}
+  .kicker{font-size:.7rem;font-weight:700;letter-spacing:.2em;text-transform:uppercase;
+    color:var(--brass);margin-bottom:11px}
+  .doc-head{padding-bottom:24px;border-bottom:1px solid var(--line-soft)}
+
+  nav.toc{margin-top:26px;background:var(--ink-2);border:1px solid var(--line-soft);padding:18px 20px}
+  nav.toc h2{font-family:var(--sans);font-size:.68rem;letter-spacing:.16em;text-transform:uppercase;
+    color:var(--sage);font-weight:800;margin-bottom:11px}
+  nav.toc ol{list-style:none;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+    gap:6px 24px;counter-reset:toc}
+  nav.toc li{counter-increment:toc}
+  nav.toc a{color:var(--cream);text-decoration:none;font-size:.92rem;display:flex;gap:9px}
+  nav.toc a::before{content:counter(toc,decimal-leading-zero);color:var(--brass);
+    font-family:var(--mono);font-size:.76rem;padding-top:2px}
+  nav.toc a:hover{color:var(--brass-bright)}
+
+  section{margin-top:48px;scroll-margin-top:80px}
+  .sec-head{display:flex;align-items:baseline;gap:11px;padding-bottom:9px;
+    border-bottom:1px solid var(--line-soft)}
+  .sec-head .n{font-family:var(--mono);font-size:.78rem;color:var(--brass);font-weight:600}
+  .body{display:grid;gap:15px;margin-top:18px}
+
+  ol.steps{list-style:none;counter-reset:step;display:grid;gap:15px}
+  ol.steps li{counter-increment:step;display:grid;grid-template-columns:28px 1fr;gap:13px}
+  ol.steps li::before{content:counter(step);font-family:var(--mono);font-size:.76rem;font-weight:700;
+    color:var(--brass);background:rgba(201,162,107,.14);width:25px;height:25px;
+    display:flex;align-items:center;justify-content:center;border-radius:50%;margin-top:1px}
+  ol.steps li > div{display:grid;gap:5px}
+
+  ul.plain{list-style:none;display:grid;gap:10px}
+  ul.plain li{display:grid;grid-template-columns:auto 1fr;gap:11px;align-items:start}
+  ul.plain li::before{content:"";width:5px;height:5px;border-radius:50%;
+    background:var(--brass);margin-top:10px}
+
+  dl.fields{display:grid;border-top:1px solid var(--line-soft)}
+  dl.fields > div{display:grid;grid-template-columns:172px 1fr;gap:16px;padding:11px 0;
+    border-bottom:1px solid var(--line-soft)}
+  dl.fields dt{font-weight:700;font-size:.92rem}
+  dl.fields dd{color:var(--cream-soft);font-size:.94rem}
+  @media(max-width:600px){ dl.fields > div{grid-template-columns:1fr;gap:3px} }
+
+  .ui{font-family:var(--mono);font-size:.85em;background:var(--ink-3);
+    border:1px solid var(--line-soft);padding:1px 6px;white-space:nowrap;color:var(--cream)}
+  pre{background:var(--ink-3);border:1px solid var(--line-soft);padding:12px 14px;
+    overflow-x:auto;font-family:var(--mono);font-size:.79rem;color:var(--cream-soft)}
+
+  .note{background:var(--ink-2);border:1px solid var(--line-soft);border-left:3px solid var(--brass);
+    padding:15px 17px;display:grid;gap:8px}
+  .note.stop{border-left-color:var(--danger)}
+  .note.win{border-left-color:var(--ok)}
+  .note h3{font-size:.96rem}
+  .note p{color:var(--cream-soft);font-size:.94rem}
+
+  table{width:100%;border-collapse:collapse;font-size:.93rem}
+  th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line-soft);vertical-align:top}
+  th{font-size:.67rem;letter-spacing:.12em;text-transform:uppercase;color:var(--sage)}
+  .scroll{overflow-x:auto}
+  .stage{display:inline-flex;align-items:center;gap:7px;font-weight:650;white-space:nowrap}
+  .dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+
+  footer{margin-top:62px;padding-top:20px;border-top:1px solid var(--line-soft);
+    font-size:.84rem;color:var(--sage)}
+</style>
+</head>
+<body>
+
+<header class="bar">
+  <h1>How to</h1>
+  <a class="btn" href="/admin">← Back to the board</a>
+</header>
+
+<div class="page">
+
+<div class="doc-head">
+  <div class="kicker">Lead Board &amp; Campaigns</div>
+  <p class="lede">
+    Everything on the admin side, in the order you'd actually use it. Signing in emails
+    you a code each time, so there's no password to remember or lose.
+  </p>
+</div>
+
+<nav class="toc">
+  <h2>Contents</h2>
+  <ol>
+    <li><a href="#arrive">When a lead arrives</a></li>
+    <li><a href="#board">Working the board</a></li>
+    <li><a href="#lead">Inside a lead</a></li>
+    <li><a href="#logging">Logging calls &amp; notes</a></li>
+    <li><a href="#followup">Follow-ups</a></li>
+    <li><a href="#table">Table view</a></li>
+    <li><a href="#byhand">Adding a lead by hand</a></li>
+    <li><a href="#campaigns">Campaigns</a></li>
+    <li><a href="#tracking">The tracking link</a></li>
+    <li><a href="#fairhousing">Fair housing rules</a></li>
+    <li><a href="#mailer">Mailer &amp; exports</a></li>
+    <li><a href="#routine">A working routine</a></li>
+  </ol>
+</nav>
+
+<section id="arrive">
+  <div class="sec-head"><span class="n">01</span><h2>When a lead arrives</h2></div>
+  <div class="body">
+    <p>Someone fills in the form on the website. Three things happen straight away:</p>
+    <ul class="plain">
+      <li>The lead is saved to the board, in the <strong>New</strong> column.</li>
+      <li>You get an email with their details.</li>
+      <li>Their answers and where they came from are captured — nothing to retype.</li>
+    </ul>
+    <div class="note">
+      <h3>Nothing is lost if something breaks</h3>
+      <p>Saving the lead and sending the email happen independently. If one fails the
+        other still goes through, so a lead is never dropped because a mail server was
+        having a bad morning.</p>
+    </div>
+  </div>
+</section>
+
+<section id="board">
+  <div class="sec-head"><span class="n">02</span><h2>Working the board</h2></div>
+  <div class="body">
+    <p>Six columns, left to right, following a deal as it progresses:</p>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Stage</th><th>Means</th></tr></thead>
+        <tbody>
+          <tr><td><span class="stage"><span class="dot" style="background:#c9a26b"></span>New</span></td><td>Arrived, not yet spoken to</td></tr>
+          <tr><td><span class="stage"><span class="dot" style="background:#e3c08c"></span>Contacted</span></td><td>You've reached out</td></tr>
+          <tr><td><span class="stage"><span class="dot" style="background:#dd7f4a"></span>Touring</span></td><td>Actively looking at homes with you</td></tr>
+          <tr><td><span class="stage"><span class="dot" style="background:#b79bd4"></span>Under Contract</span></td><td>Offer accepted, working to close</td></tr>
+          <tr><td><span class="stage"><span class="dot" style="background:#8fbf9a"></span>Closed</span></td><td>Done. Keep them — past clients refer.</td></tr>
+          <tr><td><span class="stage"><span class="dot" style="background:#9a9081"></span>Lost / Cold</span></td><td>Not moving forward, or gone quiet</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p><strong>To move someone:</strong> drag the card on a computer, or use the dropdown at
+      the bottom of the card on a phone. Both do the same thing — dragging is fiddly on a
+      touchscreen, so the dropdown is there for that.</p>
+    <p>The counters along the top always reflect what you're currently filtered to, not the
+      whole database. Filter to Facebook leads and the pipeline figure is the Facebook
+      pipeline.</p>
+    <div class="note">
+      <h3>Pipeline excludes Closed and Lost</h3>
+      <p>Money already banked isn't pipeline, and neither is money that walked away.
+        Counting either would flatter the number into uselessness.</p>
+    </div>
+  </div>
+</section>
+
+<section id="lead">
+  <div class="sec-head"><span class="n">03</span><h2>Inside a lead</h2></div>
+  <div class="body">
+    <p>Click any card and a panel slides in from the right. Everything is editable.</p>
+    <dl class="fields">
+      <div><dt>Name, Phone, Email</dt><dd>Correct typos, or fill in what someone didn't give you.</dd></div>
+      <div><dt>Stage</dt><dd>Same six as the board.</dd></div>
+      <div><dt>Priority</dt><dd><strong>Hot / Warm / Cold.</strong> Shows as the coloured stripe down the left of each card, so urgency reads at a glance.</dd></div>
+      <div><dt>Source</dt><dd>Website, referral, open house, sign call, Zillow, social, past client.</dd></div>
+      <div><dt>Looking to</dt><dd>Buy, sell, both, or curious about a home's value.</dd></div>
+      <div><dt>Next follow-up</dt><dd>A date. The field that stops leads going cold.</dd></div>
+      <div><dt>Budget</dt><dd>Accepts <span class="ui">450000</span>, <span class="ui">450k</span> or <span class="ui">$450,000</span>. Feeds the Pipeline total.</dd></div>
+      <div><dt>Tags</dt><dd>Comma separated — <em>first-time, waterfront, pre-approved</em>. You can filter and search on these, so use them consistently.</dd></div>
+      <div><dt>Private notes</dt><dd>Only you see this. Never appears anywhere public.</dd></div>
+    </dl>
+    <p>At the top are three shortcuts — <strong>Call</strong>, <strong>Text</strong> and
+      <strong>Email</strong>. On a phone they open the dialer or messages app directly, and
+      the email one pre-fills a subject line. Any shortcut greys out if you don't have that
+      detail for the person.</p>
+    <p><span class="ui">Ctrl</span>+<span class="ui">S</span> saves. <span class="ui">Esc</span> closes.</p>
+  </div>
+</section>
+
+<section id="logging">
+  <div class="sec-head"><span class="n">04</span><h2>Logging calls and notes</h2></div>
+  <div class="body">
+    <p>Two different things, for two different jobs.</p>
+    <h3>The activity log</h3>
+    <p>Pick what happened — <strong>Call, Text, Email, Showing, Offer</strong> or
+      <strong>Note</strong> — write a line, and it's stamped with the date and kept newest
+      first. This is the history of the relationship.</p>
+    <h3>Private notes</h3>
+    <p>A free-form box for things that aren't events — budget context, what they're really
+      after, the fact that they hate cul-de-sacs. <strong>+ Add dated entry</strong> drops
+      today's date at the top if you prefer to keep it as a journal.</p>
+    <div class="note win">
+      <h3>Why bother</h3>
+      <p>Six months from now, "spoke once, seemed keen" is worth nothing. "Called 14 Mar —
+        wants to be in before the school year, pre-approved to 480" is a deal you can pick
+        straight back up.</p>
+    </div>
+  </div>
+</section>
+
+<section id="followup">
+  <div class="sec-head"><span class="n">05</span><h2>Follow-ups</h2></div>
+  <div class="body">
+    <p>Leads rarely die because they weren't interested. They die because nobody called
+      back. Set <strong>Next follow-up</strong> on every lead you intend to keep.</p>
+    <ul class="plain">
+      <li>The card shows a badge as the date approaches, and turns
+        <strong style="color:var(--hot)">orange when overdue</strong>.</li>
+      <li>The <span class="ui">Overdue</span> counter is your daily to-do count.</li>
+      <li>The follow-up filter narrows to <em>Overdue</em>, <em>Due today</em>,
+        <em>Due this week</em> or <em>No date set</em> — check that last one weekly, since
+        a lead with no date is a lead nobody has promised to chase.</li>
+    </ul>
+  </div>
+</section>
+
+<section id="table">
+  <div class="sec-head"><span class="n">06</span><h2>Table view</h2></div>
+  <div class="body">
+    <p>The <span class="ui">Board</span> / <span class="ui">Table</span> switch shows the same
+      leads differently. The board is for moving one person along; the table is for scanning
+      everyone at once.</p>
+    <ul class="plain">
+      <li><strong>Click a column heading</strong> to sort, click again to reverse. Budget
+        sorts by value, not alphabetically.</li>
+      <li><strong>The boxes under the headings</strong> filter that column, and they stack —
+        "hot sellers from referrals" is three clicks.</li>
+      <li><strong>Click a row</strong> to open the same panel as a card.</li>
+      <li>The line at the bottom tells you what you're looking at, so a filtered view is
+        never mistaken for the whole pipeline.</li>
+    </ul>
+    <p>Your view, sort and filters are remembered, so it opens the way you left it.</p>
+  </div>
+</section>
+
+<section id="byhand">
+  <div class="sec-head"><span class="n">07</span><h2>Adding a lead by hand</h2></div>
+  <div class="body">
+    <p>For everyone who never touches the website — open house sign-ins, sign calls,
+      referrals, the person who cornered you at a barbecue.</p>
+    <ol class="steps">
+      <li><div><strong>+ New lead</strong><span>Top of the screen.</span></div></li>
+      <li><div><strong>Name, and one way to reach them</strong><span>A phone number <em>or</em> an email is enough — a sign call often gives you nothing else, and half a record beats a lost one.</span></div></li>
+      <li><div><strong>Set the Source</strong><span>This is what later tells you whether open houses are worth the Saturdays.</span></div></li>
+      <li><div><strong>Set a follow-up date before saving</strong><span>The single habit that turns this from a list into a pipeline.</span></div></li>
+    </ol>
+  </div>
+</section>
+
+<section id="campaigns">
+  <div class="sec-head"><span class="n">08</span><h2>Campaigns</h2></div>
+  <div class="body">
+    <p>Switch to <span class="ui">Campaigns</span> at the top. This plans advertising and —
+      the useful part — shows which of it actually produces business.</p>
+    <ol class="steps">
+      <li><div><strong>+ New campaign</strong><span>Name it something you'll recognise in six months: <em>Spring sellers — South Tampa</em>, not <em>Campaign 3</em>.</span></div></li>
+      <li><div><strong>Set channel, goal and area</strong><span>Facebook, direct mail, open house, print. Buyers or sellers. Then where.</span></div></li>
+      <li><div><strong>Enter your budget</strong><span>What you're prepared to spend.</span></div></li>
+      <li><div><strong>Save and copy the tracking link</strong><span>The next section explains why this matters.</span></div></li>
+      <li><div><strong>Update "Spent so far" as you go</strong><span>No connection to your ad account, so this is manual — a minute a week.</span></div></li>
+    </ol>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Figure</th><th>What it tells you</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Spend</strong></td><td>What you've put in so far</td></tr>
+          <tr><td><strong>Leads</strong></td><td>People who enquired via that campaign's link</td></tr>
+          <tr><td><strong>Closed</strong></td><td>How many of those actually transacted</td></tr>
+          <tr><td><strong>Per lead</strong></td><td>Spend ÷ leads — what each enquiry cost</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="note win">
+      <h3>Closed is the column that matters</h3>
+      <p>Facebook can tell you it delivered cheap clicks. It has no idea which ones bought
+        a house. Because your leads and your ads live in the same place here, you can see
+        that the $8-a-lead channel produced nothing and the $40-a-lead channel paid for
+        the year.</p>
+    </div>
+  </div>
+</section>
+
+<section id="tracking">
+  <div class="sec-head"><span class="n">09</span><h2>The tracking link</h2></div>
+  <div class="body">
+    <p>Every campaign gets its own web address when you save it:</p>
+    <pre>https://jessicakortum.com/?utm_campaign=spring-sellers-a1b2</pre>
+    <p><strong>Use that instead of the plain website address</strong> anywhere the campaign
+      appears — the ad's destination, a QR code on a postcard, a link in an email.</p>
+    <p>It looks like the normal site to whoever clicks. But when they enquire, the lead is
+      quietly tagged with that campaign, which is how the Leads and Closed columns fill in.</p>
+    <div class="note">
+      <h3>What it won't catch</h3>
+      <p>Someone who sees the ad and rings you instead of using the form won't be counted
+        automatically — ask how they heard of you and set the Source by hand.</p>
+      <p>The tag also lasts for that visit only. Click the ad today, come back next week and
+        enquire then, and it won't be attributed. That's deliberate — the alternative
+        credits old ads for business they didn't bring in — but treat the numbers as a
+        floor rather than an exact count.</p>
+    </div>
+  </div>
+</section>
+
+<section id="fairhousing">
+  <div class="sec-head"><span class="n">10</span><h2>Fair housing — read this once</h2></div>
+  <div class="body">
+    <div class="note stop">
+      <h3>Housing ads are legally restricted</h3>
+      <p>Since the 2019 HUD settlement, Facebook, Instagram and Google prohibit housing
+        advertisers from targeting by <strong>age, gender, ZIP code or detailed
+        demographics</strong>, and require a minimum 15-mile radius. Those details stand in for
+        protected characteristics — and <strong>having children is one of them</strong>. This
+        applies to you as a licensed agent, not just to the platform.</p>
+    </div>
+    <p>In practice: <strong>describe places and intentions, never people.</strong></p>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Instead of</th><th>Write</th></tr></thead>
+        <tbody>
+          <tr><td>Young families with kids in Westchase</td><td>Westchase and the surrounding area</td></tr>
+          <tr><td>Retirees looking to downsize</td><td>Homeowners considering a smaller property</td></tr>
+          <tr><td>Newlyweds buying their first home</td><td>First-time buyers</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>As you type in the audience or ad copy boxes, anything describing people rather than
+      places is flagged in orange. <strong>It's a prompt, not a block</strong> — "family room"
+      is a feature, not an audience, so it lets you save and leaves the judgement to you.</p>
+    <p>Set the actual audience inside Facebook or Google, where the platform enforces the
+      rules for you. This tool plans and measures; it doesn't buy.</p>
+  </div>
+</section>
+
+<section id="mailer">
+  <div class="sec-head"><span class="n">11</span><h2>Mailer &amp; exports</h2></div>
+  <div class="body">
+    <dl class="fields">
+      <div><dt>Export CSV</dt><dd>Every lead with every field. Your backup, and your way out if you ever move to another system — the data is yours and never trapped here.</dd></div>
+      <div><dt>Mailer CSV</dt><dd>A trimmed list — name, email, phone, tags — ready for a print house or a mail merge.</dd></div>
+    </dl>
+    <div class="note">
+      <h3>Your contacts only</h3>
+      <p>These export people already on your board. They are not purchased lists, and you
+        shouldn't feed one in — bought lists get email domains blacklisted and annoy people
+        who never asked to hear from you.</p>
+    </div>
+  </div>
+</section>
+
+<section id="routine">
+  <div class="sec-head"><span class="n">12</span><h2>A working routine</h2></div>
+  <div class="body">
+    <h3>Every morning — five minutes</h3>
+    <ul class="plain">
+      <li>Check <span class="ui">Overdue</span>. Work it to zero.</li>
+      <li>Anything in <strong>New</strong> gets a call the same day. Speed is most of the battle.</li>
+      <li>Log what happened as you go, not on Friday when you've forgotten.</li>
+    </ul>
+    <h3>Every week — fifteen minutes</h3>
+    <ul class="plain">
+      <li>Filter follow-up to <em>No date set</em> and give every one a date.</li>
+      <li>Update <strong>Spent so far</strong> on any running campaign.</li>
+      <li>Compare <strong>Per lead</strong> and <strong>Closed</strong> across campaigns. Put
+        more into what works, stop what doesn't.</li>
+      <li>Move anything genuinely dead to <strong>Lost / Cold</strong>.</li>
+    </ul>
+    <h3>Every month</h3>
+    <ul class="plain">
+      <li>Export CSV and keep the file somewhere safe.</li>
+      <li>Look through <strong>Closed</strong> — those are your referral sources, and the
+        cheapest business you'll ever get.</li>
+    </ul>
+  </div>
+</section>
+
+<footer>
+  Signing in emails you a one-time code, so there's no password to lose. Everything here is
+  private to you; nothing in the admin is ever visible on the public site.
+</footer>
+
+</div>
+</body>
+</html>
