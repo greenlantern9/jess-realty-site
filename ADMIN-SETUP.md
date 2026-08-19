@@ -86,6 +86,49 @@ design; if the form attracts spam, generate a new key and set that variable.
 
 Storing and emailing are independent — one failing does not lose the other.
 
+## Campaigns
+
+`/admin` → **Campaigns**. Plans advertising, tracks spend, and measures which
+campaigns actually produce pipeline.
+
+**How attribution works.** Every campaign gets a tracking link:
+
+```
+https://jessicakortum.com/?utm_campaign=spring-sellers-a1b2
+```
+
+Use that as the destination URL in the ad, the postcard QR code, the emailed
+link. When someone arrives the page stores the value, and if they submit the
+contact form — even after browsing for a while — the lead is stamped with it.
+The campaign card then shows leads, closed deals and **cost per lead** from
+real numbers rather than guesses.
+
+Enter spend by hand as you go; there is no billing integration.
+
+**Mailer CSV** exports contacts already in the CRM, filterable by
+`?status=`, `?tag=` or `?campaign=`, ready for a mail-merge or a print house.
+Spreadsheet formula characters are neutralised on the way out.
+
+### Fair housing — read before extending this
+
+Housing advertising is a restricted category. After the 2019 HUD/NFHA
+settlement, Meta (Special Ad Category) and Google prohibit targeting housing
+ads by age, gender, ZIP code, or detailed demographic and behavioural
+attributes, and impose a 15-mile minimum radius. Those attributes proxy for
+protected classes, and **familial status is protected** — which is why
+"targeting families with young children" is exactly the thing that is not
+allowed, however commercially sensible it sounds.
+
+This module therefore plans and measures campaigns; it does **not** compose
+audience targeting. Set the audience inside the ad platform, which enforces
+the rules at the point of purchase.
+
+The audience and copy fields are scanned for language describing *people*
+rather than *places or intent*, and flag terms like "young", "families",
+"children", "married". These are **warnings, not blocks** — "family room" is a
+feature, not an audience, and a human has to make that call. Do not add
+demographic targeting fields to this module.
+
 ## Text alerts on a new lead
 
 When a contact form submission succeeds, the worker texts:

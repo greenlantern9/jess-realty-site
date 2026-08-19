@@ -169,7 +169,53 @@
 
   /* An explicit display: on these beats the UA's [hidden]{display:none},
      so toggling the attribute alone would leave both views on screen. */
-  .board[hidden],.tablewrap[hidden],.tbl-foot[hidden]{display:none}
+  /* An explicit display: beats the UA's [hidden]{display:none}, so anything
+     toggled by the attribute needs this or it stays on screen. Bitten by this
+     twice already - .board, then the whole leads toolbar. */
+  .board[hidden],.tablewrap[hidden],.tbl-foot[hidden],.camp-wrap[hidden],
+  .stats[hidden],.viewtoggle[hidden],.btn[hidden],.search[hidden]{display:none}
+
+  /* ---------------- module switch (Leads | Campaigns) ---------------- */
+  .modules{display:inline-flex;gap:2px;margin-left:4px}
+  .modules button{padding:8px 14px;border-radius:3px;font-size:.86rem;font-weight:650;
+    color:var(--sage);transition:.2s}
+  .modules button:hover{color:var(--cream)}
+  .modules button[aria-current="page"]{color:var(--cream);background:var(--ink-2)}
+
+  /* ---------------- campaigns ---------------- */
+  .camp-wrap{flex:1;overflow-y:auto;padding:20px 22px 30px}
+  .camp-intro{display:flex;gap:14px;align-items:flex-start;max-width:1000px;
+    background:var(--ink-2);border:1px solid var(--line-soft);border-left:3px solid var(--brass);
+    padding:15px 18px;margin-bottom:22px;font-size:.87rem;color:var(--cream-soft);line-height:1.6}
+  .camp-intro b{color:var(--cream)}
+  .camp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));
+    gap:14px;max-width:1400px}
+  .camp{background:var(--ink-2);border:1px solid var(--line-soft);border-radius:4px;
+    padding:16px 17px;cursor:pointer;transition:border-color .2s,transform .15s;
+    display:flex;flex-direction:column;gap:11px}
+  .camp:hover{border-color:var(--line);transform:translateY(-1px)}
+  .camp-head{display:flex;align-items:baseline;gap:9px}
+  .camp-head .nm{font-weight:650;font-size:.98rem;flex:1;color:var(--cream)}
+  .camp .chan{font-size:.68rem;letter-spacing:.09em;text-transform:uppercase;
+    color:var(--sage)}
+  .camp-metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;
+    padding-top:11px;border-top:1px solid var(--line-soft)}
+  .metric .v{font-family:var(--serif);font-size:1.15rem;color:var(--cream);
+    font-variant-numeric:tabular-nums;line-height:1}
+  .metric .l{font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--sage);margin-top:5px}
+  .metric.cpl .v{color:var(--brass-bright)}
+  .camp-warn{display:flex;gap:8px;align-items:flex-start;font-size:.76rem;
+    color:var(--hot);background:rgba(221,127,74,.10);
+    border:1px solid rgba(221,127,74,.32);padding:8px 10px;border-radius:3px}
+  .track-url{font-family:var(--mono,ui-monospace,monospace);font-size:.72rem;
+    color:var(--cream-soft);background:var(--ink-3);border:1px solid var(--line-soft);
+    padding:7px 9px;border-radius:3px;word-break:break-all;line-height:1.5}
+  .status-pill{font-size:.66rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;
+    padding:3px 8px;border-radius:11px;background:rgba(201,162,107,.16);color:var(--cream-soft)}
+  .status-pill.running{background:rgba(143,191,154,.18);color:var(--ok)}
+  .status-pill.draft{background:rgba(154,144,129,.18);color:var(--sage)}
+  .status-pill.paused{background:rgba(221,127,74,.16);color:var(--hot)}
 
   /* ---------------- view toggle ---------------- */
   .viewtoggle{display:inline-flex;padding:3px;gap:3px;border-radius:4px;
@@ -261,7 +307,11 @@
 <body>
 
 <header class="bar">
-  <h1>Lead Board</h1>
+  <h1 id="moduleTitle">Lead Board</h1>
+  <nav class="modules" aria-label="Sections">
+    <button id="modLeads" type="button" aria-current="page">Leads</button>
+    <button id="modCampaigns" type="button">Campaigns</button>
+  </nav>
   <div class="bar-right">
     <span class="who" id="who" hidden>
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -310,6 +360,8 @@
 
   <button class="btn" id="addLead" type="button">+ New lead</button>
   <button class="btn ghost" id="exportCsv" type="button">Export CSV</button>
+  <button class="btn" id="newCampaign" type="button" hidden>+ New campaign</button>
+  <button class="btn ghost" id="mailerCsv" type="button" hidden>Mailer CSV</button>
 
   <div class="stats">
     <span class="stat">Total <b id="stTotal">0</b></span>
@@ -325,6 +377,114 @@
 <div class="board" id="board" hidden></div>
 <div class="tablewrap" id="tablewrap" hidden></div>
 <div class="tbl-foot" id="tblFoot" hidden></div>
+
+<div class="camp-wrap" id="campWrap" hidden>
+  <div class="camp-intro">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         stroke-width="2" style="color:var(--brass);flex-shrink:0;margin-top:1px" aria-hidden="true">
+      <path d="M12 9v4M12 17h.01"/><circle cx="12" cy="12" r="9"/>
+    </svg>
+    <div>
+      <b>Housing ads are a restricted category.</b> Since the 2019 HUD settlement, Meta and
+      Google bar housing advertisers from targeting by age, gender, ZIP code or detailed
+      demographics, with a 15-mile minimum radius — those attributes stand in for protected
+      classes, and familial status is one. Plan campaigns here by <b>geography and
+      message</b>; set the audience inside the ad platform, which enforces the rules for you.
+    </div>
+  </div>
+  <div class="camp-grid" id="campGrid"></div>
+</div>
+
+<aside class="drawer" id="campDrawer" aria-hidden="true" aria-label="Campaign detail">
+  <div class="drawer-head">
+    <h2 id="cTitle">Campaign</h2>
+    <button class="x" id="cClose" type="button" aria-label="Close">×</button>
+  </div>
+  <div class="drawer-body">
+    <div class="fset" id="cfs-name">
+      <label for="cName">Campaign name</label>
+      <input id="cName" type="text" placeholder="Spring sellers — South Tampa">
+      <span class="err" id="cerr-name"></span>
+    </div>
+
+    <div class="grid2">
+      <div class="fset">
+        <label for="cChannel">Channel</label>
+        <select id="cChannel"></select>
+      </div>
+      <div class="fset">
+        <label for="cObjective">Going after</label>
+        <select id="cObjective"></select>
+      </div>
+    </div>
+
+    <div class="grid2">
+      <div class="fset">
+        <label for="cStatus">Status</label>
+        <select id="cStatus"></select>
+      </div>
+      <div class="fset">
+        <label for="cBudget">Budget</label>
+        <input id="cBudget" type="text" placeholder="500">
+        <span class="err" id="cerr-budget"></span>
+      </div>
+    </div>
+
+    <div class="grid2">
+      <div class="fset">
+        <label for="cSpend">Spent so far</label>
+        <input id="cSpend" type="text" placeholder="0">
+        <span class="err" id="cerr-spend"></span>
+      </div>
+      <div class="fset">
+        <label for="cStarts">Starts</label>
+        <input id="cStarts" type="date">
+      </div>
+    </div>
+
+    <div class="fset">
+      <label for="cEnds">Ends</label>
+      <input id="cEnds" type="date">
+    </div>
+
+    <div class="fset">
+      <label for="cGeo">Where <span style="text-transform:none;letter-spacing:0">(cities or a ≥15 mile radius)</span></label>
+      <input id="cGeo" type="text" placeholder="Tampa + 20 mile radius">
+    </div>
+
+    <div class="fset">
+      <label for="cAudience">Who it speaks to <span style="text-transform:none;letter-spacing:0">(describe intent, not people)</span></label>
+      <textarea id="cAudience" placeholder="Homeowners weighing a move this year — message is about pricing, not who they are."></textarea>
+    </div>
+
+    <div class="fset">
+      <label for="cCreative">Ad copy</label>
+      <textarea id="cCreative" placeholder="Headline, body, call to action…"></textarea>
+    </div>
+
+    <div id="cWarnBox"></div>
+
+    <div class="fset">
+      <label>Tracking link <span style="text-transform:none;letter-spacing:0">— use this as the ad's destination</span></label>
+      <div class="track-url" id="cTrackUrl">Save the campaign to generate its link.</div>
+      <button class="linkbtn" id="cCopyUrl" type="button" style="text-align:left">Copy link</button>
+    </div>
+
+    <div class="fset">
+      <label for="cNotes">Notes</label>
+      <textarea id="cNotes" placeholder="What worked, what to change next time…"></textarea>
+    </div>
+
+    <div class="meta-line" id="cMeta"></div>
+  </div>
+  <div class="drawer-foot">
+    <button class="btn" id="cSave" type="button">Save</button>
+    <button class="btn ghost" id="cCancel" type="button">Cancel</button>
+    <span class="saved" id="cSaved" hidden>Saved</span>
+    <span class="spacer"></span>
+    <button class="btn danger" id="cDelete" type="button">Delete</button>
+  </div>
+</aside>
 
 <div class="drawer-bg" id="drawerBg"></div>
 <aside class="drawer" id="drawer" aria-hidden="true" aria-label="Lead detail">
@@ -1242,7 +1402,300 @@
   fillSelect(el('fSource'),
     [{ id:'', label:'All sources' }].concat(SOURCES), 'id', 'label');
 
-  el('refresh').addEventListener('click', load);
+  /* ================= CAMPAIGNS =================
+     Plans and measures campaigns. It deliberately does not compose audience
+     targeting: housing sits in a restricted ad category, and the platforms
+     enforce those rules at the point of purchase. What this adds that the ad
+     platforms cannot is attribution against the actual pipeline — a lead
+     arriving on ?utm_campaign=… is stamped with it, so cost per lead is
+     measured rather than guessed.                                          */
+
+  const CHANNELS = [
+    { id:'facebook',      label:'Facebook' },
+    { id:'instagram',     label:'Instagram' },
+    { id:'google',        label:'Google' },
+    { id:'direct_mail',   label:'Direct mail' },
+    { id:'email',         label:'Email' },
+    { id:'open_house',    label:'Open house' },
+    { id:'print',         label:'Print' },
+    { id:'referral_push', label:'Referral push' },
+    { id:'other',         label:'Other' }
+  ];
+  const CHANNEL_LABEL = Object.fromEntries(CHANNELS.map(c => [c.id, c.label]));
+  const OBJECTIVES = [
+    { id:'buyers',  label:'Buyers' },
+    { id:'sellers', label:'Sellers' },
+    { id:'both',    label:'Both' },
+    { id:'brand',   label:'Awareness' }
+  ];
+  const CAMP_STATUSES = [
+    { id:'draft',     label:'Draft' },
+    { id:'scheduled', label:'Scheduled' },
+    { id:'running',   label:'Running' },
+    { id:'paused',    label:'Paused' },
+    { id:'finished',  label:'Finished' }
+  ];
+
+  let campaigns = [];
+  let activeCampaign = null;   // null while creating
+  let module = 'leads';
+
+  function setModule(next){
+    module = next;
+    el('modLeads').setAttribute('aria-current', next === 'leads' ? 'page' : 'false');
+    el('modCampaigns').setAttribute('aria-current', next === 'campaigns' ? 'page' : 'false');
+    el('moduleTitle').textContent = next === 'leads' ? 'Lead Board' : 'Campaigns';
+
+    const leadsUi = ['q','fPriority','fSource','fDue','addLead','exportCsv'];
+    leadsUi.forEach(id => { const e = el(id); if (e) e.closest('.search') ? e.closest('.search').hidden = next !== 'leads' : e.hidden = next !== 'leads'; });
+    document.querySelector('.viewtoggle').hidden = next !== 'leads';
+    document.querySelector('.stats').hidden = next !== 'leads';
+    el('newCampaign').hidden = next !== 'campaigns';
+    el('mailerCsv').hidden = next !== 'campaigns';
+
+    el('campWrap').hidden = next !== 'campaigns';
+    if (next === 'campaigns'){ board.hidden = true; el('tablewrap').hidden = true; el('tblFoot').hidden = true; loadCampaigns(); }
+    else render();
+  }
+
+  async function loadCampaigns(){
+    try {
+      const data = await api('/api/campaigns');
+      campaigns = data.campaigns || [];
+      hideBanner();
+    } catch (err) {
+      if (err.message !== 'unauthorized') showBanner(err.message);
+    }
+    renderCampaigns();
+  }
+
+  const trackUrlFor = (slug) =>
+    'https://jessicakortum.com/?utm_campaign=' + slug;
+
+  function renderCampaigns(){
+    const grid = el('campGrid');
+    grid.textContent = '';
+
+    if (!campaigns.length){
+      const empty = document.createElement('div');
+      empty.className = 'tbl-empty';
+      empty.textContent = 'No campaigns yet. Create one to start measuring what actually brings leads in.';
+      grid.appendChild(empty);
+      return;
+    }
+
+    campaigns.forEach(c => {
+      const card = document.createElement('article');
+      card.className = 'camp';
+      card.addEventListener('click', () => openCampaign(c.id));
+
+      const head = document.createElement('div');
+      head.className = 'camp-head';
+      const nm = document.createElement('span');
+      nm.className = 'nm';
+      nm.textContent = c.name;
+      const pill = document.createElement('span');
+      pill.className = 'status-pill ' + c.status;
+      pill.textContent = (CAMP_STATUSES.find(s => s.id === c.status) || {}).label || c.status;
+      head.append(nm, pill);
+      card.appendChild(head);
+
+      const chan = document.createElement('div');
+      chan.className = 'chan';
+      const obj = (OBJECTIVES.find(o => o.id === c.objective) || {}).label || c.objective;
+      chan.textContent = (CHANNEL_LABEL[c.channel] || c.channel) + ' · ' + obj +
+        (c.geo ? ' · ' + c.geo : '');
+      card.appendChild(chan);
+
+      if (c.warnings && c.warnings.length){
+        const warn = document.createElement('div');
+        warn.className = 'camp-warn';
+        warn.textContent = 'Wording to review before this runs: ' + c.warnings.join(', ');
+        card.appendChild(warn);
+      }
+
+      const spend = Number(c.spend) || 0;
+      const leadsN = Number(c.leads) || 0;
+      const cpl = leadsN ? spend / leadsN : null;
+
+      const metrics = document.createElement('div');
+      metrics.className = 'camp-metrics';
+      [
+        ['Spend', spend ? money(spend) : '—', ''],
+        ['Leads', String(leadsN), ''],
+        ['Closed', String(Number(c.closed) || 0), ''],
+        ['Per lead', cpl === null ? '—' : money(Math.round(cpl)), 'cpl']
+      ].forEach(([label, value, cls]) => {
+        const m = document.createElement('div');
+        m.className = 'metric ' + cls;
+        const v = document.createElement('div'); v.className = 'v'; v.textContent = value;
+        const l = document.createElement('div'); l.className = 'l'; l.textContent = label;
+        m.append(v, l);
+        metrics.appendChild(m);
+      });
+      card.appendChild(metrics);
+      grid.appendChild(card);
+    });
+  }
+
+  function setCampError(name, msg){
+    const fs = el('cfs-' + name);
+    if (fs) fs.classList.toggle('invalid', !!msg);
+    const e = el('cerr-' + name);
+    if (e) e.textContent = msg || '';
+  }
+
+  function renderCampWarnings(text){
+    const box = el('cWarnBox');
+    box.textContent = '';
+    // Mirrors the server list; a prompt for a human, never a block.
+    const terms = ['age','young','older','senior','retiree','male','female','men','women',
+      'family','families','children','kids','single','married','pregnant','newlywed',
+      'race','ethnic','hispanic','latino','religio','christian','jewish','muslim','church',
+      'disab','handicap','immigrant','zip code','zipcode'];
+    const s = String(text || '').toLowerCase();
+    const hits = [...new Set(terms.filter(t => s.includes(t)))];
+    if (!hits.length) return;
+    const w = document.createElement('div');
+    w.className = 'camp-warn';
+    w.textContent = 'These words describe people rather than places or intent, which is how ' +
+      'housing ads get rejected or become a fair-housing problem: ' + hits.join(', ') + '.';
+    box.appendChild(w);
+  }
+
+  function openCampaign(id){
+    ['name','budget','spend'].forEach(n => setCampError(n, ''));
+    el('cSaved').hidden = true;
+    activeCampaign = id;
+    const c = id ? campaigns.find(x => x.id === id) : null;
+    if (id && !c) return;
+
+    el('cTitle').textContent = c ? c.name : 'New campaign';
+    el('cName').value      = c ? c.name : '';
+    el('cChannel').value   = c ? c.channel : 'facebook';
+    el('cObjective').value = c ? c.objective : 'sellers';
+    el('cStatus').value    = c ? c.status : 'draft';
+    el('cBudget').value    = c && Number(c.budget) ? c.budget : '';
+    el('cSpend').value     = c && Number(c.spend) ? c.spend : '';
+    el('cStarts').value    = c ? (c.starts_on || '') : '';
+    el('cEnds').value      = c ? (c.ends_on || '') : '';
+    el('cGeo').value       = c ? (c.geo || '') : '';
+    el('cAudience').value  = c ? (c.audience || '') : '';
+    el('cCreative').value  = c ? (c.creative || '') : '';
+    el('cNotes').value     = c ? (c.notes || '') : '';
+
+    el('cTrackUrl').textContent = c ? trackUrlFor(c.slug)
+      : 'Save the campaign to generate its link.';
+    el('cDelete').style.display = c ? '' : 'none';
+    el('cMeta').textContent = c
+      ? 'Attributed leads: ' + (c.leads || 0) + '  ·  in pipeline: ' + (c.qualified || 0) +
+        '  ·  closed: ' + (c.closed || 0)
+      : '';
+    renderCampWarnings((c ? c.audience + ' ' + c.creative : ''));
+
+    el('campDrawer').classList.add('open');
+    el('campDrawer').setAttribute('aria-hidden','false');
+    el('drawerBg').classList.add('open');
+    drawerOpen = true;
+    setTimeout(() => el('cName').focus(), 120);
+  }
+
+  function closeCampaign(){
+    activeCampaign = null;
+    drawerOpen = false;
+    el('campDrawer').classList.remove('open');
+    el('campDrawer').setAttribute('aria-hidden','true');
+    el('drawerBg').classList.remove('open');
+  }
+
+  async function saveCampaign(){
+    ['name','budget','spend'].forEach(n => setCampError(n, ''));
+    const payload = {
+      name: el('cName').value.trim(),
+      channel: el('cChannel').value,
+      objective: el('cObjective').value,
+      status: el('cStatus').value,
+      budget: el('cBudget').value.trim(),
+      spend: el('cSpend').value.trim(),
+      starts_on: el('cStarts').value,
+      ends_on: el('cEnds').value,
+      geo: el('cGeo').value.trim(),
+      audience: el('cAudience').value,
+      creative: el('cCreative').value,
+      notes: el('cNotes').value
+    };
+    if (!payload.name){ setCampError('name','Give the campaign a name.'); el('cName').focus(); return; }
+
+    const btn = el('cSave');
+    btn.disabled = true; btn.textContent = 'Saving…';
+    try {
+      if (activeCampaign){
+        await api('/api/campaigns/' + encodeURIComponent(activeCampaign), {
+          method:'PATCH', body: JSON.stringify(payload)
+        });
+      } else {
+        await api('/api/campaigns', { method:'POST', body: JSON.stringify(payload) });
+      }
+      await loadCampaigns();
+      closeCampaign();
+      hideBanner();
+    } catch (err) {
+      if (err.fieldErrors) Object.entries(err.fieldErrors).forEach(([f,m]) => setCampError(f,m));
+      if (err.message !== 'unauthorized') showBanner(err.message);
+    } finally {
+      btn.disabled = false; btn.textContent = 'Save';
+    }
+  }
+
+  async function deleteCampaign(){
+    if (!activeCampaign) return;
+    const c = campaigns.find(x => x.id === activeCampaign);
+    if (!c) return;
+    if (!confirm('Delete the campaign "' + c.name + '"? Leads it brought in are kept.')) return;
+    try {
+      await api('/api/campaigns/' + encodeURIComponent(activeCampaign), { method:'DELETE' });
+      closeCampaign();
+      await loadCampaigns();
+    } catch (err) {
+      if (err.message !== 'unauthorized') showBanner('Could not delete: ' + err.message);
+    }
+  }
+
+  fillSelect(el('cChannel'), CHANNELS, 'id', 'label');
+  fillSelect(el('cObjective'), OBJECTIVES, 'id', 'label');
+  fillSelect(el('cStatus'), CAMP_STATUSES, 'id', 'label');
+
+  el('modLeads').addEventListener('click', () => setModule('leads'));
+  el('modCampaigns').addEventListener('click', () => setModule('campaigns'));
+  el('newCampaign').addEventListener('click', () => openCampaign(null));
+  el('cClose').addEventListener('click', closeCampaign);
+  el('cCancel').addEventListener('click', closeCampaign);
+  el('cSave').addEventListener('click', saveCampaign);
+  el('cDelete').addEventListener('click', deleteCampaign);
+  ['cAudience','cCreative'].forEach(id =>
+    el(id).addEventListener('input', () =>
+      renderCampWarnings(el('cAudience').value + ' ' + el('cCreative').value)));
+  el('cCopyUrl').addEventListener('click', () => {
+    const t = el('cTrackUrl').textContent;
+    if (t.startsWith('http')) navigator.clipboard?.writeText(t).then(
+      () => { el('cCopyUrl').textContent = 'Copied'; setTimeout(()=>el('cCopyUrl').textContent='Copy link', 1600); });
+  });
+  el('mailerCsv').addEventListener('click', async () => {
+    const btn = el('mailerCsv');
+    btn.disabled = true; btn.textContent = 'Building…';
+    try {
+      const res = await fetch('/api/mailer');
+      if (!res.ok) throw new Error('Export failed (' + res.status + ')');
+      const url = URL.createObjectURL(await res.blob());
+      const a = document.createElement('a');
+      a.href = url; a.download = 'mailer-' + new Date().toISOString().slice(0,10) + '.csv';
+      document.body.appendChild(a); a.click(); a.remove();
+      URL.revokeObjectURL(url);
+    } catch (err) { showBanner(err.message); }
+    finally { btn.disabled = false; btn.textContent = 'Mailer CSV'; }
+  });
+
+  el('refresh').addEventListener('click', () => module === 'campaigns' ? loadCampaigns() : load());
   el('viewBoard').addEventListener('click', () => setView('board'));
   el('viewTable').addEventListener('click', () => setView('table'));
   // Reflect the persisted choice before the first paint.
@@ -1252,7 +1705,8 @@
   el('addLead').addEventListener('click', () => openDrawer(null));
   el('dClose').addEventListener('click', closeDrawer);
   el('dCancel').addEventListener('click', closeDrawer);
-  el('drawerBg').addEventListener('click', closeDrawer);
+  // one backdrop, two drawers
+  el('drawerBg').addEventListener('click', () => { closeDrawer(); closeCampaign(); });
   el('dSave').addEventListener('click', saveDrawer);
   el('dDelete').addEventListener('click', deleteLead);
   el('dStamp').addEventListener('click', stampNote);
@@ -1297,7 +1751,7 @@
   });
 
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && drawerOpen) closeDrawer();
+    if (e.key === 'Escape' && drawerOpen) { closeDrawer(); closeCampaign(); }
     // Ctrl/Cmd+S saves while the drawer is open.
     if (drawerOpen && (e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 's'){
       e.preventDefault();

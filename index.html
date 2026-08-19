@@ -1491,6 +1491,23 @@
   // year
   document.getElementById('yr').textContent = new Date().getFullYear();
 
+  // Campaign attribution. A visitor arrives on ?utm_campaign=spring-sellers-a1b2,
+  // then reads, scrolls, maybe comes back later - so the value is parked in
+  // sessionStorage rather than read off the URL at submit time, when it has
+  // usually been replaced by a #fragment.
+  function trackedCampaign(){
+    try {
+      const fromUrl = new URLSearchParams(location.search).get('utm_campaign');
+      if (fromUrl) sessionStorage.setItem('jk_campaign', fromUrl);
+      return (sessionStorage.getItem('jk_campaign') || '').slice(0, 80);
+    } catch {
+      // private browsing can throw on sessionStorage; attribution is a nice to
+      // have and must never cost us the lead
+      return '';
+    }
+  }
+  trackedCampaign();   // capture on arrival, before any navigation
+
   // contact form -> Web3Forms
   const contactForm = document.getElementById('contactForm');
   const formNote = document.getElementById('formNote');
@@ -1573,6 +1590,7 @@
       phone: f.phone.value.trim(),
       intent: f.intent.value,
       message: f.message.value.trim(),
+      campaign: trackedCampaign(),
       botcheck: f.botcheck.checked ? '1' : ''
     };
 

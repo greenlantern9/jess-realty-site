@@ -99,7 +99,15 @@ let res = await worker.fetch(
 check('contact returns 200', res.status === 200, 'got ' + res.status);
 check('insert attempted twice (fail, create, retry)', insertAttempts === 2, 'got ' + insertAttempts);
 check('CREATE TABLE was issued', executed.some((s) => s.startsWith('CREATE TABLE')));
-check('indexes were created', executed.filter((s) => s.startsWith('CREATE INDEX')).length === 2);
+// Assert what was created, not how many - a count breaks every time the
+// schema legitimately grows.
+check('leads indexes were created',
+  executed.filter((s) => s.startsWith('CREATE INDEX')).length >= 2,
+  executed.filter((s) => s.startsWith('CREATE INDEX')).join(' | '));
+check('campaigns table is created alongside',
+  executed.some((s) => s.startsWith('CREATE TABLE')) &&
+  executed.filter((s) => s.startsWith('CREATE TABLE')).length >= 2,
+  executed.filter((s) => s.startsWith('CREATE TABLE')).join(' | '));
 
 /* ------------------------------------------------------------------ */
 console.log('\n2. a real DB error is NOT mistaken for a missing table');
@@ -351,6 +359,108 @@ let noLimiter = await worker.fetch(
   req('/api/contact', 'POST', contactBody), { ...staticEnv(), DB: okDbRl }
 );
 check('missing binding fails open', noLimiter.status === 200, 'got ' + noLimiter.status);
+
+/* ------------------------------------------------------------------ */
+console.log('\n6b. campaigns: auth, validation, fair-housing warnings');
+
+const campRows = [];
+const campDb = { prepare: (sql) => ({
+  bind(...a){ this.args = a; return this; },
+  run: async () => { if (/^\s*INSERT INTO campaigns/i.test(sql)) campRows.push(this?.args); return { meta:{ changes:1 } }; },
+  all: async () => ({ results: [
+    { id:'c1', name:'Spring sellers', slug:'spring-sellers-a1b2', channel:'facebook',
+      objective:'sellers', status:'running', audience:'Homeowners weighing a move',
+      geo:'Tampa + 20mi', creative:'Thinking of selling?', notes:'', budget:500, spend:250,
+      starts_on:'', ends_on:'', created_at:'2026-08-01T00:00:00Z', updated_at:'2026-08-01T00:00:00Z',
+      leads:10, qualified:4, closed:1 }
+  ] }),
+  first: async () => null
+}) };
+
+// locked down like every other admin route
+for (const [method, body] of [['GET', null], ['POST', { name:'X' }]]) {
+  let r = await worker.fetch(req('/api/campaigns', method, body), { ...staticEnv(), DB: campDb });
+  check(method + ' /api/campaigns -> 503 unconfigured', r.status === 503, 'got ' + r.status);
+  r = await worker.fetch(req('/api/campaigns', method, body), authEnv(campDb));
+  check(method + ' /api/campaigns -> 401 without token', r.status === 401, 'got ' + r.status);
+}
+
+let cRes = await worker.fetch(authReq('/api/campaigns'), authEnv(campDb));
+let cBody = await cRes.json();
+check('GET /api/campaigns -> 200 with token', cRes.status === 200, 'got ' + cRes.status);
+check('returns attribution counts',
+  cBody.campaigns?.[0]?.leads === 10 && cBody.campaigns[0].closed === 1,
+  JSON.stringify(cBody.campaigns?.[0]));
+
+for (const [label, body, expected] of [
+  ['no name',          { channel:'facebook' },                 400],
+  ['bad channel',      { name:'X', channel:'tiktok-ads' },      400],
+  ['bad objective',    { name:'X', objective:'everyone' },      400],
+  ['bad date',         { name:'X', starts_on:'next tuesday' },  400],
+  ['bad budget',       { name:'X', budget:'lots' },             400],
+  ['valid',            { name:'Spring sellers', channel:'facebook', objective:'sellers',
+                         budget:'500', geo:'Tampa + 20mi' },    200]
+]) {
+  const r = await worker.fetch(authReq('/api/campaigns', 'POST', body), authEnv(campDb));
+  check('create: ' + label.padEnd(14) + ' -> ' + expected, r.status === expected, 'got ' + r.status);
+}
+
+// A campaign written in terms of people, not places, must be flagged.
+const flagged = await worker.fetch(authReq('/api/campaigns', 'POST', {
+  name: 'Test', channel: 'facebook',
+  audience: 'Young married couples with children looking for their first family home'
+}), authEnv(campDb));
+const flaggedBody = await flagged.json();
+check('protected-class wording is flagged',
+  Array.isArray(flaggedBody.warnings) && flaggedBody.warnings.length >= 3,
+  JSON.stringify(flaggedBody.warnings));
+check('but the campaign still saves (warn, never block)', flagged.status === 200, 'got ' + flagged.status);
+
+const clean = await worker.fetch(authReq('/api/campaigns', 'POST', {
+  name: 'Geo only', channel: 'facebook',
+  audience: 'Homeowners in South Tampa considering a move this year',
+  geo: 'Tampa + 20 mile radius'
+}), authEnv(campDb));
+check('neutral wording produces no warnings',
+  ((await clean.json()).warnings || []).length === 0);
+
+// mailer export
+const mail = await worker.fetch(authReq('/api/mailer'), authEnv(campDb));
+check('GET /api/mailer -> csv', mail.headers.get('content-type')?.includes('text/csv'),
+  mail.headers.get('content-type'));
+const mailUnauth = await worker.fetch(req('/api/mailer'), authEnv(campDb));
+check('mailer is auth-gated', mailUnauth.status === 401, 'got ' + mailUnauth.status);
+
+/* ------------------------------------------------------------------ */
+console.log('\n6c. campaign attribution on the public form');
+
+let capturedInsert = null;
+const attrDb = { prepare: (sql) => ({
+  bind(...a){ if (/INSERT INTO leads/i.test(sql)) capturedInsert = { sql, args: a }; return this; },
+  run: async () => ({ meta:{ changes:1 } }),
+  all: async () => ({ results: [] })
+}) };
+const savedFetch2 = globalThis.fetch;
+globalThis.fetch = async () => new Response('{"success":true}', { status: 200 });
+await worker.fetch(req('/api/contact','POST',{
+  name:'Dana', email:'d@e.com', phone:'8135550142', intent:'Buy', message:'hi',
+  campaign:'spring-sellers-a1b2'
+}), { ...staticEnv(), DB: attrDb });
+globalThis.fetch = savedFetch2;
+check('utm_campaign is stored with the lead',
+  capturedInsert && capturedInsert.args.includes('spring-sellers-a1b2'),
+  JSON.stringify(capturedInsert && capturedInsert.args));
+
+globalThis.fetch = async () => new Response('{"success":true}', { status: 200 });
+capturedInsert = null;
+await worker.fetch(req('/api/contact','POST',{
+  name:'Dana', email:'d@e.com', phone:'8135550142', intent:'Buy', message:'hi',
+  campaign:'<script>alert(1)</script>'
+}), { ...staticEnv(), DB: attrDb });
+globalThis.fetch = savedFetch2;
+check('campaign value is sanitised to slug characters',
+  capturedInsert && !capturedInsert.args.some(a => String(a).includes('<')),
+  JSON.stringify(capturedInsert && capturedInsert.args));
 
 /* ------------------------------------------------------------------ */
 console.log('\n7c. SMS alert on a new lead');

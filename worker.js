@@ -168,6 +168,26 @@ async function handleApi(request, env, url, ctx) {
     return handleExport(request, env);
   }
 
+  if (path === '/api/campaigns') {
+    if (request.method === 'GET')  return handleCampaignList(request, env);
+    if (request.method === 'POST') return handleCampaignCreate(request, env);
+    return methodNotAllowed('GET, POST');
+  }
+
+  // Mail-merge list built from her own contacts, never a purchased list.
+  if (path === '/api/mailer') {
+    if (request.method !== 'GET') return methodNotAllowed('GET');
+    return handleMailer(request, env);
+  }
+
+  const camp = path.match(/^\/api\/campaigns\/([^/]+)$/);
+  if (camp) {
+    const id = decodeURIComponent(camp[1]);
+    if (request.method === 'PATCH')  return handleCampaignUpdate(request, env, id);
+    if (request.method === 'DELETE') return handleCampaignDelete(request, env, id);
+    return methodNotAllowed('PATCH, DELETE');
+  }
+
   const match = path.match(/^\/api\/leads\/([^/]+)$/);
   if (match) {
     const id = decodeURIComponent(match[1]);
@@ -304,23 +324,101 @@ const SCHEMA_SQL = [
      next_follow_up TEXT NOT NULL DEFAULT '',
      budget      INTEGER NOT NULL DEFAULT 0,
      activity    TEXT NOT NULL DEFAULT '[]',
+     campaign    TEXT NOT NULL DEFAULT '',
      created_at  TEXT NOT NULL,
      updated_at  TEXT NOT NULL
    )`,
   `CREATE INDEX IF NOT EXISTS idx_leads_status  ON leads(status)`,
-  `CREATE INDEX IF NOT EXISTS idx_leads_created ON leads(created_at DESC)`
+  `CREATE INDEX IF NOT EXISTS idx_leads_created ON leads(created_at DESC)`,
+  `CREATE TABLE IF NOT EXISTS campaigns (
+     id          TEXT PRIMARY KEY,
+     name        TEXT NOT NULL,
+     slug        TEXT NOT NULL,
+     channel     TEXT NOT NULL DEFAULT 'other',
+     objective   TEXT NOT NULL DEFAULT 'both',
+     status      TEXT NOT NULL DEFAULT 'draft',
+     audience    TEXT NOT NULL DEFAULT '',
+     geo         TEXT NOT NULL DEFAULT '',
+     creative    TEXT NOT NULL DEFAULT '',
+     notes       TEXT NOT NULL DEFAULT '',
+     budget      INTEGER NOT NULL DEFAULT 0,
+     spend       INTEGER NOT NULL DEFAULT 0,
+     starts_on   TEXT NOT NULL DEFAULT '',
+     ends_on     TEXT NOT NULL DEFAULT '',
+     created_at  TEXT NOT NULL,
+     updated_at  TEXT NOT NULL
+   )`,
+  `CREATE INDEX IF NOT EXISTS idx_campaigns_slug ON campaigns(slug)`,
+  `CREATE INDEX IF NOT EXISTS idx_leads_campaign ON leads(campaign)`
 ];
 
 // Columns added after the table already existed in production. Applied lazily
 // the same way the table is - each is tried on its own so an already-applied
 // one does not block the rest.
+/* ------------------------------------------------------------------ *
+ * Campaigns
+ *
+ * FAIR HOUSING - read before extending this.
+ *
+ * Housing advertising sits in a restricted category (Meta "Special Ad
+ * Category", equivalent policies at Google) following the 2019 HUD/NFHA
+ * settlement. Targeting by age, gender, ZIP code, or detailed demographic and
+ * behavioural attributes is prohibited, and radius targeting has a 15 mile
+ * floor, because those attributes proxy for protected classes - and familial
+ * status is one of them.
+ *
+ * So this module plans, tracks and attributes campaigns. It deliberately does
+ * NOT compose audience targeting, and audienceWarnings() below flags language
+ * that would put a campaign on the wrong side of that line. Do not "improve"
+ * this by adding demographic targeting fields.
+ * ------------------------------------------------------------------ */
+
+const CAMPAIGN_CHANNELS = new Set([
+  'facebook', 'instagram', 'google', 'direct_mail', 'email',
+  'open_house', 'print', 'referral_push', 'other'
+]);
+const CAMPAIGN_OBJECTIVES = new Set(['buyers', 'sellers', 'both', 'brand']);
+const CAMPAIGN_STATUSES = new Set(['draft', 'scheduled', 'running', 'paused', 'finished']);
+
+const CAMPAIGN_LIMITS = { name: 120, audience: 1000, geo: 300, creative: 4000, notes: 4000 };
+
+// Terms that map onto protected classes. Presence is not proof of a violation -
+// "family room" is a feature, not an audience - so these produce warnings for a
+// human to judge, never a hard block.
+const PROTECTED_CLASS_TERMS = [
+  'age', 'young', 'older', 'senior', 'retiree', 'millennial', 'boomer',
+  'male', 'female', 'men', 'women', 'gender',
+  'family', 'families', 'children', 'kids', 'childless', 'single', 'married',
+  'pregnant', 'newlywed', 'divorc',
+  'race', 'ethnic', 'hispanic', 'latino', 'black', 'white', 'asian',
+  'religio', 'christian', 'jewish', 'muslim', 'church',
+  'disab', 'handicap', 'wheelchair',
+  'national origin', 'immigrant', 'citizen',
+  'zip code', 'zipcode'
+];
+
+function audienceWarnings(text) {
+  const s = String(text || '').toLowerCase();
+  const hits = PROTECTED_CLASS_TERMS.filter((t) => s.includes(t));
+  return [...new Set(hits)];
+}
+
+// utm_campaign value: what ties a lead back to the campaign that produced it.
+function slugify(name) {
+  return String(name).toLowerCase().trim()
+    .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40) || 'campaign';
+}
+
 const MIGRATIONS = [
   `ALTER TABLE leads ADD COLUMN source   TEXT NOT NULL DEFAULT 'website'`,
   `ALTER TABLE leads ADD COLUMN priority TEXT NOT NULL DEFAULT 'warm'`,
   `ALTER TABLE leads ADD COLUMN tags     TEXT NOT NULL DEFAULT ''`,
   `ALTER TABLE leads ADD COLUMN next_follow_up TEXT NOT NULL DEFAULT ''`,
   `ALTER TABLE leads ADD COLUMN budget   INTEGER NOT NULL DEFAULT 0`,
-  `ALTER TABLE leads ADD COLUMN activity TEXT NOT NULL DEFAULT '[]'`
+  `ALTER TABLE leads ADD COLUMN activity TEXT NOT NULL DEFAULT '[]'`,
+  // utm_campaign carried in from the landing URL - this is what makes
+  // cost-per-lead real rather than guessed.
+  `ALTER TABLE leads ADD COLUMN campaign TEXT NOT NULL DEFAULT ''`
 ];
 
 const errText = (err) => String((err && err.message) || err);
@@ -507,6 +605,10 @@ async function handleContact(request, env, ctx) {
   const phone = String(data.phone ?? '').trim();
   const intent = String(data.intent ?? '').trim();
   const message = String(data.message ?? '').trim();
+  // utm_campaign the visitor arrived with, forwarded by the page. Restricted to
+  // slug characters so it cannot smuggle anything into the CSV export or board.
+  const campaign = String(data.campaign ?? '').trim().toLowerCase()
+    .replace(/[^a-z0-9-]/g, '').slice(0, 80);
 
   // The browser checks are for UX only - anyone can POST here directly, so
   // every rule is enforced again on this side.
@@ -533,10 +635,11 @@ async function handleContact(request, env, ctx) {
       await withSchema(env, () =>
         env.DB.prepare(
           `INSERT INTO leads
-             (id, name, email, phone, intent, message, status, notes, created_at, updated_at)
-           VALUES (?, ?, ?, ?, ?, ?, 'new', '', ?, ?)`
+             (id, name, email, phone, intent, message, status, notes, campaign,
+              created_at, updated_at)
+           VALUES (?, ?, ?, ?, ?, ?, 'new', '', ?, ?, ?)`
         )
-          .bind(crypto.randomUUID(), name, email, phone, intent, message, now, now)
+          .bind(crypto.randomUUID(), name, email, phone, intent, message, campaign, now, now)
           .run()
       );
       stored = true;
@@ -604,7 +707,7 @@ async function handleLeadList(request, env) {
     const { results } = await withSchema(env, () =>
       env.DB.prepare(
         `SELECT id, name, email, phone, intent, message, status, notes,
-                source, priority, tags, next_follow_up, budget, activity,
+                source, priority, tags, next_follow_up, budget, activity, campaign,
                 created_at, updated_at
            FROM leads
           ORDER BY created_at DESC`
@@ -660,6 +763,214 @@ async function handleExport(request, env) {
   }
 }
 
+/* ------------------------------------------------------------------ *
+ * campaigns: plan, track spend, attribute leads
+ * ------------------------------------------------------------------ */
+
+function readCampaignBody(body) {
+  const str = (k, max) => String(body[k] ?? '').trim().slice(0, max);
+  const out = {
+    name:     str('name', CAMPAIGN_LIMITS.name),
+    audience: str('audience', CAMPAIGN_LIMITS.audience),
+    geo:      str('geo', CAMPAIGN_LIMITS.geo),
+    creative: str('creative', CAMPAIGN_LIMITS.creative),
+    notes:    str('notes', CAMPAIGN_LIMITS.notes),
+    channel:   body.channel   ?? 'other',
+    objective: body.objective ?? 'both',
+    status:    body.status    ?? 'draft',
+    starts_on: str('starts_on', 10),
+    ends_on:   str('ends_on', 10)
+  };
+  const errors = {};
+  if (!out.name) errors.name = 'Give the campaign a name.';
+  if (!CAMPAIGN_CHANNELS.has(out.channel))     errors.channel = 'Unknown channel.';
+  if (!CAMPAIGN_OBJECTIVES.has(out.objective)) errors.objective = 'Unknown objective.';
+  if (!CAMPAIGN_STATUSES.has(out.status))      errors.status = 'Unknown status.';
+  for (const k of ['starts_on', 'ends_on']) {
+    if (out[k] && !DATE_RE.test(out[k])) errors[k] = 'Use a calendar date.';
+  }
+  for (const k of ['budget', 'spend']) {
+    if (body[k] === undefined) continue;
+    const v = parseBudget(body[k]);
+    if (v === null) { errors[k] = 'Use a number, like 250 or 1.5k.'; continue; }
+    out[k] = v;
+  }
+  return { out, errors };
+}
+
+async function handleCampaignList(request, env) {
+  const auth = await requireAccess(env, request);
+  if (!auth.ok) return json({ error: auth.message }, auth.status);
+  if (!env.DB) return json({ error: 'Lead database is not bound.' }, 503);
+
+  try {
+    // Attribution: leads carry the utm_campaign they arrived with, so
+    // cost-per-lead is measured rather than estimated.
+    const { results } = await withSchema(env, () =>
+      env.DB.prepare(
+        `SELECT c.*,
+                (SELECT COUNT(*) FROM leads l WHERE l.campaign = c.slug) AS leads,
+                (SELECT COUNT(*) FROM leads l WHERE l.campaign = c.slug
+                   AND l.status IN ('active','under_contract','closed')) AS qualified,
+                (SELECT COUNT(*) FROM leads l WHERE l.campaign = c.slug
+                   AND l.status = 'closed') AS closed
+           FROM campaigns c
+          ORDER BY c.created_at DESC`
+      ).all()
+    );
+    const campaigns = (results ?? []).map((c) => ({
+      ...c,
+      warnings: audienceWarnings(c.audience + ' ' + c.creative)
+    }));
+    return json({ campaigns, user: auth.email });
+  } catch (err) {
+    console.error('Campaign query failed:', err);
+    return json({ error: dbErrorMessage(err) }, 500);
+  }
+}
+
+async function handleCampaignCreate(request, env) {
+  const auth = await requireAccess(env, request);
+  if (!auth.ok) return json({ error: auth.message }, auth.status);
+  if (!env.DB) return json({ error: 'Lead database is not bound.' }, 503);
+
+  let body;
+  try { body = await request.json(); } catch { return json({ error: 'Invalid JSON.' }, 400); }
+
+  const { out, errors } = readCampaignBody(body);
+  if (Object.keys(errors).length) {
+    return json({ error: 'Please check the highlighted fields.', errors }, 400);
+  }
+
+  const now = new Date().toISOString();
+  const id = crypto.randomUUID();
+  const slug = slugify(out.name) + '-' + id.slice(0, 4);
+
+  try {
+    await withSchema(env, () =>
+      env.DB.prepare(
+        `INSERT INTO campaigns
+           (id, name, slug, channel, objective, status, audience, geo, creative,
+            notes, budget, spend, starts_on, ends_on, created_at, updated_at)
+         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
+      ).bind(
+        id, out.name, slug, out.channel, out.objective, out.status,
+        out.audience, out.geo, out.creative, out.notes,
+        out.budget ?? 0, out.spend ?? 0, out.starts_on, out.ends_on, now, now
+      ).run()
+    );
+    return json({ success: true, id, slug, warnings: audienceWarnings(out.audience + ' ' + out.creative) });
+  } catch (err) {
+    console.error('Campaign insert failed:', err);
+    return json({ error: dbErrorMessage(err) }, 500);
+  }
+}
+
+async function handleCampaignUpdate(request, env, id) {
+  const auth = await requireAccess(env, request);
+  if (!auth.ok) return json({ error: auth.message }, auth.status);
+  if (!env.DB) return json({ error: 'Lead database is not bound.' }, 503);
+
+  let body;
+  try { body = await request.json(); } catch { return json({ error: 'Invalid JSON.' }, 400); }
+
+  const { out, errors } = readCampaignBody({ name: 'placeholder', ...body });
+  // name is only required when it is actually being changed
+  if (body.name !== undefined && !String(body.name).trim()) {
+    return json({ error: 'Give the campaign a name.', errors: { name: 'Required.' } }, 400);
+  }
+  delete errors.name;
+  if (Object.keys(errors).length) {
+    return json({ error: 'Please check the highlighted fields.', errors }, 400);
+  }
+
+  const sets = [], binds = [];
+  for (const f of ['name','channel','objective','status','audience','geo','creative','notes','starts_on','ends_on']) {
+    if (body[f] === undefined) continue;
+    sets.push(`${f} = ?`); binds.push(out[f]);
+  }
+  for (const f of ['budget','spend']) {
+    if (body[f] === undefined) continue;
+    sets.push(`${f} = ?`); binds.push(out[f] ?? 0);
+  }
+  if (!sets.length) return json({ error: 'Nothing to update.' }, 400);
+
+  sets.push('updated_at = ?'); binds.push(new Date().toISOString());
+  binds.push(id);
+
+  try {
+    const res = await withSchema(env, () =>
+      env.DB.prepare(`UPDATE campaigns SET ${sets.join(', ')} WHERE id = ?`).bind(...binds).run()
+    );
+    if (!res.meta?.changes) return json({ error: 'Campaign not found.' }, 404);
+    return json({ success: true });
+  } catch (err) {
+    console.error('Campaign update failed:', err);
+    return json({ error: dbErrorMessage(err) }, 500);
+  }
+}
+
+async function handleCampaignDelete(request, env, id) {
+  const auth = await requireAccess(env, request);
+  if (!auth.ok) return json({ error: auth.message }, auth.status);
+  if (!env.DB) return json({ error: 'Lead database is not bound.' }, 503);
+
+  try {
+    const res = await withSchema(env, () =>
+      env.DB.prepare('DELETE FROM campaigns WHERE id = ?').bind(id).run()
+    );
+    if (!res.meta?.changes) return json({ error: 'Campaign not found.' }, 404);
+    return json({ success: true });
+  } catch (err) {
+    console.error('Campaign delete failed:', err);
+    return json({ error: dbErrorMessage(err) }, 500);
+  }
+}
+
+// Mail-merge CSV for a print house, built from contacts already in the CRM.
+// ?status=, ?tag=, ?campaign= narrow it. Never a bought list.
+async function handleMailer(request, env) {
+  const auth = await requireAccess(env, request);
+  if (!auth.ok) return json({ error: auth.message }, auth.status);
+  if (!env.DB) return json({ error: 'Lead database is not bound.' }, 503);
+
+  const p = new URL(request.url).searchParams;
+  const where = [], binds = [];
+  if (p.get('status'))   { where.push('status = ?');   binds.push(p.get('status')); }
+  if (p.get('campaign')) { where.push('campaign = ?'); binds.push(p.get('campaign')); }
+  if (p.get('tag'))      { where.push('tags LIKE ?');  binds.push('%' + p.get('tag') + '%'); }
+
+  const cell = (v) => {
+    let s = String(v ?? '');
+    if (/^[=+\-@\t\r]/.test(s)) s = "'" + s;   // spreadsheet formula injection
+    return '"' + s.replace(/"/g, '""') + '"';
+  };
+  const COLUMNS = ['name','email','phone','intent','status','tags','campaign','created_at'];
+
+  try {
+    const { results } = await withSchema(env, () =>
+      env.DB.prepare(
+        `SELECT ${COLUMNS.join(', ')} FROM leads
+         ${where.length ? 'WHERE ' + where.join(' AND ') : ''}
+         ORDER BY created_at DESC`
+      ).bind(...binds).all()
+    );
+    const rows = [COLUMNS.join(',')];
+    for (const r of results ?? []) rows.push(COLUMNS.map((c) => cell(r[c])).join(','));
+    const stamp = new Date().toISOString().slice(0, 10);
+    return new Response('﻿' + rows.join('\r\n'), {
+      headers: {
+        'Content-Type': 'text/csv; charset=utf-8',
+        'Content-Disposition': `attachment; filename="mailer-${stamp}.csv"`,
+        'Cache-Control': 'no-store'
+      }
+    });
+  } catch (err) {
+    console.error('Mailer export failed:', err);
+    return json({ error: dbErrorMessage(err) }, 500);
+  }
+}
+
 // Manually entered leads - open house sign-ins, sign calls, referrals.
 async function handleLeadCreate(request, env) {
   const auth = await requireAccess(env, request);
@@ -681,6 +992,7 @@ async function handleLeadCreate(request, env) {
   const message = str('message', FIELD_LIMITS.message);
   const notes   = str('notes', FIELD_LIMITS.notes);
   const tags    = str('tags', FIELD_LIMITS.tags);
+  const campaign = str('campaign', 80);   // set by hand when logging an open-house walk-in
 
   // Deliberately looser than the public form: a sign call may only leave a
   // name and a number, and losing that is worse than storing a partial record.
@@ -717,12 +1029,12 @@ async function handleLeadCreate(request, env) {
       env.DB.prepare(
         `INSERT INTO leads
            (id, name, email, phone, intent, message, status, notes,
-            source, priority, tags, next_follow_up, budget, activity,
+            source, priority, tags, next_follow_up, budget, activity, campaign,
             created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
       )
         .bind(id, name, email, phone, intent, message, status, notes,
-              source, priority, tags, followUp, budget, activity, now, now)
+              source, priority, tags, followUp, budget, activity, campaign, now, now)
         .run()
     );
     return json({ success: true, id });
