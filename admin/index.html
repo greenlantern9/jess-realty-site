@@ -172,7 +172,7 @@
   /* An explicit display: beats the UA's [hidden]{display:none}, so anything
      toggled by the attribute needs this or it stays on screen. Bitten by this
      twice already - .board, then the whole leads toolbar. */
-  .board[hidden],.tablewrap[hidden],.tbl-foot[hidden],.camp-wrap[hidden],
+  .board[hidden],.tablewrap[hidden],.tbl-foot[hidden],.camp-wrap[hidden],.calc-wrap[hidden],
   .stats[hidden],.viewtoggle[hidden],.btn[hidden],.search[hidden]{display:none}
 
   /* ---------------- module switch (Leads | Campaigns) ---------------- */
@@ -181,6 +181,52 @@
     color:var(--sage);transition:.2s}
   .modules button:hover{color:var(--cream)}
   .modules button[aria-current="page"]{color:var(--cream);background:var(--ink-2)}
+
+  /* ---------------- calculators ---------------- */
+  .calc-wrap{flex:1;overflow-y:auto;padding:18px 22px 40px}
+  .calc-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:18px}
+  .calc-tab{padding:9px 15px;border-radius:3px;font-size:.85rem;font-weight:600;
+    color:var(--cream-soft);background:var(--ink-2);border:1px solid var(--line-soft);
+    transition:.2s}
+  .calc-tab:hover{border-color:var(--line);color:var(--cream)}
+  .calc-tab[aria-selected="true"]{background:var(--brass);color:var(--ink-3);border-color:var(--brass)}
+
+  .calc-panel{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,.85fr);
+    gap:22px;align-items:start;max-width:1080px}
+  .calc-blurb{grid-column:1/-1;color:var(--cream-soft);font-size:.92rem;max-width:70ch;
+    margin-bottom:2px}
+  .calc-inputs{display:grid;gap:13px;background:var(--ink-2);border:1px solid var(--line-soft);
+    border-radius:4px;padding:18px 20px}
+  .calc-field{display:grid;gap:5px}
+  .calc-field label{font-size:.68rem;letter-spacing:.13em;text-transform:uppercase;color:var(--sage)}
+  .calc-field .wrap{position:relative;display:flex;align-items:center}
+  .calc-field .pre{position:absolute;left:11px;color:var(--sage);font-size:.9rem;pointer-events:none}
+  .calc-field .suf{position:absolute;right:11px;color:var(--sage);font-size:.82rem;pointer-events:none}
+  .calc-field input{width:100%;padding:10px 12px;border-radius:3px;background:var(--ink);
+    border:1px solid var(--line-soft);color:var(--cream);font-variant-numeric:tabular-nums}
+  .calc-field input.has-pre{padding-left:24px}
+  .calc-field input.has-suf{padding-right:38px}
+  .calc-field input:focus{outline:none;border-color:var(--brass)}
+  .calc-field .hint{font-size:.74rem;color:var(--sage);line-height:1.45}
+
+  .calc-out{background:var(--ink-3);border:1px solid var(--line);border-radius:4px;
+    padding:18px 20px;display:grid;gap:2px;position:sticky;top:8px}
+  .out-row{display:flex;align-items:baseline;gap:12px;padding:9px 0;
+    border-bottom:1px solid var(--line-soft)}
+  .out-row:last-of-type{border-bottom:0}
+  .out-row .l{font-size:.86rem;color:var(--cream-soft);flex:1}
+  .out-row .v{font-family:var(--serif);font-size:1.05rem;color:var(--cream);
+    font-variant-numeric:tabular-nums;white-space:nowrap}
+  .out-row.head{border-bottom:1px solid var(--line);padding-bottom:13px;margin-bottom:4px}
+  .out-row.head .l{font-size:.68rem;letter-spacing:.13em;text-transform:uppercase;color:var(--sage)}
+  .out-row.head .v{font-size:1.9rem;color:var(--brass-bright);line-height:1.1}
+  .out-row.sub .l,.out-row.sub .v{color:var(--sage);font-size:.82rem}
+  .out-row.neg .v{color:var(--hot)}
+  .calc-actions{margin-top:14px;display:flex;gap:9px;flex-wrap:wrap}
+
+  .calc-disclaimer{max-width:1080px;margin-top:20px;font-size:.8rem;color:var(--sage);
+    line-height:1.6;border-top:1px solid var(--line-soft);padding-top:14px}
+  @media(max-width:900px){ .calc-panel{grid-template-columns:1fr} .calc-out{position:static} }
 
   /* ---------------- campaigns ---------------- */
   .camp-wrap{flex:1;overflow-y:auto;padding:20px 22px 30px}
@@ -311,6 +357,7 @@
   <nav class="modules" aria-label="Sections">
     <button id="modLeads" type="button" title="Your pipeline" aria-current="page">Leads</button>
     <button id="modCampaigns" type="button" title="Advertising, spend and what it actually produced">Campaigns</button>
+    <button id="modCalc" type="button" title="Payment, affordability, seller net and investment numbers">Calculators</button>
   </nav>
   <div class="bar-right">
     <span class="who" id="who" hidden>
@@ -382,6 +429,17 @@
 <div class="board" id="board" hidden></div>
 <div class="tablewrap" id="tablewrap" hidden></div>
 <div class="tbl-foot" id="tblFoot" hidden></div>
+
+<div class="calc-wrap" id="calcWrap" hidden>
+  <div class="calc-tabs" id="calcTabs" role="tablist"></div>
+  <div id="calcPanel"></div>
+  <p class="calc-disclaimer">
+    Estimates only — not a Loan Estimate, a title commitment or a closing statement.
+    Tax, insurance and title figures vary by county, lender and insurer, and Florida
+    homeowners insurance in particular moves fast. Confirm with the lender and title
+    company before a client relies on any of these numbers.
+  </p>
+</div>
 
 <div class="camp-wrap" id="campWrap" hidden>
   <div class="camp-intro">
@@ -1407,6 +1465,374 @@
   fillSelect(el('fSource'),
     [{ id:'', label:'All sources' }].concat(SOURCES), 'id', 'label');
 
+  /* ================= CALCULATORS =================
+     Client-side only. Nothing typed here is sent anywhere or stored - these are
+     often a client's private finances, and there is no reason for them to leave
+     the browser.
+
+     Florida rates are defaults, not constants: doc stamps, intangible tax and
+     the promulgated title schedule are statutory but counties differ
+     (Miami-Dade most of all), so every one is an editable field.            */
+
+  const money0 = (n) => (n < 0 ? '-$' : '$') + Math.round(Math.abs(n)).toLocaleString('en-US');
+  const pctStr = (n) => n.toFixed(2) + '%';
+
+  function pmt(principal, annualRate, years){
+    const r = annualRate / 100 / 12, n = years * 12;
+    if (principal <= 0 || n <= 0) return 0;
+    if (r === 0) return principal / n;
+    return principal * (r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1);
+  }
+
+  // Florida promulgated owner's title insurance rate
+  function flTitle(price){
+    if (price <= 0) return 0;
+    let t = Math.min(price, 100000) / 1000 * 5.75;
+    if (price > 100000)   t += (Math.min(price, 1000000) - 100000) / 1000 * 5.00;
+    if (price > 1000000)  t += (Math.min(price, 5000000) - 1000000) / 1000 * 2.50;
+    if (price > 5000000)  t += (price - 5000000) / 1000 * 2.25;
+    return t;
+  }
+
+  const CALCS = [
+    {
+      id:'payment', name:'Monthly payment',
+      blurb:'What a buyer actually pays each month - principal, interest, taxes, insurance, HOA and mortgage insurance. The number every buyer asks for first.',
+      fields:[
+        { k:'price',   label:'Purchase price', pre:'$', def:450000 },
+        { k:'downPct', label:'Down payment',   suf:'%', def:20, hint:'Under 20% adds mortgage insurance below.' },
+        { k:'rate',    label:'Interest rate',  suf:'%', def:6.5 },
+        { k:'years',   label:'Term',           suf:'yr', def:30 },
+        { k:'taxRate', label:'Property tax',   suf:'%', def:1.6, hint:'Percent of price per year. Hillsborough and Pinellas typically run 1.5-2.1% before homestead.' },
+        { k:'ins',     label:'Insurance',      pre:'$', def:4200, hint:'Per year. Florida runs high - get a real quote early, it can decide the deal.' },
+        { k:'hoa',     label:'HOA',            pre:'$', def:0, hint:'Per month.' },
+        { k:'pmiRate', label:'Mortgage ins.',  suf:'%', def:0.6, hint:'Per year on the loan, applied only when the down payment is under 20%.' }
+      ],
+      compute(v){
+        const down = v.price * v.downPct / 100;
+        const loan = Math.max(0, v.price - down);
+        const pi  = pmt(loan, v.rate, v.years);
+        const tax = v.price * v.taxRate / 100 / 12;
+        const ins = v.ins / 12;
+        const pmi = v.downPct < 20 ? loan * v.pmiRate / 100 / 12 : 0;
+        const total = pi + tax + ins + v.hoa + pmi;
+        return { total, rows:[
+          { l:'Monthly payment', v:money0(total), head:true },
+          { l:'Principal & interest', v:money0(pi) },
+          { l:'Property tax', v:money0(tax) },
+          { l:'Insurance', v:money0(ins) },
+          ...(v.hoa ? [{ l:'HOA', v:money0(v.hoa) }] : []),
+          ...(pmi ? [{ l:'Mortgage insurance', v:money0(pmi) }] : []),
+          { l:'Loan amount', v:money0(loan), sub:true },
+          { l:'Down payment', v:money0(down), sub:true }
+        ]};
+      },
+      summary(v, o){
+        return 'Estimated monthly payment on ' + money0(v.price) + '\n' +
+          v.downPct + '% down, ' + v.rate + '% over ' + v.years + ' years\n\n' +
+          o.rows.filter(r => !r.head).map(r => r.l + ': ' + r.v).join('\n') +
+          '\n\nTOTAL: ' + money0(o.total) + '/month\n\nEstimate only - confirm with your lender.';
+      }
+    },
+
+    {
+      id:'afford', name:'What they can afford',
+      blurb:'Work backwards from income to a price range. Use it on a first call so nobody spends three weekends touring homes they cannot finance.',
+      fields:[
+        { k:'income',  label:'Gross income',  pre:'$', def:9000, hint:'Per month, before tax, all borrowers combined.' },
+        { k:'debts',   label:'Monthly debts', pre:'$', def:650, hint:'Car, student loans, credit card minimums, child support.' },
+        { k:'down',    label:'Cash for down', pre:'$', def:90000 },
+        { k:'rate',    label:'Interest rate', suf:'%', def:6.5 },
+        { k:'years',   label:'Term',          suf:'yr', def:30 },
+        { k:'dti',     label:'Max DTI',       suf:'%', def:43, hint:'Share of gross income for all debt. 43% is the usual qualified-mortgage ceiling; 36% is conservative.' },
+        { k:'taxRate', label:'Property tax',  suf:'%', def:1.6 },
+        { k:'ins',     label:'Insurance',     pre:'$', def:4200, hint:'Per year.' }
+      ],
+      compute(v){
+        const forHousing = Math.max(0, v.income * v.dti / 100 - v.debts);
+        // Tax and insurance scale with price, so solve by iteration rather than
+        // algebra - it settles within a few passes.
+        let price = v.down;
+        for (let i = 0; i < 60; i++){
+          const monthlyTax = price * v.taxRate / 100 / 12;
+          const forPI = Math.max(0, forHousing - monthlyTax - v.ins / 12);
+          const r = v.rate / 100 / 12, n = v.years * 12;
+          const loan = r === 0 ? forPI * n
+            : forPI * (Math.pow(1 + r, n) - 1) / (r * Math.pow(1 + r, n));
+          const next = loan + v.down;
+          if (Math.abs(next - price) < 25){ price = next; break; }
+          price = next;
+        }
+        const loan = Math.max(0, price - v.down);
+        const pi = pmt(loan, v.rate, v.years);
+        const ti = price * v.taxRate / 100 / 12 + v.ins / 12;
+        return { total: price, rows:[
+          { l:'Comfortable up to', v:money0(price), head:true },
+          { l:'Loan amount', v:money0(loan) },
+          { l:'Down payment', v:money0(v.down) },
+          { l:'Principal & interest', v:money0(pi) },
+          { l:'Tax & insurance', v:money0(ti) },
+          { l:'Total housing payment', v:money0(pi + ti) },
+          { l:'Room to borrow each month', v:money0(forHousing), sub:true }
+        ]};
+      },
+      summary(v, o){
+        return 'Affordability estimate\n\nGross income ' + money0(v.income) + '/mo, existing debts ' +
+          money0(v.debts) + '/mo\n' + money0(v.down) + ' down at ' + v.rate + '%\n\n' +
+          'Comfortable up to about ' + money0(o.total) +
+          '\n\nA guide, not a pre-approval - a lender’s underwriting is what counts.';
+      }
+    },
+
+    {
+      id:'net', name:'Seller net sheet',
+      blurb:'What a seller actually walks away with. Bring this to the listing appointment - the honest number builds more trust than a high one.',
+      fields:[
+        { k:'price',   label:'Sale price',       pre:'$', def:525000 },
+        { k:'payoff',  label:'Mortgage payoff',  pre:'$', def:280000 },
+        { k:'commPct', label:'Total commission', suf:'%', def:5.5, hint:'Both sides combined, as agreed in the listing.' },
+        { k:'docPer',  label:'Doc stamps',       suf:'/100', def:0.70, hint:'Florida deed stamps, $0.70 per $100 of price in most counties. Miami-Dade differs.' },
+        { k:'title',   label:'Title & closing',  pre:'$', def:0, hint:'Leave at 0 to use the Florida promulgated rate for this price.' },
+        { k:'repairs', label:'Repairs / credits',pre:'$', def:2500 },
+        { k:'other',   label:'Other costs',      pre:'$', def:1200, hint:'Prorated taxes, HOA estoppel, survey, attorney.' }
+      ],
+      compute(v){
+        const comm   = v.price * v.commPct / 100;
+        const stamps = v.price / 100 * v.docPer;
+        const title  = v.title > 0 ? v.title : flTitle(v.price);
+        const costs  = comm + stamps + title + v.repairs + v.other;
+        const net    = v.price - v.payoff - costs;
+        return { total: net, rows:[
+          { l:'Seller nets', v:money0(net), head:true, neg: net < 0 },
+          { l:'Sale price', v:money0(v.price) },
+          { l:'Mortgage payoff', v:'-' + money0(v.payoff), neg:true },
+          { l:'Commission', v:'-' + money0(comm), neg:true },
+          { l:'Doc stamps', v:'-' + money0(stamps), neg:true },
+          { l:'Title & closing', v:'-' + money0(title), neg:true },
+          { l:'Repairs / credits', v:'-' + money0(v.repairs), neg:true },
+          { l:'Other', v:'-' + money0(v.other), neg:true },
+          { l:'Total cost of sale', v:money0(costs), sub:true },
+          { l:'As % of price', v: v.price ? pctStr(costs / v.price * 100) : '-', sub:true }
+        ]};
+      },
+      summary(v, o){
+        return 'Seller net sheet - ' + money0(v.price) + '\n\n' +
+          o.rows.filter(r => !r.head && !r.sub).map(r => r.l + ': ' + r.v).join('\n') +
+          '\n\nESTIMATED NET: ' + money0(o.total) +
+          '\n\nEstimate only - the title company’s closing statement governs.';
+      }
+    },
+
+    {
+      id:'cash', name:'Cash to close',
+      blurb:'What a buyer needs in the bank on closing day - the figure that surprises people who only budgeted for the down payment.',
+      fields:[
+        { k:'price',    label:'Purchase price',   pre:'$', def:450000 },
+        { k:'downPct',  label:'Down payment',     suf:'%', def:20 },
+        { k:'deposit',  label:'Deposit paid',     pre:'$', def:5000, hint:'Escrow money already handed over - it counts toward what is owed.' },
+        { k:'lender',   label:'Lender fees',      pre:'$', def:2200, hint:'Origination, appraisal, credit report, underwriting.' },
+        { k:'notePer',  label:'Note stamps',      suf:'/100', def:0.35, hint:'Florida documentary stamps on the note, $0.35 per $100 borrowed.' },
+        { k:'intang',   label:'Intangible tax',   suf:'%', def:0.2, hint:'Florida intangible tax on the mortgage, 2 mills.' },
+        { k:'prepaid',  label:'Prepaids / escrow',pre:'$', def:5200, hint:'First-year insurance plus a few months of tax and insurance into escrow.' },
+        { k:'titleBuy', label:'Buyer title/other',pre:'$', def:1400 },
+        { k:'credit',   label:'Seller credit',    pre:'$', def:0 }
+      ],
+      compute(v){
+        const down   = v.price * v.downPct / 100;
+        const loan   = Math.max(0, v.price - down);
+        const stamps = loan / 100 * v.notePer;
+        const intang = loan * v.intang / 100;
+        const costs  = v.lender + stamps + intang + v.prepaid + v.titleBuy;
+        const cash   = down + costs - v.deposit - v.credit;
+        return { total: cash, rows:[
+          { l:'Cash needed at closing', v:money0(cash), head:true },
+          { l:'Down payment', v:money0(down) },
+          { l:'Lender fees', v:money0(v.lender) },
+          { l:'Note doc stamps', v:money0(stamps) },
+          { l:'Intangible tax', v:money0(intang) },
+          { l:'Prepaids & escrow', v:money0(v.prepaid) },
+          { l:'Title & other', v:money0(v.titleBuy) },
+          ...(v.deposit ? [{ l:'Less deposit paid', v:'-' + money0(v.deposit), neg:true }] : []),
+          ...(v.credit ? [{ l:'Less seller credit', v:'-' + money0(v.credit), neg:true }] : []),
+          { l:'Closing costs total', v:money0(costs), sub:true },
+          { l:'As % of price', v: v.price ? pctStr(costs / v.price * 100) : '-', sub:true }
+        ]};
+      },
+      summary(v, o){
+        return 'Cash to close - ' + money0(v.price) + ' at ' + v.downPct + '% down\n\n' +
+          o.rows.filter(r => !r.head && !r.sub).map(r => r.l + ': ' + r.v).join('\n') +
+          '\n\nCASH NEEDED: ' + money0(o.total) +
+          '\n\nEstimate only - the lender’s Closing Disclosure governs.';
+      }
+    },
+
+    {
+      id:'invest', name:'Rental / investment',
+      blurb:'Whether a rental actually earns. Cap rate ignores the loan so two properties can be compared; cash-on-cash is what the money in your pocket does.',
+      fields:[
+        { k:'price',   label:'Purchase price', pre:'$', def:380000 },
+        { k:'downPct', label:'Down payment',   suf:'%', def:25 },
+        { k:'rate',    label:'Interest rate',  suf:'%', def:7.0 },
+        { k:'years',   label:'Term',           suf:'yr', def:30 },
+        { k:'rent',    label:'Monthly rent',   pre:'$', def:2900 },
+        { k:'vacancy', label:'Vacancy',        suf:'%', def:6, hint:'Share of the year empty or turning over.' },
+        { k:'taxRate', label:'Property tax',   suf:'%', def:1.8, hint:'No homestead exemption on an investment property, so it runs higher than an owner-occupied home.' },
+        { k:'ins',     label:'Insurance',      pre:'$', def:4800, hint:'Per year.' },
+        { k:'mgmtPct', label:'Management',     suf:'%', def:10, hint:'Of collected rent. Set to 0 if self-managed.' },
+        { k:'maint',   label:'Maintenance',    pre:'$', def:3000, hint:'Per year, including a reserve for the roof and the AC.' },
+        { k:'closing', label:'Closing costs',  pre:'$', def:9000 }
+      ],
+      compute(v){
+        const down = v.price * v.downPct / 100;
+        const loan = Math.max(0, v.price - down);
+        const gross = v.rent * 12;
+        const collected = gross - gross * v.vacancy / 100;
+        const mgmt = collected * v.mgmtPct / 100;
+        const opex = v.price * v.taxRate / 100 + v.ins + mgmt + v.maint;
+        const noi  = collected - opex;
+        const debt = pmt(loan, v.rate, v.years) * 12;
+        const cash = noi - debt;
+        const invested = down + v.closing;
+        return { total: cash / 12, rows:[
+          { l:'Monthly cash flow', v:money0(cash / 12), head:true, neg: cash < 0 },
+          { l:'Cap rate', v: v.price ? pctStr(noi / v.price * 100) : '-' },
+          { l:'Cash on cash', v: invested > 0 ? pctStr(cash / invested * 100) : '-' },
+          { l:'Net operating income', v:money0(noi) + '/yr' },
+          { l:'Collected rent', v:money0(collected) + '/yr' },
+          { l:'Operating expenses', v:'-' + money0(opex) + '/yr', neg:true },
+          { l:'Mortgage', v:'-' + money0(debt) + '/yr', neg:true },
+          { l:'Cash invested', v:money0(invested), sub:true },
+          { l:'Rent as % of price', v: v.price ? (v.rent / v.price * 100).toFixed(2) + '%' : '-', sub:true }
+        ]};
+      },
+      summary(v, o){
+        return 'Rental analysis - ' + money0(v.price) + ', ' + money0(v.rent) + '/mo rent\n\n' +
+          o.rows.filter(r => !r.head).map(r => r.l + ': ' + r.v).join('\n') +
+          '\n\nMONTHLY CASH FLOW: ' + money0(o.total) + '\n\nEstimate only.';
+      }
+    }
+  ];
+
+  let activeCalc = store.get('calc', 'payment');
+  const calcValues = {};
+
+  function calcInputs(calc){
+    if (!calcValues[calc.id]){
+      calcValues[calc.id] = Object.fromEntries(calc.fields.map(f => [f.k, f.def]));
+    }
+    return calcValues[calc.id];
+  }
+
+  function renderCalc(){
+    const tabs = el('calcTabs');
+    tabs.textContent = '';
+    CALCS.forEach(c => {
+      const b = document.createElement('button');
+      b.className = 'calc-tab';
+      b.type = 'button';
+      b.setAttribute('role', 'tab');
+      b.setAttribute('aria-selected', String(c.id === activeCalc));
+      b.textContent = c.name;
+      b.addEventListener('click', () => { activeCalc = c.id; store.set('calc', c.id); renderCalc(); });
+      tabs.appendChild(b);
+    });
+
+    const calc = CALCS.find(c => c.id === activeCalc) || CALCS[0];
+    const vals = calcInputs(calc);
+    const panel = el('calcPanel');
+    panel.textContent = '';
+
+    const wrap = document.createElement('div');
+    wrap.className = 'calc-panel';
+
+    const blurb = document.createElement('p');
+    blurb.className = 'calc-blurb';
+    blurb.textContent = calc.blurb;
+    wrap.appendChild(blurb);
+
+    const inputs = document.createElement('div');
+    inputs.className = 'calc-inputs';
+    calc.fields.forEach(f => {
+      const fld = document.createElement('div');
+      fld.className = 'calc-field';
+      const lab = document.createElement('label');
+      lab.setAttribute('for', 'ci-' + calc.id + '-' + f.k);
+      lab.textContent = f.label;
+      const w = document.createElement('div');
+      w.className = 'wrap';
+      if (f.pre){ const p = document.createElement('span'); p.className = 'pre'; p.textContent = f.pre; w.appendChild(p); }
+      if (f.suf){ const s = document.createElement('span'); s.className = 'suf'; s.textContent = f.suf; w.appendChild(s); }
+      const inp = document.createElement('input');
+      inp.id = 'ci-' + calc.id + '-' + f.k;
+      inp.type = 'text';
+      inp.inputMode = 'decimal';
+      if (f.pre) inp.classList.add('has-pre');
+      if (f.suf) inp.classList.add('has-suf');
+      inp.value = vals[f.k];
+      inp.addEventListener('input', () => {
+        const n = parseFloat(String(inp.value).replace(/[^0-9.\-]/g, ''));
+        vals[f.k] = Number.isFinite(n) ? n : 0;
+        renderCalcOutput(calc, vals);
+      });
+      w.appendChild(inp);
+      fld.append(lab, w);
+      if (f.hint){
+        const hint = document.createElement('div');
+        hint.className = 'hint';
+        hint.textContent = f.hint;
+        fld.appendChild(hint);
+      }
+      inputs.appendChild(fld);
+    });
+
+    const out = document.createElement('div');
+    out.className = 'calc-out';
+    out.id = 'calcOut';
+
+    wrap.append(inputs, out);
+    panel.appendChild(wrap);
+    renderCalcOutput(calc, vals);
+  }
+
+  function renderCalcOutput(calc, vals){
+    const out = el('calcOut');
+    if (!out) return;
+    const res = calc.compute(vals);
+    out.textContent = '';
+    res.rows.forEach(r => {
+      const row = document.createElement('div');
+      row.className = 'out-row' + (r.head ? ' head' : '') + (r.sub ? ' sub' : '') + (r.neg ? ' neg' : '');
+      const l = document.createElement('span'); l.className = 'l'; l.textContent = r.l;
+      const v = document.createElement('span'); v.className = 'v'; v.textContent = r.v;
+      row.append(l, v);
+      out.appendChild(row);
+    });
+
+    const actions = document.createElement('div');
+    actions.className = 'calc-actions';
+    const copy = document.createElement('button');
+    copy.className = 'btn ghost';
+    copy.type = 'button';
+    copy.textContent = 'Copy for client';
+    copy.title = 'Copies a plain-text summary to paste into an email or a lead note';
+    copy.addEventListener('click', () => {
+      const text = calc.summary(vals, res);
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(text).then(() => {
+          copy.textContent = 'Copied';
+          setTimeout(() => { copy.textContent = 'Copy for client'; }, 1700);
+        });
+      }
+    });
+    const reset = document.createElement('button');
+    reset.className = 'btn ghost';
+    reset.type = 'button';
+    reset.textContent = 'Reset';
+    reset.addEventListener('click', () => { delete calcValues[calc.id]; renderCalc(); });
+    actions.append(copy, reset);
+    out.appendChild(actions);
+  }
+
   /* ================= CAMPAIGNS =================
      Plans and measures campaigns. It deliberately does not compose audience
      targeting: housing sits in a restricted ad category, and the platforms
@@ -1445,21 +1871,36 @@
   let activeCampaign = null;   // null while creating
   let module = 'leads';
 
+  const MODULE_TITLES = { leads:'Lead Board', campaigns:'Campaigns', calc:'Calculators' };
+
   function setModule(next){
     module = next;
-    el('modLeads').setAttribute('aria-current', next === 'leads' ? 'page' : 'false');
-    el('modCampaigns').setAttribute('aria-current', next === 'campaigns' ? 'page' : 'false');
-    el('moduleTitle').textContent = next === 'leads' ? 'Lead Board' : 'Campaigns';
+    const isLeads = next === 'leads', isCamp = next === 'campaigns', isCalc = next === 'calc';
 
-    const leadsUi = ['q','fPriority','fSource','fDue','addLead','exportCsv'];
-    leadsUi.forEach(id => { const e = el(id); if (e) e.closest('.search') ? e.closest('.search').hidden = next !== 'leads' : e.hidden = next !== 'leads'; });
-    document.querySelector('.viewtoggle').hidden = next !== 'leads';
-    document.querySelector('.stats').hidden = next !== 'leads';
-    el('newCampaign').hidden = next !== 'campaigns';
-    el('mailerCsv').hidden = next !== 'campaigns';
+    [['modLeads', isLeads], ['modCampaigns', isCamp], ['modCalc', isCalc]]
+      .forEach(([id, on]) => el(id).setAttribute('aria-current', on ? 'page' : 'false'));
+    el('moduleTitle').textContent = MODULE_TITLES[next] || 'Lead Board';
+    store.set('module', next);
 
-    el('campWrap').hidden = next !== 'campaigns';
-    if (next === 'campaigns'){ board.hidden = true; el('tablewrap').hidden = true; el('tblFoot').hidden = true; loadCampaigns(); }
+    // Every one of these sets an explicit display, so the [hidden] guard rule
+    // in the stylesheet is what actually makes hiding work.
+    ['q','fPriority','fSource','fDue','addLead','exportCsv'].forEach(id => {
+      const e = el(id);
+      if (!e) return;
+      const target = e.closest('.search') || e;
+      target.hidden = !isLeads;
+    });
+    document.querySelector('.viewtoggle').hidden = !isLeads;
+    document.querySelector('.stats').hidden = !isLeads;
+    el('newCampaign').hidden = !isCamp;
+    el('mailerCsv').hidden = !isCamp;
+
+    el('campWrap').hidden = !isCamp;
+    el('calcWrap').hidden = !isCalc;
+    if (!isLeads){ board.hidden = true; el('tablewrap').hidden = true; el('tblFoot').hidden = true; }
+
+    if (isCamp) loadCampaigns();
+    else if (isCalc) renderCalc();
     else render();
   }
 
@@ -1672,6 +2113,7 @@
 
   el('modLeads').addEventListener('click', () => setModule('leads'));
   el('modCampaigns').addEventListener('click', () => setModule('campaigns'));
+  el('modCalc').addEventListener('click', () => setModule('calc'));
   el('newCampaign').addEventListener('click', () => openCampaign(null));
   el('cClose').addEventListener('click', closeCampaign);
   el('cCancel').addEventListener('click', closeCampaign);
