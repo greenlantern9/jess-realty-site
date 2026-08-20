@@ -369,6 +369,41 @@
   /* ===================== LIFESTYLE BANNER ===================== */
   /* The plain url() line comes first on purpose: a browser without image-set()
      ignores the second declaration and still gets the JPEG. */
+  /* ---------------- instagram reels ---------------- */
+  .reels-h2{font-family:var(--serif);font-size:clamp(1.7rem,3.4vw,2.5rem);font-weight:500;
+    line-height:1.14;letter-spacing:-.015em;margin-top:16px}
+  .reels-lead{max-width:52ch;margin-top:16px;color:var(--cream-soft);font-size:1.02rem;line-height:1.65}
+  .reels-lead a{color:var(--brass-bright)}
+  /* Capped rather than 1fr: a 9:16 card stretched across half a desktop is a
+     900px billboard, which is not what a reel looks like anywhere else. */
+  .reels{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,264px));
+    justify-content:start;gap:18px;margin-top:34px}
+  .reel{position:relative;aspect-ratio:9/16;border-radius:6px;overflow:hidden;
+    background:var(--ink-2);border:1px solid var(--line-soft);
+    display:flex;flex-direction:column;justify-content:flex-end;
+    text-align:left;width:100%;padding:0;cursor:pointer;
+    transition:border-color .2s,transform .18s}
+  .reel:hover{border-color:var(--brass);transform:translateY(-2px)}
+  .reel .sheen{position:absolute;inset:0;
+    background:radial-gradient(120% 90% at 50% 15%,rgba(201,162,107,.16),transparent 60%),
+               linear-gradient(180deg,transparent 35%,rgba(24,21,15,.86) 100%)}
+  .reel .play{position:absolute;top:50%;left:50%;transform:translate(-50%,-60%);
+    width:56px;height:56px;border-radius:50%;background:rgba(244,240,230,.10);
+    border:1px solid var(--line);display:flex;align-items:center;justify-content:center;
+    backdrop-filter:blur(2px);transition:background .2s,transform .18s}
+  .reel:hover .play{background:var(--brass);transform:translate(-50%,-60%) scale(1.06)}
+  .reel .play svg{width:20px;height:20px;fill:var(--cream);margin-left:3px}
+  .reel:hover .play svg{fill:var(--ink-3)}
+  .reel .cap{position:relative;padding:18px 18px 16px;color:var(--cream);
+    font-size:.95rem;line-height:1.45;font-weight:600}
+  .reel .cap small{display:block;margin-top:6px;font-size:.72rem;font-weight:600;
+    letter-spacing:.12em;text-transform:uppercase;color:var(--brass-bright)}
+  .reel iframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:var(--ink-3)}
+  .reels-more{display:inline-block;margin-top:30px;font-size:.9rem;font-weight:600;
+    color:var(--brass-bright);text-decoration:none;border-bottom:1px solid var(--line);
+    padding-bottom:3px}
+  .reels-more:hover{border-color:var(--brass-bright)}
+  @media(prefers-reduced-motion:reduce){ .reel,.reel .play{transition:none} }
   .lifestyle{position:relative;min-height:clamp(340px,52vh,500px);display:flex;align-items:center;
     background:
       linear-gradient(90deg, rgba(20,17,12,.86) 0%, rgba(24,21,15,.58) 52%, rgba(24,21,15,.24) 100%),
@@ -1343,6 +1378,29 @@
 </section>
 
 <!-- ===================== LIFESTYLE BANNER ===================== -->
+<!-- Instagram reels.
+     Nothing loads from Meta until somebody clicks a card. That is deliberate:
+     Instagram's embed sets cookies and reports the visit back the moment it
+     runs, so loading it on page view would have every visitor tracked before
+     they showed any interest in it - and it costs several hundred KB on a page
+     that currently loads fast. The facade is local markup; the click swaps in
+     the real embed. -->
+<section class="band alt" id="reels" hidden>
+  <div class="wrap">
+    <p class="eyebrow">On the ground</p>
+    <h2 class="reels-h2">Around Tampa Bay, lately</h2>
+    <p class="reels-lead">
+      Neighbourhood walk-throughs, new listings and the odd Saturday morning at the
+      farmers market — from
+      <a href="https://instagram.com/jkortumrealtor" target="_blank" rel="noopener">@jkortumrealtor</a>.
+    </p>
+    <div class="reels" id="reelGrid"></div>
+    <a class="reels-more" href="https://instagram.com/jkortumrealtor" target="_blank" rel="noopener">
+      See everything on Instagram →
+    </a>
+  </div>
+</section>
+
 <section class="lifestyle" aria-label="Tampa Bay at sunset">
   <div class="wrap lifestyle-inner">
     <span class="eyebrow reveal">Life on the Gulf</span>
@@ -1913,6 +1971,76 @@
     renderCards(AREA_DATA.hoods);
     renderMarkers(AREA_DATA.hoods);
   })();
+</script>
+<script>
+/* ---- Instagram reels ----
+   Paste the reels you want here. Get a code by opening a reel on Instagram and
+   copying the bit of the address after /reel/ :
+
+       https://www.instagram.com/reel/ABC123xyz/   ->   code: 'ABC123xyz'
+
+   Write your own caption - Instagram will not give us one without an API key,
+   and a caption you wrote reads better than one scraped anyway. Leave the list
+   empty and the whole section stays off the page. */
+const REELS = [
+  // { code: 'ABC123xyz', caption: 'Walking Hyde Park Village on a Saturday', tag: 'South Tampa' },
+];
+
+(function reels(){
+  const section = document.getElementById('reels');
+  const grid = document.getElementById('reelGrid');
+  if (!section || !grid) return;
+
+  const clean = REELS.filter((r) => r && /^[A-Za-z0-9_-]{5,20}$/.test(String(r.code || '')));
+  if (!clean.length) return;          // nothing to show, so the section stays hidden
+  section.hidden = false;
+
+  clean.forEach((r) => {
+    const url = 'https://www.instagram.com/reel/' + r.code + '/';
+
+    const card = document.createElement('button');
+    card.type = 'button';
+    card.className = 'reel';
+    card.setAttribute('aria-label', 'Play the reel: ' + (r.caption || 'Instagram reel'));
+
+    const sheen = document.createElement('span');
+    sheen.className = 'sheen';
+
+    const play = document.createElement('span');
+    play.className = 'play';
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('viewBox', '0 0 24 24');
+    const tri = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    tri.setAttribute('d', 'M8 5v14l11-7z');
+    svg.appendChild(tri);
+    play.appendChild(svg);
+
+    const cap = document.createElement('span');
+    cap.className = 'cap';
+    cap.textContent = r.caption || 'Watch the reel';
+    if (r.tag){
+      const t = document.createElement('small');
+      t.textContent = r.tag;
+      cap.appendChild(t);
+    }
+
+    card.append(sheen, play, cap);
+
+    // Nothing reaches Meta until this fires.
+    card.addEventListener('click', () => {
+      const frame = document.createElement('iframe');
+      frame.src = url + 'embed/';
+      frame.title = r.caption || 'Instagram reel';
+      frame.loading = 'lazy';
+      frame.allow = 'encrypted-media; picture-in-picture; web-share';
+      frame.allowFullscreen = true;
+      frame.referrerPolicy = 'strict-origin-when-cross-origin';
+      card.replaceWith(frame);
+    });
+
+    grid.appendChild(card);
+  });
+})();
 </script>
 </body>
 </html>

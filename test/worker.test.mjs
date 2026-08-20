@@ -1268,6 +1268,12 @@ check('API responses are secured too', !!apiRes.headers.get('x-content-type-opti
 const csp = secureRes.headers.get('content-security-policy') || '';
 check('CSP is enforcing, not report-only',
   !!csp && !secureRes.headers.get('content-security-policy-report-only'));
+// Without frame-src the reel iframes fall back to default-src 'self' and are
+// blocked silently - the card just goes blank with no error anywhere obvious.
+check('CSP allows the Instagram reel frames',
+  /frame-src[^;]*https:\/\/www\.instagram\.com/.test(csp), csp);
+check('but does not open frame-src to anything else',
+  !/frame-src[^;]*\*/.test(csp), csp);
 check('CSP cannot be framed', csp.includes("frame-ancestors 'none'"));
 check('CSP pins form-action', csp.includes("form-action 'self'"));
 // Hosts the live page genuinely needs - verified against the report-only pass.

@@ -44,6 +44,9 @@ const CSP = [
   "img-src 'self' data: https://unpkg.com https://*.basemaps.cartocdn.com",
   "connect-src 'self' https://cloudflareinsights.com",
   "form-action 'self'",
+  // Instagram reels load into an iframe on click. Without this, default-src
+  // 'self' blocks them silently - the card just goes blank.
+  "frame-src https://www.instagram.com",
   "frame-ancestors 'none'",
   "base-uri 'self'",
   "object-src 'none'"
